@@ -1,0 +1,19 @@
+<view class="screen with-tabbar">
+  <lp-header title="我的" subtitle="属于你的资料与生活记录" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步个人资料" error-text="个人资料暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view class="profile-hero">
+      <image wx:if="{{state.profile.avatarUrl}}" class="profile-avatar" src="{{state.profile.avatarUrl}}" mode="aspectFill" />
+      <view wx:else class="profile-avatar profile-avatar--empty"><t-icon name="user-avatar" size="58rpx" /></view>
+      <view class="profile-hero-copy"><text class="profile-name">{{state.profile.nickname}}</text><text class="profile-meta">{{state.profile.region || '未填写地区'}} · {{genderLabel}}</text></view>
+      <view class="profile-edit-link" hover-class="pressed" bind:tap="editProfile">编辑</view>
+    </view>
+    <view class="notice-card brand"><text class="notice-title">我的爱好</text><text class="notice-copy">{{hobbiesLabel}}</text></view>
+    <view class="section-heading"><text class="section-title">生活工具</text></view>
+    <view class="list">
+      <view class="list-cell" hover-class="pressed" bind:tap="openCalendar"><view class="cell-icon"><t-icon name="calendar" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">生活日历</text><text class="cell-subtitle">记录情绪、事件和经期</text></view><text class="chevron">›</text></view>
+      <view class="list-cell" hover-class="pressed" bind:tap="openPoints"><view class="cell-icon"><t-icon name="money" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">我的积分</text><text class="cell-subtitle">个人 {{state.personalPoints}} · 共同 {{state.sharedPoints}}</text></view><text class="chevron">›</text></view>
+      <view class="list-cell" hover-class="pressed" bind:tap="openSettings"><view class="cell-icon"><t-icon name="setting" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">设置与关系空间</text><text class="cell-subtitle">数据模式、版本与解除绑定</text></view><text class="chevron">›</text></view>
+    </view>
+  </block>
+</view>

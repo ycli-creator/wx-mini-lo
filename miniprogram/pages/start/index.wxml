@@ -1,0 +1,13 @@
+<view class="screen">
+  <lp-header title="Love Points" subtitle="两个人的小任务、积分和共同记录" />
+  <view class="notice-card brand">
+    <text class="notice-title">先绑定你的另一半</text>
+    <text class="notice-copy">通过微信小程序卡片和短码，建立一对一情侣空间。</text>
+  </view>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取关系状态" error-text="暂时无法确认绑定状态，请重新加载。" bind:retry="refresh" />
+  <view wx:else class="safe-actions">
+    <lp-button label="邀请 TA" bind:tap="goInvite" />
+    <lp-button label="输入短码" variant="soft" bind:tap="goJoin" />
+  </view>
+  <text class="field-hint">{{cloudEnabled ? '数据会同步到你们专属的云端情侣空间。' : '当前使用本机体验数据；配置云开发环境后会自动切换为双人同步。'}}</text>
+</view>

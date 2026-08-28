@@ -1,0 +1,27 @@
+<view class="screen with-tabbar has-floating-action">
+  <lp-header title="奖励商店" subtitle="双方都可以添加只属于你们的奖励" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步奖励" error-text="奖励暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view wx:if="{{createOpen}}" class="create-panel">
+    <view class="create-field"><text class="field-hint">奖励名称</text><input class="text-input" value="{{name}}" bind:input="handleName" /></view>
+    <view class="create-field"><text class="field-hint">简短说明</text><input class="text-input" value="{{description}}" bind:input="handleDescription" /></view>
+    <view class="create-field"><text class="field-hint">所需积分</text><input class="text-input" type="number" value="{{cost}}" bind:input="handleCost" /></view>
+    <view class="create-field"><text class="field-hint">有效期</text><input class="text-input" maxlength="60" value="{{expiry}}" bind:input="handleExpiry" /></view>
+    <view class="create-field"><text class="field-hint">使用条件</text><input class="text-input" maxlength="120" value="{{condition}}" bind:input="handleCondition" /></view>
+    <view class="segment"><view class="segment-item {{pointsType === 'shared' ? 'active' : ''}}" data-type="shared" bind:tap="selectPointsType">共同积分</view><view class="segment-item {{pointsType === 'personal' ? 'active' : ''}}" data-type="personal" bind:tap="selectPointsType">个人积分</view></view>
+    <view class="switch-row"><view><text class="cell-title">兑换前需要对方同意</text><text class="cell-subtitle">开启后，积分会在对方审批通过时扣除</text></view><switch color="#f65f6b" checked="{{approvalRequired}}" bind:change="handleApproval" /></view>
+    <lp-button label="创建奖励" disabled="{{!name || !cost}}" loading="{{busy}}" bind:tap="createReward" />
+  </view>
+  <view class="notice-card brand"><text class="notice-title">共同积分 {{state.sharedPoints}}</text><text class="notice-copy">奖励可指定使用个人积分或共同积分。</text></view>
+  <view class="list">
+    <view wx:for="{{rewards}}" wx:key="id" class="reward-card" data-id="{{item.id}}" hover-class="pressed" bind:tap="openReward">
+      <view class="reward-icon"><t-icon name="gift" size="42rpx" /></view><view class="cell-copy"><text class="cell-title">{{item.name}}</text><text class="cell-subtitle">{{item.description}}</text></view><text class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text><view class="reward-cost"><t-icon name="money" size="30rpx" /><text>{{item.cost}} {{item.pointsLabel}}积分</text></view>
+    </view>
+  </view>
+  <view wx:if="{{!rewards.length}}" class="empty-state"><text class="empty-title">还没有奖励</text><text class="empty-copy">点下方“新建奖励”，添加第一份只属于你们的期待。</text></view>
+  <view class="floating-create-action {{createOpen ? 'is-open' : ''}}" hover-class="floating-create-action--pressed" bind:tap="toggleCreate">
+    <text class="floating-create-icon">{{createOpen ? '×' : '＋'}}</text>
+    <text>{{createOpen ? '收起' : '新建奖励'}}</text>
+  </view>
+  </block>
+</view>

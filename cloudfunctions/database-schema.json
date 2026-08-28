@@ -1,0 +1,66 @@
+{
+  "collections": [
+    { "name": "users", "indexes": [] },
+    { "name": "couples", "indexes": [] },
+    { "name": "invites", "indexes": [
+      { "name": "code_status_created", "fields": [{ "field": "codeHash", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "creator_status_updated", "fields": [{ "field": "creatorOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] },
+      { "name": "applicant_updated", "fields": [{ "field": "applicantOpenId", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] }
+    ] },
+    { "name": "tasks", "indexes": [
+      { "name": "couple_deleted_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "createdAt", "direction": "asc" }] },
+      { "name": "assignee_status", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "assigneeOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "createdAt", "direction": "asc" }] },
+      { "name": "reviewer_status", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "reviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] }
+    ] },
+    { "name": "task_cycles", "indexes": [
+      { "name": "couple_task_cycle", "unique": true, "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "taskId", "direction": "asc" }, { "field": "cycleKey", "direction": "asc" }] },
+      { "name": "couple_status_updated", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] }
+    ] },
+    { "name": "task_submissions", "indexes": [
+      { "name": "couple_task", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "taskId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "couple_cycle_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "taskCycleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "point_accounts", "indexes": [] },
+    { "name": "point_ledgers", "indexes": [
+      { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "couple_points_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "pointsType", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "couple_owner_points_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "accountOwnerOpenId", "direction": "asc" }, { "field": "pointsType", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "rewards", "indexes": [{ "name": "couple_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "asc" }] }] },
+    { "name": "redemptions", "indexes": [
+      { "name": "requester_status_updated", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "requesterOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] },
+      { "name": "couple_status_updated", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] },
+      { "name": "reviewer_status", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "reviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "refund_reviewer_status", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "refundReviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] },
+      { "name": "requester_reward_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "requesterOpenId", "direction": "asc" }, { "field": "rewardId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "requester_reward_status_updated", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "requesterOpenId", "direction": "asc" }, { "field": "rewardId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] },
+      { "name": "reviewer_reward_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "reviewerOpenId", "direction": "asc" }, { "field": "rewardId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "refund_reviewer_reward_status_updated", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "refundReviewerOpenId", "direction": "asc" }, { "field": "rewardId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] }
+    ] },
+    { "name": "document_groups", "indexes": [{ "name": "couple_order", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "order", "direction": "asc" }] }] },
+    { "name": "documents", "indexes": [
+      { "name": "couple_deleted_updated", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] },
+      { "name": "couple_lock_owner", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "lockOwnerOpenId", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "updatedAt", "direction": "desc" }] }
+    ] },
+    { "name": "community_posts", "indexes": [
+      { "name": "status_deleted_published", "fields": [{ "field": "status", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "publishedAt", "direction": "desc" }] },
+      { "name": "couple_status_deleted_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "reviewer_status_created", "fields": [{ "field": "reviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "daily_records", "indexes": [
+      { "name": "couple_visibility_deleted_date", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "visibility", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "date", "direction": "desc" }] },
+      { "name": "couple_owner_deleted_date", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "ownerOpenId", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "date", "direction": "desc" }] }
+    ] },
+    { "name": "notifications", "indexes": [{ "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }] },
+    { "name": "unbind_requests", "indexes": [
+      { "name": "couple_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "reviewer_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "reviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "operation_logs", "indexes": [
+      { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "actor_created", "fields": [{ "field": "actorOpenId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] }
+  ],
+  "permissionMode": "ADMIN_ONLY",
+  "permissionPolicy": "All collections must deny direct Mini Program reads and writes. Access is only through the api cloud function."
+}

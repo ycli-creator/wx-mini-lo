@@ -1,0 +1,14 @@
+{
+  "name": "love-points-api",
+  "version": "0.2.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "check": "node --check index.js && node --check lib/shared.js && node --check actions/invite.js && node --check actions/task.js && node --check actions/reward.js && node --check actions/documents.js && node --check actions/unbind.js && node --check actions/profile.js && node --check actions/community.js && node --check actions/records.js && node scripts/verify-schema.js",
+    "test": "node --test tests/api.test.js",
+    "verify": "npm run check && npm test"
+  },
+  "dependencies": {
+    "wx-server-sdk": "4.0.2"
+  }
+}

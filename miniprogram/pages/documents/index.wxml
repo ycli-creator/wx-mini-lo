@@ -1,0 +1,35 @@
+<view class="screen with-tabbar has-floating-action">
+  <lp-header title="共享文档" subtitle="日记、攻略和共同计划，都收在这里" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步文档" error-text="文档暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view wx:if="{{createOpen}}" class="create-panel">
+    <view class="segment"><view class="segment-item {{createMode === 'document' ? 'active' : ''}}" data-mode="document" bind:tap="selectCreateMode">新建文档</view><view class="segment-item {{createMode === 'group' ? 'active' : ''}}" data-mode="group" bind:tap="selectCreateMode">新建分组</view></view>
+    <block wx:if="{{createMode === 'document'}}">
+      <text class="field-hint section-gap">选择保存位置</text>
+      <view class="choice-wrap"><view wx:for="{{groups}}" wx:key="id" class="choice-chip {{selectedGroupId === item.id ? 'active' : ''}}" data-id="{{item.id}}" bind:tap="selectGroup">{{item.name}}</view></view>
+      <lp-button label="开始写文档" disabled="{{!selectedGroupId}}" bind:tap="startDocument" />
+    </block>
+    <block wx:else>
+      <view class="create-field"><text class="field-hint">分组名称</text><input class="text-input" maxlength="30" value="{{groupName}}" bind:input="handleGroupName" /></view>
+      <lp-button label="创建分组" disabled="{{!groupName}}" loading="{{busy}}" bind:tap="createGroup" />
+    </block>
+  </view>
+  <view class="notice-card brand"><text class="notice-title">{{groups.length}} 个文档组</text><text class="notice-copy">首版采用简单文本和单人编辑锁，避免双方同时覆盖。</text></view>
+  <view wx:if="{{groups.length}}" class="document-groups">
+    <view wx:for="{{groups}}" wx:for-item="group" wx:key="id" class="document-group">
+      <view class="section-heading"><text class="section-title">{{group.name}}</text><text class="section-caption" data-id="{{group.id}}" bind:tap="startGroupDocument">＋ 新文档</text></view>
+      <view wx:if="{{group.documents.length}}" class="list">
+        <view wx:for="{{group.documents}}" wx:for-item="document" wx:key="id" class="list-cell" data-id="{{document.id}}" hover-class="pressed" bind:tap="openDocument">
+          <view class="cell-icon"><t-icon name="file" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">{{document.title}}</text><text class="cell-subtitle">{{document.lockedByOther ? '对方正在编辑 · 点击只读查看' : '点击查看或继续编辑'}}</text></view><text class="chevron">›</text>
+        </view>
+      </view>
+      <view wx:else class="empty-state section-gap" data-id="{{group.id}}" bind:tap="startGroupDocument"><text class="empty-copy">还没有文档，点此开始记录。</text></view>
+    </view>
+  </view>
+  <view wx:else class="empty-state"><text class="empty-title">还没有文档组</text><text class="empty-copy">点下方“新建内容”，先创建分组，再开始记录共同内容。</text></view>
+  <view class="floating-create-action {{createOpen ? 'is-open' : ''}}" hover-class="floating-create-action--pressed" bind:tap="toggleCreate">
+    <text class="floating-create-icon">{{createOpen ? '×' : '＋'}}</text>
+    <text>{{createOpen ? '收起' : '新建内容'}}</text>
+  </view>
+  </block>
+</view>

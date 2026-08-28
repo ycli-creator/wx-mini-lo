@@ -1,0 +1,482 @@
+const crypto = require('node:crypto')
+const cloud = require('wx-server-sdk')
+const { assert } = require('./errors')
+
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+
+const db = cloud.database({ env: cloud.DYNAMIC_CURRENT_ENV })
+const command = db.command
+
+const collections = {
+  users: 'users',
+  couples: 'couples',
+  invites: 'invites',
+  tasks: 'tasks',
+  taskCycles: 'task_cycles',
+  submissions: 'task_submissions',
+  accounts: 'point_accounts',
+  ledgers: 'point_ledgers',
+  rewards: 'rewards',
+  redemptions: 'redemptions',
+  documentGroups: 'document_groups',
+  documents: 'documents',
+  notifications: 'notifications',
+  unbindRequests: 'unbind_requests',
+  operationLogs: 'operation_logs',
+  communityPosts: 'community_posts',
+  dailyRecords: 'daily_records',
+}
+
+const now = () => new Date()
+const makeId = (prefix) => `${prefix}_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`
+const hashCode = (code) => crypto.createHash('sha256').update(String(code)).digest('hex')
+const randomCode = () => String(crypto.randomInt(100000, 1000000))
+
+const queryOne = async (collection, where, orderBy = null) => {
+  let query = db.collection(collection).where(where)
+  if (orderBy) query = query.orderBy(orderBy.field, orderBy.direction)
+  const result = await query.limit(1).get()
+  return result.data[0] || null
+}
+
+const getDoc = async (collection, id) => {
+  const result = await db.collection(collection).where({ _id: id }).limit(1).get()
+  return result.data[0] || null
+}
+
+const ensureUser = async (openid) => {
+  assert(openid, 'UNAUTHENTICATED', '无法获取微信用户身份')
+  const existing = await getDoc(collections.users, openid)
+  if (existing) {
+    await db.collection(collections.users).doc(openid).update({ data: { lastSeenAt: db.serverDate(), updatedAt: db.serverDate() } })
+    return existing
+  }
+  const user = {
+    coupleId: null,
+    nickname: '',
+    avatarUrl: '',
+    gender: 'private',
+    region: '',
+    hobbies: [],
+    profileCompleted: false,
+    createdAt: now(),
+    updatedAt: now(),
+    lastSeenAt: now(),
+  }
+  await db.collection(collections.users).doc(openid).set({ data: user })
+  return user
+}
+
+const requireCouple = async (openid) => {
+  const user = await getDoc(collections.users, openid)
+  assert(user?.coupleId, 'NOT_BOUND', '请先完成情侣绑定')
+  const couple = await getDoc(collections.couples, user.coupleId)
+  assert(couple && couple.status === 'active', 'COUPLE_INACTIVE', '情侣空间不存在或已解绑')
+  assert(Array.isArray(couple.members) && couple.members.includes(openid), 'FORBIDDEN', '你无权访问该情侣空间')
+  return { user, couple, coupleId: couple._id, partnerId: couple.members.find((id) => id !== openid) || '' }
+}
+
+const publicProfile = (user = {}) => ({
+  nickname: String(user.nickname || ''),
+  avatarUrl: String(user.avatarUrl || ''),
+  gender: ['female', 'male', 'other', 'private'].includes(user.gender) ? user.gender : 'private',
+  region: String(user.region || ''),
+  hobbies: Array.isArray(user.hobbies) ? user.hobbies.map(String).slice(0, 12) : [],
+  completed: Boolean(user.profileCompleted || String(user.nickname || '').trim()),
+})
+
+const SHANGHAI_OFFSET = 8 * 60 * 60 * 1000
+const pad = (value) => String(value).padStart(2, '0')
+const localDateParts = (date) => {
+  const shifted = new Date(date.getTime() + SHANGHAI_OFFSET)
+  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth(), day: shifted.getUTCDate(), weekday: shifted.getUTCDay() }
+}
+const utcFromShanghai = (year, month, day) => new Date(Date.UTC(year, month, day) - SHANGHAI_OFFSET)
+const formatDayKey = (date) => {
+  const { year, month, day } = localDateParts(date)
+  return `${year}-${pad(month + 1)}-${pad(day)}`
+}
+const formatShortDate = (date) => {
+  const { month, day } = localDateParts(date)
+  return `${month + 1} 月 ${day} 日`
+}
+const normalizePlanType = (value) => ['daily', 'weekly', 'long_term'].includes(value) ? value : 'long_term'
+const taskCycleWindow = (planTypeValue, at = now()) => {
+  const planType = normalizePlanType(planTypeValue)
+  if (planType === 'long_term') return { cycleKey: 'lifetime', cycleLabel: '长期', periodStart: null, periodEnd: null }
+  const parts = localDateParts(at)
+  if (planType === 'daily') {
+    const periodStart = utcFromShanghai(parts.year, parts.month, parts.day)
+    const periodEnd = new Date(periodStart.getTime() + 24 * 60 * 60 * 1000)
+    return { cycleKey: formatDayKey(periodStart), cycleLabel: formatShortDate(periodStart), periodStart, periodEnd }
+  }
+  const daysSinceMonday = (parts.weekday + 6) % 7
+  const periodStart = utcFromShanghai(parts.year, parts.month, parts.day - daysSinceMonday)
+  const periodEnd = new Date(periodStart.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const lastDay = new Date(periodEnd.getTime() - 24 * 60 * 60 * 1000)
+  return { cycleKey: formatDayKey(periodStart), cycleLabel: `${formatShortDate(periodStart)}–${formatShortDate(lastDay)}`, periodStart, periodEnd }
+}
+const taskCycleId = (taskId, cycleKey) => `cycle_${hashCode(`${taskId}:${cycleKey}`).slice(0, 40)}`
+
+const ensureTaskCycles = async (taskDocuments, coupleId, at = now()) => {
+  const existingResult = await db.collection(collections.taskCycles).where({ coupleId }).limit(500).get()
+  const cycles = [...existingResult.data]
+  const cycleById = new Map(cycles.map((cycle) => [cycle._id, cycle]))
+  for (const cycle of cycles) {
+    if (!cycle.periodEnd || new Date(cycle.periodEnd).getTime() > at.getTime() || !['todo', 'rejected'].includes(cycle.status)) continue
+    await db.collection(collections.taskCycles).doc(cycle._id).update({ data: { status: 'missed', settledAt: at, updatedAt: at } })
+    cycle.status = 'missed'
+    cycle.settledAt = at
+    cycle.updatedAt = at
+  }
+  for (const task of taskDocuments) {
+    if (task.enabled === false || task.deleted === true) continue
+    const planType = normalizePlanType(task.planType)
+    const window = taskCycleWindow(planType, at)
+    const cycleId = taskCycleId(task._id, window.cycleKey)
+    if (!cycleById.has(cycleId)) {
+      const cycle = {
+        _id: cycleId,
+        coupleId,
+        taskId: task._id,
+        cycleKey: window.cycleKey,
+        cycleLabel: window.cycleLabel,
+        periodStart: window.periodStart,
+        periodEnd: window.periodEnd,
+        status: planType === 'long_term' && ['todo', 'pending', 'approved', 'rejected'].includes(task.status) ? task.status : 'todo',
+        latestSubmissionId: planType === 'long_term' ? task.latestSubmissionId || null : null,
+        latestNote: planType === 'long_term' ? task.latestNote || '' : '',
+        rejectionReason: planType === 'long_term' ? task.rejectionReason || '' : '',
+        settledAt: planType === 'long_term' && task.status === 'approved' ? task.updatedAt || at : null,
+        createdAt: at,
+        updatedAt: at,
+      }
+      const { _id, ...data } = cycle
+      await db.collection(collections.taskCycles).doc(cycleId).set({ data })
+      cycles.push(cycle)
+      cycleById.set(cycleId, cycle)
+    }
+    if (!task.planType) {
+      await db.collection(collections.tasks).doc(task._id).update({ data: { planType: 'long_term', timezone: 'Asia/Shanghai', enabled: true, updatedAt: at } })
+      task.planType = 'long_term'
+    }
+  }
+  return cycles
+}
+
+const defaultState = (user = {}) => ({
+  profile: publicProfile(user),
+  partnerProfile: { nickname: '', avatarUrl: '' },
+  profileComplete: publicProfile(user).completed,
+  bound: false,
+  inviteCode: '',
+  joinCode: '',
+  taskStatus: 'todo',
+  taskCanReview: false,
+  taskNote: '',
+  selectedTaskId: '',
+  tasks: [],
+  personalPoints: 0,
+  sharedPoints: 0,
+  selectedRewardId: '',
+  redeemedRewardId: null,
+  redemptionStatus: 'none',
+  redemptionCanReview: false,
+  refundStatus: 'none',
+  refundCanReview: false,
+  documentTitle: '',
+  documentBody: '',
+  selectedDocumentId: '',
+  documentGroups: [],
+  documents: [],
+  unbindRequested: false,
+  unbindCanReview: false,
+  rewards: [],
+  redemptions: [],
+  ledger: [],
+  communityPosts: [],
+  dailyRecords: [],
+})
+
+const projectState = async (openid) => {
+  const user = await getDoc(collections.users, openid)
+  if (!user?.coupleId) return defaultState(user)
+  const couple = await getDoc(collections.couples, user.coupleId)
+  if (!couple || couple.status !== 'active' || !couple.members.includes(openid)) return defaultState(user)
+
+  const coupleId = couple._id
+  const partnerId = couple.members.find((id) => id !== openid) || ''
+  const [partner, account, taskResult, rewardResult, personalLedgerResult, sharedLedgerResult, groupResult, documentResult, latestDocument, redemptionResult, unbindResult] = await Promise.all([
+    partnerId ? getDoc(collections.users, partnerId) : null,
+    getDoc(collections.accounts, coupleId),
+    db.collection(collections.tasks).where({ coupleId, deleted: command.neq(true) }).orderBy('createdAt', 'asc').limit(100).get(),
+    db.collection(collections.rewards).where({ coupleId, status: 'active' }).orderBy('createdAt', 'asc').limit(100).get(),
+    db.collection(collections.ledgers).where({ coupleId, pointsType: 'personal', accountOwnerOpenId: openid }).orderBy('createdAt', 'desc').limit(30).get(),
+    db.collection(collections.ledgers).where({ coupleId, pointsType: 'shared' }).orderBy('createdAt', 'desc').limit(30).get(),
+    db.collection(collections.documentGroups).where({ coupleId }).orderBy('order', 'asc').limit(50).get(),
+    db.collection(collections.documents)
+      .where({ coupleId, deleted: command.neq(true) })
+      .field({ _id: true, groupId: true, title: true, lockOwnerOpenId: true, lockExpiresAt: true, updatedAt: true })
+      .orderBy('updatedAt', 'desc').limit(100).get(),
+    queryOne(collections.documents, { coupleId, deleted: command.neq(true) }, { field: 'updatedAt', direction: 'desc' }),
+    db.collection(collections.redemptions).where({ coupleId, status: command.in(['pending_approval', 'active', 'refund_requested', 'refunded']) }).orderBy('updatedAt', 'desc').limit(50).get(),
+    db.collection(collections.unbindRequests).where({ coupleId, status: 'pending' }).orderBy('createdAt', 'desc').limit(1).get(),
+  ])
+
+  const taskDocuments = taskResult.data
+  const taskDocumentById = new Map(taskDocuments.map((item) => [item._id, item]))
+  const taskCycles = await ensureTaskCycles(taskDocuments, coupleId)
+  const document = latestDocument || null
+  const incomingRedemption = redemptionResult.data.find((item) =>
+    (item.status === 'pending_approval' && item.reviewerOpenId === openid)
+    || (item.status === 'refund_requested' && item.refundReviewerOpenId === openid)) || null
+  const ownRedemption = redemptionResult.data.find((item) => item.requesterOpenId === openid && ['pending_approval', 'refund_requested', 'active'].includes(item.status))
+    || redemptionResult.data.find((item) => item.requesterOpenId === openid)
+    || null
+  const redemption = incomingRedemption || ownRedemption
+  const visibleLedgers = [...personalLedgerResult.data, ...sharedLedgerResult.data]
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 30)
+  const visibleRedemptions = redemptionResult.data
+  let unbindRequest = unbindResult.data[0] || null
+  if (unbindRequest?.expiresAt && new Date(unbindRequest.expiresAt).getTime() <= Date.now()) {
+    await db.collection(collections.unbindRequests).doc(unbindRequest._id).update({ data: { status: 'expired', updatedAt: db.serverDate() } })
+    unbindRequest = null
+  }
+  const personalBalances = account?.personalBalances || {}
+  const rewards = rewardResult.data.map((reward) => ({
+    id: reward._id,
+    name: reward.name,
+    description: reward.description,
+    cost: reward.cost,
+    pointsType: reward.pointsType,
+    expiry: reward.expiry,
+    condition: reward.condition,
+    approvalRequired: Boolean(reward.approvalRequired),
+  }))
+  const tasks = taskCycles
+    .map((cycle) => ({ cycle, item: taskDocumentById.get(cycle.taskId) }))
+    .filter(({ item, cycle }) => item && (
+      cycle.cycleKey === taskCycleWindow(item.planType).cycleKey
+      || cycle.status === 'pending'
+      || normalizePlanType(item.planType) === 'long_term'
+    ))
+    .map(({ cycle, item }) => ({
+      id: cycle._id,
+      templateId: item._id,
+      title: item.title,
+      description: item.description || '',
+      taskType: item.taskType === 'shared' ? 'shared' : 'personal',
+      pointsType: item.pointsType === 'shared' ? 'shared' : 'personal',
+      points: Number(item.points || 0),
+      status: cycle.status === 'approved' ? 'done' : cycle.status === 'pending' ? 'pending' : cycle.status === 'rejected' ? 'rejected' : cycle.status === 'missed' ? 'missed' : 'todo',
+      assigneeIsSelf: item.assigneeOpenId === openid,
+      reviewerIsSelf: item.reviewerOpenId === openid,
+      latestNote: cycle.latestNote || '',
+      rejectionReason: cycle.rejectionReason || '',
+      planType: normalizePlanType(item.planType),
+      cycleKey: cycle.cycleKey,
+      cycleLabel: cycle.cycleLabel || cycle.cycleKey,
+      periodStart: cycle.periodStart ? new Date(cycle.periodStart).toISOString() : '',
+      periodEnd: cycle.periodEnd ? new Date(cycle.periodEnd).toISOString() : '',
+      isCurrentCycle: cycle.cycleKey === taskCycleWindow(item.planType).cycleKey,
+    }))
+  const task = tasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
+    || tasks.find((item) => item.planType === 'daily' && item.isCurrentCycle && ['todo', 'rejected', 'done'].includes(item.status) && item.assigneeIsSelf)
+    || tasks.find((item) => item.isCurrentCycle && ['todo', 'rejected'].includes(item.status) && item.assigneeIsSelf)
+    || tasks[0]
+    || null
+  const documentGroups = groupResult.data.map((group) => ({ id: group._id, name: group.name, order: Number(group.order || 0) }))
+  const documents = documentResult.data.map((item) => ({
+    id: item._id,
+    groupId: item.groupId || '',
+    title: item.title,
+    body: item._id === document?._id ? document.body || '' : '',
+    lockedByOther: Boolean(
+      item.lockOwnerOpenId
+      && item.lockOwnerOpenId !== openid
+      && item.lockExpiresAt
+      && new Date(item.lockExpiresAt).getTime() > Date.now()
+    ),
+  }))
+
+  return {
+    profile: publicProfile(user),
+    partnerProfile: { nickname: String(partner?.nickname || '你的另一半'), avatarUrl: String(partner?.avatarUrl || '') },
+    profileComplete: publicProfile(user).completed,
+    bound: true,
+    inviteCode: '',
+    joinCode: '',
+    taskStatus: task?.status || 'todo',
+    taskCanReview: Boolean(task?.reviewerIsSelf),
+    taskNote: task?.latestNote || '',
+    selectedTaskId: task?.id || '',
+    tasks,
+    personalPoints: Number(personalBalances[openid] || 0),
+    sharedPoints: Number(account?.sharedBalance || 0),
+    selectedRewardId: redemption?.rewardId || rewards[0]?.id || '',
+    redeemedRewardId: redemption && redemption.status !== 'refunded' ? redemption.rewardId : null,
+    redemptionStatus: redemption?.status === 'pending_approval' ? 'pending' : redemption?.status === 'active' || redemption?.status === 'refund_requested' ? 'active' : redemption?.status === 'refunded' ? 'refunded' : 'none',
+    redemptionCanReview: Boolean(redemption && redemption.status === 'pending_approval' && redemption.reviewerOpenId === openid),
+    refundStatus: redemption?.status === 'refund_requested' ? 'requested' : redemption?.status === 'refunded' ? 'approved' : 'none',
+    refundCanReview: Boolean(redemption && redemption.status === 'refund_requested' && redemption.refundReviewerOpenId === openid),
+    documentTitle: document?.title || '',
+    documentBody: document?.body || '',
+    selectedDocumentId: document?._id || '',
+    documentGroups,
+    documents,
+    unbindRequested: Boolean(unbindRequest),
+    unbindCanReview: Boolean(unbindRequest && unbindRequest.reviewerOpenId === openid),
+    rewards,
+    redemptions: visibleRedemptions.map((item) => ({
+      rewardId: item.rewardId,
+      status: item.status === 'pending_approval' ? 'pending' : item.status === 'refunded' ? 'refunded' : 'active',
+      canReview: Boolean(item.status === 'pending_approval' && item.reviewerOpenId === openid),
+      refundStatus: item.status === 'refund_requested' ? 'requested' : item.status === 'refunded' ? 'approved' : 'none',
+      refundCanReview: Boolean(item.status === 'refund_requested' && item.refundReviewerOpenId === openid),
+      requesterIsSelf: item.requesterOpenId === openid,
+    })),
+    ledger: visibleLedgers.map((entry) => ({
+      id: entry._id,
+      title: entry.title,
+      detail: entry.detail,
+      amount: entry.amount,
+      balance: entry.balanceAfter,
+      type: entry.pointsType,
+    })),
+    communityPosts: [],
+    dailyRecords: [],
+  }
+}
+
+const writeOperationLog = async ({ coupleId = null, openid, action, targetId = null, result = 'success' }) => {
+  try {
+    await db.collection(collections.operationLogs).add({
+      data: { coupleId, actorOpenId: openid, action, targetId, result, createdAt: db.serverDate() },
+    })
+  } catch (error) {
+    // The business transaction is authoritative. A secondary audit write must
+    // never turn an already-committed bind, approval, redemption or refund into
+    // a client-visible failure that invites a misleading retry.
+    console.error('Love Points operation log write failed', {
+      coupleId,
+      openid,
+      action,
+      targetId,
+      message: error instanceof Error ? error.message : String(error),
+    })
+  }
+}
+
+const seedCouple = async (transaction, { coupleId, creatorId, applicantId, inviteId }) => {
+  const createdAt = now()
+  const members = [creatorId, applicantId]
+  const personalBalances = { [creatorId]: 320, [applicantId]: 320 }
+  const taskId = `task_seed_${coupleId}`
+  const groupId = `group_diary_${coupleId}`
+  const documentId = `document_seed_${coupleId}`
+
+  await transaction.collection(collections.couples).doc(coupleId).set({
+    data: { members, status: 'active', inviteId, createdAt, updatedAt: createdAt },
+  })
+  await transaction.collection(collections.accounts).doc(coupleId).set({
+    data: { coupleId, personalBalances, sharedBalance: 580, createdAt, updatedAt: createdAt },
+  })
+  await transaction.collection(collections.tasks).doc(taskId).set({
+    data: {
+      coupleId,
+      title: '一起完成晚餐',
+      description: '准备两个人都喜欢的菜，完成后一起记录。',
+      taskType: 'personal',
+      pointsType: 'personal',
+      points: 120,
+      planType: 'long_term',
+      timezone: 'Asia/Shanghai',
+      enabled: true,
+      startDate: formatDayKey(createdAt),
+      assigneeOpenId: applicantId,
+      reviewerOpenId: creatorId,
+      status: 'todo',
+      latestSubmissionId: null,
+      latestNote: '',
+      rejectionReason: '',
+      deleted: false,
+      createdAt,
+      updatedAt: createdAt,
+    },
+  })
+  await transaction.collection(collections.rewards).doc(`reward_movie_${coupleId}`).set({
+    data: {
+      coupleId,
+      name: '双人电影之夜',
+      description: '选一部期待很久的电影',
+      cost: 200,
+      pointsType: 'shared',
+      expiry: '2026 年 12 月 31 日',
+      condition: '周末或节假日',
+      approvalRequired: false,
+      status: 'active',
+      createdBy: creatorId,
+      createdAt,
+      updatedAt: createdAt,
+    },
+  })
+  await transaction.collection(collections.rewards).doc(`reward_trip_${coupleId}`).set({
+    data: {
+      coupleId,
+      name: '周末短途旅行',
+      description: '周末一起出发',
+      cost: 800,
+      pointsType: 'shared',
+      expiry: '2027 年 06 月 30 日',
+      condition: '提前一周商量目的地',
+      approvalRequired: true,
+      status: 'active',
+      createdBy: creatorId,
+      createdAt,
+      updatedAt: createdAt,
+    },
+  })
+  await transaction.collection(collections.documentGroups).doc(groupId).set({
+    data: { coupleId, name: '日记', order: 0, createdBy: creatorId, createdAt, updatedAt: createdAt },
+  })
+  await transaction.collection(collections.documents).doc(documentId).set({
+    data: {
+      coupleId,
+      groupId,
+      title: '我们的第一篇共同日记',
+      body: '今天一起完成了晚餐任务，番茄牛腩比想象中更成功。下次想试试做甜点。',
+      createdBy: creatorId,
+      lastEditedBy: creatorId,
+      lockOwnerOpenId: null,
+      lockExpiresAt: null,
+      deleted: false,
+      createdAt,
+      updatedAt: createdAt,
+    },
+  })
+  await transaction.collection(collections.users).doc(creatorId).update({ data: { coupleId, updatedAt: createdAt } })
+  await transaction.collection(collections.users).doc(applicantId).update({ data: { coupleId, updatedAt: createdAt } })
+}
+
+module.exports = {
+  cloud,
+  db,
+  command,
+  collections,
+  now,
+  makeId,
+  hashCode,
+  randomCode,
+  queryOne,
+  getDoc,
+  ensureUser,
+  requireCouple,
+  normalizePlanType,
+  taskCycleWindow,
+  taskCycleId,
+  ensureTaskCycles,
+  projectState,
+  writeOperationLog,
+  seedCouple,
+}

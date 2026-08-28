@@ -1,0 +1,15 @@
+<view class="card" hover-class="card--pressed" bind:tap="handleTap">
+  <view class="heading">
+    <view class="icon"><t-icon name="task-checked" size="36rpx" /></view>
+    <view class="copy">
+      <text class="title">{{title}}</text>
+      <text class="subtitle">{{subtitle || ('完成可得 ' + points + ' 积分')}}</text>
+    </view>
+    <text class="tag tag--{{status}}">{{label}}</text>
+  </view>
+  <text class="description">{{taskDescription || description}}</text>
+  <view class="progress-row">
+    <text>进度 {{progress}}%</text>
+    <view class="track"><view class="bar" style="width: {{progress}}%;"></view></view>
+  </view>
+</view>

@@ -1,0 +1,4 @@
+{
+  "desc": "Love Points 个人使用版",
+  "rules": [{ "action": "disallow", "page": "*" }]
+}

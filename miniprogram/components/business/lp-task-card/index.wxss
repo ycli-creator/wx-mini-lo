@@ -1,0 +1,19 @@
+:host { display: block; margin-bottom: 28rpx; }
+.card { width: 100%; min-height: 312rpx; padding: 36rpx 40rpx; color: #2f2928; background: #fff; border: 2rpx solid #eedfd8; border-radius: 48rpx; box-shadow: 0 8rpx 32rpx rgba(78, 48, 39, 0.06); transition: transform 160ms ease; }
+.card--pressed { transform: scale(0.985); }
+.heading { display: flex; align-items: center; gap: 24rpx; }
+.icon { width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; color: #e84a57; background: #fff1f0; border-radius: 28rpx; font-size: 36rpx; }
+.copy { min-width: 0; flex: 1; }
+.title, .subtitle { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.title { font-size: 32rpx; font-weight: 500; line-height: 50rpx; }
+.subtitle { color: #8a7c78; font-size: 24rpx; line-height: 38rpx; }
+.tag { min-height: 52rpx; padding: 6rpx 18rpx; display: flex; align-items: center; border-radius: 999rpx; font-size: 22rpx; }
+.tag--todo { color: #e84a57; background: #fff1f0; }
+.tag--pending { color: #4d84c6; background: #eaf2ff; }
+.tag--done { color: #688f3b; background: #edf6df; }
+.tag--rejected { color: #e84a57; background: #fff1f0; }
+.tag--missed { color: #e7942f; background: #fff1d6; }
+.description { display: block; margin: 28rpx 0 26rpx; color: #8a7c78; font-size: 28rpx; line-height: 44rpx; }
+.progress-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 20rpx; color: #8a7c78; font-size: 24rpx; }
+.track { height: 8rpx; overflow: hidden; background: #f8efea; border-radius: 999rpx; }
+.bar { height: 100%; background: #f65f6b; border-radius: inherit; }

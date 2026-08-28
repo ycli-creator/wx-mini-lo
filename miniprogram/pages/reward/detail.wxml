@@ -1,0 +1,11 @@
+<view class="screen">
+  <lp-header title="奖励详情" subtitle="兑换前再确认一下规则" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取奖励" error-text="奖励暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="reward-card section-gap"><view class="reward-icon"><t-icon name="gift" size="42rpx" /></view><view class="cell-copy"><text class="cell-title">{{reward.name}}</text><text class="cell-subtitle">{{reward.description}}</text></view><view class="reward-cost"><t-icon name="money" size="30rpx" /><text>{{reward.cost}} {{pointsLabel}}积分</text></view></view>
+  <view class="info-card"><text class="notice-title">使用说明</text><text class="notice-copy">有效期：{{reward.expiry}}\n使用条件：{{reward.condition}}\n对方审批：{{reward.approvalRequired ? '需要' : '不需要'}}</text></view>
+  <view class="notice-card {{enough ? 'success' : 'warning'}}"><text class="notice-title">{{enough ? '当前积分充足' : '当前积分不足'}}</text><text class="notice-copy">兑换后会生成一条不可修改的积分流水。</text></view>
+  <lp-button label="{{redeemed ? '查看已兑换奖励' : '确认兑换'}}" disabled="{{!enough && !redeemed}}" loading="{{busy}}" bind:tap="redeem" />
+  <lp-button label="返回奖励商店" variant="text" bind:tap="goBack" />
+  </block>
+</view>

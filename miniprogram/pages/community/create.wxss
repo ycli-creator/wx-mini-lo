@@ -1,0 +1,8 @@
+.community-create-screen { padding-bottom: calc(env(safe-area-inset-bottom) + 80rpx); }
+.post-editor { min-height: 260rpx; }
+.editor-count { display: block; color: var(--lp-text-secondary); font-size: 22rpx; text-align: right; }
+.media-grid { margin-bottom: 24rpx; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14rpx; }
+.media-preview { position: relative; overflow: hidden; aspect-ratio: 1; background: var(--lp-disabled); border-radius: 24rpx; }
+.media-preview image, .media-preview video { width: 100%; height: 100%; }
+.remove-media { position: absolute; top: 8rpx; right: 8rpx; width: 42rpx; height: 42rpx; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(0, 0, 0, 0.55); border-radius: 50%; font-size: 28rpx; }
+.media-picker { min-height: 120rpx; margin-bottom: 28rpx; padding: 22rpx 28rpx; display: flex; align-items: center; gap: 20rpx; background: #fff; border: 2rpx dashed var(--lp-border); border-radius: 32rpx; }

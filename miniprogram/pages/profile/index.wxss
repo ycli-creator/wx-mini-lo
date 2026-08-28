@@ -1,0 +1,7 @@
+.profile-hero { margin-bottom: 28rpx; padding: 34rpx; display: flex; align-items: center; gap: 24rpx; background: #fff; border: 2rpx solid var(--lp-border); border-radius: 42rpx; box-shadow: 0 10rpx 36rpx rgba(78, 48, 39, 0.06); }
+.profile-avatar { width: 120rpx; height: 120rpx; flex: 0 0 auto; border-radius: 50%; }
+.profile-avatar--empty { display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: var(--lp-brand-soft); }
+.profile-hero-copy { min-width: 0; flex: 1; }
+.profile-name { display: block; overflow: hidden; font-size: 38rpx; font-weight: 700; line-height: 54rpx; text-overflow: ellipsis; white-space: nowrap; }
+.profile-meta { display: block; margin-top: 6rpx; color: var(--lp-text-secondary); font-size: 24rpx; }
+.profile-edit-link { padding: 14rpx 22rpx; color: var(--lp-brand-text); background: var(--lp-brand-soft); border-radius: 999rpx; font-size: 24rpx; }

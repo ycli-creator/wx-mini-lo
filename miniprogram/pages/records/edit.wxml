@@ -1,0 +1,35 @@
+<view class="screen record-edit-screen">
+  <lp-header title="{{readOnly ? '查看生活记录' : id ? '编辑生活记录' : '记录这一天'}}" subtitle="{{readOnly ? ownerName + ' 与你共享了这条记录' : '每条记录都可以选择仅自己可见或与 TA 共享'}}" />
+  <lp-page-state wx:if="{{loading}}" loading="{{true}}" loading-text="正在读取记录" />
+  <block wx:elif="{{readOnly}}">
+    <view class="readonly-record">
+      <view class="readonly-meta"><text>{{date}}</text><text>{{type === 'mood' ? '情绪' : type === 'event' ? '事件' : '经期'}}</text></view>
+      <text wx:if="{{type === 'mood'}}" class="readonly-mood">{{mood}}</text>
+      <text wx:if="{{type === 'event'}}" class="readonly-title">{{title}}</text>
+      <text wx:if="{{type === 'period'}}" class="readonly-title">经期记录 · {{periodFlow === 'light' ? '少量' : periodFlow === 'heavy' ? '较多' : '正常'}}</text>
+      <text wx:if="{{note}}" class="readonly-note">{{note}}</text>
+      <text wx:else class="readonly-note muted">没有补充说明</text>
+    </view>
+  </block>
+  <block wx:else>
+    <picker mode="date" value="{{date}}" bind:change="handleDate"><view class="date-picker"><view class="cell-icon"><t-icon name="calendar" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">记录日期</text><text class="cell-subtitle">{{date}}</text></view><text class="chevron">›</text></view></picker>
+    <view class="segment record-type-segment"><view wx:for="{{typeOptions}}" wx:key="value" class="segment-item {{type === item.value ? 'active' : ''}}" data-value="{{item.value}}" bind:tap="selectType">{{item.label}}</view></view>
+    <view wx:if="{{type === 'mood'}}" class="form-card">
+      <text class="field-label">今天感觉怎么样？</text>
+      <view class="mood-grid"><view wx:for="{{moods}}" wx:key="emoji" class="mood-option {{mood === item.emoji ? 'active' : ''}}" data-emoji="{{item.emoji}}" bind:tap="selectMood"><text class="mood-emoji">{{item.emoji}}</text><text>{{item.label}}</text></view></view>
+    </view>
+    <view wx:if="{{type === 'event'}}" class="form-card">
+      <view class="create-field"><text class="field-hint">事件名称 *</text><input class="text-input" maxlength="60" placeholder="例如：第一次一起看展" value="{{title}}" bind:input="handleTitle" /></view>
+    </view>
+    <view wx:if="{{type === 'period'}}" class="form-card">
+      <text class="field-label">经量</text>
+      <view class="choice-wrap"><view wx:for="{{flowOptions}}" wx:key="value" class="choice-chip {{periodFlow === item.value ? 'active' : ''}}" data-value="{{item.value}}" bind:tap="selectFlow">{{item.label}}</view></view>
+    </view>
+    <view class="form-card">
+      <text class="field-hint">补充说明</text><textarea class="text-area" maxlength="500" placeholder="可以写下细节、感受或需要记住的事" value="{{note}}" bind:input="handleNote" />
+    </view>
+    <view class="switch-row sharing-row"><view><text class="cell-title">与 TA 共享</text><text class="cell-subtitle">关闭时只有你自己能看到；经期等敏感记录默认关闭</text></view><switch color="#f65f6b" checked="{{shared}}" bind:change="handleShared" /></view>
+    <lp-button label="保存记录" disabled="{{type === 'event' && !title}}" loading="{{busy}}" bind:tap="save" />
+    <view wx:if="{{id}}" class="delete-record" bind:tap="remove">删除这条记录</view>
+  </block>
+</view>

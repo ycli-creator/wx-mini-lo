@@ -1,0 +1,11 @@
+<t-button
+  block
+  size="large"
+  disabled="{{disabled || loading}}"
+  loading="{{loading}}"
+  open-type="{{openType}}"
+  theme="{{variant === 'primary' ? 'primary' : variant === 'danger' ? 'danger' : 'light'}}"
+  variant="{{variant === 'text' ? 'text' : 'base'}}"
+  custom-class="lp-button lp-button--{{variant}}"
+  bind:tap="handleTap"
+>{{loading ? '处理中…' : label}}</t-button>

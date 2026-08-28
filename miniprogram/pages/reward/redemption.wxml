@@ -1,0 +1,23 @@
+<view class="screen">
+  <lp-header title="已兑换奖励" subtitle="保存这份小期待，完成后一起留下记录" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取兑换记录" error-text="兑换记录暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="notice-card {{redemption.refundStatus === 'approved' ? 'success' : redemption.status === 'pending' ? 'warning' : 'brand'}}"><text class="notice-title">{{redemption.refundStatus === 'approved' ? '退款已完成' : redemption.status === 'pending' ? '等待兑换审批' : reward.name}}</text><text class="notice-copy">{{redemption.refundStatus === 'approved' ? '积分已经原路返还，且只会返还一次。' : redemption.status === 'pending' ? '需要指定的另一方同意后才会扣除积分。' : reward.condition}}</text></view>
+  <view class="list">
+    <view class="confirmation-row"><view class="confirmation-copy"><text class="cell-title">兑换状态</text><text class="cell-subtitle">不可直接修改积分余额</text></view><text class="confirmation-value">{{redemption.refundStatus === 'approved' ? '已退款' : redemption.status === 'pending' ? '待审批' : '已兑换'}}</text></view>
+    <view class="confirmation-row"><view class="confirmation-copy"><text class="cell-title">退款状态</text><text class="cell-subtitle">需由对方确认</text></view><text class="confirmation-value">{{redemption.refundStatus === 'none' ? '未申请' : redemption.refundStatus === 'requested' ? '待确认' : '已通过'}}</text></view>
+  </view>
+  <block wx:if="{{redemption.status === 'pending' && redemption.canReview}}">
+    <lp-button label="同意兑换" loading="{{busy}}" bind:tap="approveRedemption" />
+    <lp-button label="拒绝兑换" variant="text" disabled="{{busy}}" bind:tap="rejectRedemption" />
+  </block>
+  <view wx:elif="{{redemption.status === 'pending'}}" class="notice-card warning"><text class="notice-copy">申请已经发送，等待对方处理。</text></view>
+  <block wx:elif="{{redemption.refundStatus === 'requested' && redemption.refundCanReview}}">
+    <lp-button label="同意退款" loading="{{busy}}" bind:tap="approveRefund" />
+    <lp-button label="拒绝退款" variant="text" disabled="{{busy}}" bind:tap="rejectRefund" />
+  </block>
+  <view wx:elif="{{redemption.refundStatus === 'requested'}}" class="notice-card warning"><text class="notice-copy">退款申请已发送，等待对方确认。</text></view>
+  <lp-button wx:elif="{{redemption.status === 'active' && redemption.refundStatus === 'none' && redemption.requesterIsSelf}}" label="申请退款" variant="soft" loading="{{busy}}" bind:tap="requestRefund" />
+  <lp-button label="返回奖励商店" variant="text" bind:tap="goRewards" />
+  </block>
+</view>

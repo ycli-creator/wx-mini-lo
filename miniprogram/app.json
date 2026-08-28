@@ -1,0 +1,58 @@
+{
+  "pages": [
+    "pages/start/index",
+    "pages/profile/edit",
+    "pages/invite/create",
+    "pages/invite/join",
+    "pages/invite/confirm",
+    "pages/home/index",
+    "pages/task/index",
+    "pages/task/submit",
+    "pages/task/review",
+    "pages/community/index",
+    "pages/community/create",
+    "pages/points/index",
+    "pages/reward/list",
+    "pages/reward/detail",
+    "pages/reward/redemption",
+    "pages/documents/index",
+    "pages/documents/edit",
+    "pages/profile/index",
+    "pages/records/index",
+    "pages/records/edit",
+    "pages/settings/index",
+    "pages/unbind/pending",
+    "pages/unbind/confirm"
+  ],
+  "window": {
+    "navigationStyle": "custom",
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#fff9f4",
+    "backgroundColor": "#fff9f4",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "usingComponents": {
+    "lp-header": "/components/base/lp-header/index",
+    "lp-button": "/components/base/lp-button/index",
+    "lp-page-state": "/components/base/lp-page-state/index",
+    "lp-task-card": "/components/business/lp-task-card/index",
+    "t-icon": "tdesign-miniprogram/icon/icon"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#9d8f89",
+    "selectedColor": "#e84a57",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/home/index", "text": "首页" },
+      { "pagePath": "pages/task/index", "text": "任务" },
+      { "pagePath": "pages/community/index", "text": "社区" },
+      { "pagePath": "pages/documents/index", "text": "文档" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

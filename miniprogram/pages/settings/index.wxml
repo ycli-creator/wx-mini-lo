@@ -1,0 +1,13 @@
+<view class="screen with-tabbar">
+  <lp-header title="我的" subtitle="管理你们的关系空间与数据方式" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步关系空间" error-text="关系空间暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="notice-card brand"><text class="notice-title">你与对方</text><text class="notice-copy">已建立一对一情侣空间</text></view>
+  <view class="list">
+    <view class="list-cell"><view class="cell-icon"><t-icon name="cloud" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">数据模式</text><text class="cell-subtitle">配置环境 ID 后自动切换云端</text></view><text class="cell-value">{{modeLabel}}</text></view>
+    <view class="list-cell"><view class="cell-icon"><t-icon name="money" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">积分说明</text><text class="cell-subtitle">个人积分与共同积分彼此独立</text></view></view>
+    <view class="list-cell"><view class="cell-icon"><t-icon name="info-circle" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">关于 Love Points</text><text class="cell-subtitle">只属于两个人的共同空间</text></view><text class="cell-value">v{{appVersion}}</text></view>
+    <view class="list-cell" hover-class="pressed" bind:tap="openUnbind"><view class="cell-icon"><t-icon name="error-circle" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">解除绑定</text><text class="cell-subtitle">必须由双方明确确认</text></view><text class="chevron">›</text></view>
+  </view>
+  </block>
+</view>

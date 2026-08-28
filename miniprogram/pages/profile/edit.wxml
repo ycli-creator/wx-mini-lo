@@ -1,0 +1,23 @@
+<view class="screen profile-edit-screen">
+  <lp-header title="{{onboarding ? '先认识一下你' : '编辑个人资料'}}" subtitle="这些信息用于你们的情侣空间，敏感信息不会自动公开" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取个人资料" error-text="个人资料暂时没有读取成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view class="profile-avatar-row">
+      <button class="avatar-button" open-type="chooseAvatar" bind:chooseavatar="handleAvatar">
+        <image wx:if="{{avatarUrl}}" class="avatar-image" src="{{avatarUrl}}" mode="aspectFill" />
+        <view wx:else class="avatar-placeholder"><t-icon name="user-avatar" size="54rpx" /></view>
+      </button>
+      <view class="profile-avatar-copy"><text class="cell-title">头像</text><text class="cell-subtitle">点击选择一张喜欢的照片</text></view>
+    </view>
+    <view class="form-card profile-form">
+      <view class="create-field"><text class="field-hint">用户名 *</text><input class="text-input" type="nickname" maxlength="24" placeholder="例如：小悦" value="{{nickname}}" bind:input="handleNickname" /></view>
+      <text class="field-hint">性别</text>
+      <view class="choice-wrap">
+        <view wx:for="{{genderOptions}}" wx:key="value" class="choice-chip {{gender === item.value ? 'active' : ''}}" data-value="{{item.value}}" bind:tap="selectGender">{{item.label}}</view>
+      </view>
+      <view class="create-field"><text class="field-hint">地区</text><input class="text-input" maxlength="60" placeholder="例如：上海" value="{{region}}" bind:input="handleRegion" /></view>
+      <view class="create-field"><text class="field-hint">爱好</text><input class="text-input" maxlength="160" placeholder="旅行、电影、做饭（用逗号分隔）" value="{{hobbiesText}}" bind:input="handleHobbies" /></view>
+    </view>
+    <lp-button label="保存个人资料" disabled="{{!nickname}}" loading="{{busy}}" bind:tap="save" />
+  </block>
+</view>

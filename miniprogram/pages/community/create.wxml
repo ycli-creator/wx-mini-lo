@@ -1,0 +1,17 @@
+<view class="screen community-create-screen">
+  <lp-header title="分享你们的日常" subtitle="照片、视频或一句话，都需要 TA 确认后才会公开" />
+  <view class="form-card">
+    <textarea class="text-area post-editor" maxlength="1000" placeholder="记录今天发生的小事……" value="{{content}}" bind:input="handleContent" />
+    <text class="editor-count">{{content.length}} / 1000</text>
+  </view>
+  <view wx:if="{{media.length}}" class="media-grid">
+    <view wx:for="{{media}}" wx:key="localPath" class="media-preview">
+      <image wx:if="{{item.type === 'image'}}" src="{{item.localPath}}" mode="aspectFill" />
+      <video wx:else src="{{item.localPath}}" poster="{{item.posterPath}}" controls="{{false}}" show-center-play-btn="{{true}}" />
+      <view class="remove-media" data-index="{{index}}" bind:tap="removeMedia">×</view>
+    </view>
+  </view>
+  <view class="media-picker" hover-class="pressed" bind:tap="chooseMedia"><view class="cell-icon"><t-icon name="image" size="32rpx" /></view><view class="cell-copy"><text class="cell-title">添加照片或视频</text><text class="cell-subtitle">最多 9 个，支持图文、视频和纯文字</text></view><text class="cell-value">{{media.length}} / 9</text></view>
+  <view class="notice-card brand"><text class="notice-title">两个人共同发布</text><text class="notice-copy">提交后先进入情侣确认。TA 同意后才会出现在公开社区，个人性别、地区和爱好不会随帖子公开。</text></view>
+  <lp-button label="{{uploadProgress || '提交给 TA 确认'}}" disabled="{{!content && !media.length}}" loading="{{busy}}" bind:tap="publish" />
+</view>

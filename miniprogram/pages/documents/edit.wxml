@@ -1,0 +1,12 @@
+<view class="screen">
+  <lp-header title="{{isNew ? '新建文档' : '编辑文档'}}" subtitle="保存后对方会看到最新内容" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取文档" error-text="文档暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="notice-card {{locked ? 'danger' : 'warning'}}"><text class="notice-title">{{locked ? '对方正在编辑' : (isNew ? '创建共同记录' : '当前由你编辑')}}</text><text class="notice-copy">{{locked ? '当前内容为只读，请稍后再试。' : '云端模式会建立编辑锁；你离开或保存后自动释放。'}}</text></view>
+  <view class="form-card"><text class="field-label">标题</text><input class="text-input" disabled="{{locked}}" value="{{title}}" maxlength="60" bind:input="handleTitle" /></view>
+  <view class="form-card"><text class="field-label">正文</text><textarea class="text-area document" disabled="{{locked}}" value="{{body}}" maxlength="5000" bind:input="handleBody" /></view>
+  <lp-button wx:if="{{locked && !isNew}}" label="重新获取编辑权" variant="soft" loading="{{busy}}" bind:tap="retryLock" />
+  <lp-button label="保存文档" disabled="{{locked || !title}}" loading="{{busy}}" bind:tap="save" />
+  <lp-button label="取消" variant="text" bind:tap="goBack" />
+  </block>
+</view>

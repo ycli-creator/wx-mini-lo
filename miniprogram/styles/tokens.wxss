@@ -1,0 +1,19 @@
+page {
+  --lp-bg-canvas: #fff9f4;
+  --lp-bg-surface: #ffffff;
+  --lp-brand: #f65f6b;
+  --lp-brand-text: #e84a57;
+  --lp-brand-soft: #fff1f0;
+  --lp-text-primary: #2f2928;
+  --lp-text-secondary: #8a7c78;
+  --lp-border: #eedfd8;
+  --lp-warning-bg: #fff1d6;
+  --lp-warning-text: #e7942f;
+  --lp-disabled: #f8efea;
+  --lp-success-bg: #edf6df;
+  --lp-success: #688f3b;
+  --lp-blue-bg: #eaf2ff;
+  --lp-blue: #4d84c6;
+  --lp-danger-bg: #fff0f1;
+  --lp-danger: #db3f50;
+}

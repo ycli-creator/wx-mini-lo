@@ -1,0 +1,13 @@
+<view class="tabbar">
+  <view
+    wx:for="{{tabs}}"
+    wx:key="pagePath"
+    class="item {{selected === index ? 'active' : ''}}"
+    data-index="{{index}}"
+    hover-class="pressed"
+    bind:tap="switchTab"
+  >
+    <view class="icon-wrap"><t-icon name="{{selected === index ? item.activeIcon : item.icon}}" size="44rpx" /><view wx:if="{{selected === index}}" class="dot"></view></view>
+    <text class="label">{{item.text}}</text>
+  </view>
+</view>

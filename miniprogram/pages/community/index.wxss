@@ -1,0 +1,22 @@
+.community-screen { padding-left: 22rpx; padding-right: 22rpx; }
+.feed-grid { display: flex; align-items: flex-start; gap: 18rpx; }
+.feed-column { width: calc(50% - 9rpx); display: flex; flex-direction: column; gap: 18rpx; }
+.feed-card { overflow: hidden; background: #fff; border: 2rpx solid var(--lp-border); border-radius: 28rpx; box-shadow: 0 8rpx 28rpx rgba(78, 48, 39, 0.06); }
+.feed-cover { width: 100%; min-height: 210rpx; display: block; background: var(--lp-disabled); }
+.feed-cover-wrap { position: relative; width: 100%; }
+.feed-video-wrap { position: relative; width: 100%; height: 300rpx; background: #251f1e; }
+.feed-video { width: 100%; height: 300rpx; }
+.media-count { position: absolute; top: 14rpx; right: 14rpx; padding: 4rpx 10rpx; color: #fff; background: rgba(0, 0, 0, 0.48); border-radius: 999rpx; font-size: 20rpx; }
+.text-cover { min-height: 250rpx; padding: 28rpx; display: flex; align-items: flex-end; color: #5c3f3d; background: linear-gradient(145deg, #ffe9e7, #fff8ec); font-size: 32rpx; font-weight: 600; line-height: 48rpx; }
+.feed-body { padding: 22rpx; }
+.feed-content { display: -webkit-box; overflow: hidden; margin-bottom: 18rpx; font-size: 27rpx; font-weight: 600; line-height: 40rpx; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.couple-row { display: flex; align-items: center; gap: 10rpx; }
+.mini-avatar { width: 34rpx; height: 34rpx; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: var(--lp-brand-soft); border-radius: 50%; }
+.mini-avatar image { width: 100%; height: 100%; }
+.couple-name { min-width: 0; flex: 1; overflow: hidden; color: var(--lp-text-secondary); font-size: 21rpx; text-overflow: ellipsis; white-space: nowrap; }
+.feed-meta { min-height: 42rpx; margin-top: 12rpx; display: flex; align-items: center; justify-content: space-between; gap: 8rpx; color: var(--lp-text-secondary); font-size: 20rpx; }
+.feed-meta .status-tag { min-height: 38rpx; padding: 3rpx 10rpx; font-size: 18rpx; }
+.review-actions { margin-top: 14rpx; display: grid; grid-template-columns: 1fr 1fr; gap: 10rpx; }
+.mini-action { min-height: 58rpx; display: flex; align-items: center; justify-content: center; color: #fff; background: var(--lp-brand); border-radius: 18rpx; font-size: 22rpx; font-weight: 600; }
+.mini-action.ghost { color: var(--lp-text-secondary); background: var(--lp-disabled); }
+.rejected-copy { display: block; margin-top: 12rpx; color: var(--lp-warning-text); font-size: 20rpx; line-height: 32rpx; }

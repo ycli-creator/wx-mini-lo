@@ -1,0 +1,35 @@
+<view class="screen records-screen">
+  <lp-header title="生活日历" subtitle="在同一天里，留下情绪、事件和身体感受" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步生活记录" error-text="生活记录暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view class="calendar-card">
+      <view class="month-nav"><view class="month-arrow" data-offset="-1" bind:tap="shiftMonth">‹</view><text class="month-title">{{monthLabel}}</text><view class="month-arrow" data-offset="1" bind:tap="shiftMonth">›</view></view>
+      <view class="weekday-row"><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text><text>日</text></view>
+      <view class="calendar-grid">
+        <view wx:for="{{days}}" wx:key="key" class="calendar-day {{item.inMonth ? '' : 'outside'}} {{item.isToday ? 'today' : ''}} {{item.selected ? 'selected' : ''}}" data-date="{{item.date}}" bind:tap="selectDate">
+          <text class="day-number">{{item.day}}</text>
+          <view wx:if="{{item.moodEmojis.length}}" class="day-moods"><text wx:for="{{item.moodEmojis}}" wx:for-item="emoji" class="day-mood">{{emoji}}</text></view>
+          <view wx:if="{{item.hasEvent || item.hasPeriod}}" class="day-markers"><view wx:if="{{item.hasEvent}}" class="day-dot event"></view><view wx:if="{{item.hasPeriod}}" class="day-dot period"></view></view>
+        </view>
+      </view>
+      <view class="calendar-legend"><view><text class="legend-emoji">🙂</text><text>情绪</text></view><view><view class="legend-dot event"></view><text>事件</text></view><view><view class="legend-dot period"></view><text>经期</text></view></view>
+    </view>
+    <view class="floating-create-action record-add-action" hover-class="floating-create-action--pressed" bind:tap="addRecord"><text class="floating-create-icon">＋</text><text>记录这一天</text></view>
+    <view wx:if="{{drawerOpen}}" class="drawer-backdrop" bind:tap="closeDrawer">
+      <view class="record-drawer" catch:tap="noop">
+        <view class="drawer-handle"></view>
+        <view class="drawer-heading"><view><text class="drawer-title">{{selectedDateLabel}}</text><text class="drawer-caption">{{selectedRecordCount}} 条可见记录</text></view><view class="drawer-close" role="button" aria-label="关闭当天记录" bind:tap="closeDrawer">×</view></view>
+        <scroll-view scroll-y class="drawer-scroll">
+          <view wx:if="{{selectedRecordCount}}" class="list drawer-list">
+            <view wx:for="{{selectedRecords}}" wx:key="id" class="record-cell" data-id="{{item.id}}" hover-class="pressed" bind:tap="openRecord">
+              <view class="record-icon {{item.type}}">{{item.typeIcon}}</view>
+              <view class="cell-copy"><text class="cell-title">{{item.summary}}</text><text class="cell-subtitle">{{item.ownerName}} · {{item.typeLabel}} · {{item.visibilityLabel}}</text></view><text class="chevron">›</text>
+            </view>
+          </view>
+          <view wx:else class="empty-state drawer-empty"><text class="empty-title">这一天还没有记录</text><text class="empty-copy">可以记下一个心情、一件事，或一条经期信息。</text></view>
+        </scroll-view>
+        <view class="drawer-action" hover-class="drawer-action--pressed" bind:tap="addRecord">＋ {{selectedRecordCount ? '新增一条记录' : '记录这一天'}}</view>
+      </view>
+    </view>
+  </block>
+</view>

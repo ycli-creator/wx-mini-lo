@@ -1,0 +1,12 @@
+{
+  "name": "love-points",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "verify": "npm --prefix web-prototype run build && npm --prefix miniprogram run verify && npm --prefix cloudfunctions/api run verify",
+    "verify:deployment-config": "node scripts/verify-deployment-config.mjs",
+    "verify:cloudbase-structure": "node scripts/verify-cloudbase-structure.mjs",
+    "plan:cloudbase": "node scripts/generate-cloudbase-plan.mjs",
+    "deploy:indexes": "node scripts/deploy-cloudbase-indexes.mjs"
+  }
+}

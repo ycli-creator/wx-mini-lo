@@ -1,0 +1,42 @@
+<view class="screen with-tabbar has-floating-action community-screen">
+  <lp-header title="情侣社区" subtitle="经过两个人确认，分享你们的日常" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步社区" error-text="社区暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view wx:if="{{pendingCount}}" class="notice-card blue"><text class="notice-title">{{pendingCount}} 条帖子等待情侣确认</text><text class="notice-copy">只有发布人和伴侣都同意，内容才会对社区公开。</text></view>
+    <view wx:if="{{posts.length}}" class="feed-grid">
+      <view class="feed-column">
+        <view wx:for="{{leftPosts}}" wx:key="id" class="feed-card">
+          <view wx:if="{{item.coverType === 'image'}}" class="feed-cover-wrap" data-id="{{item.id}}" bind:tap="previewImage"><image class="feed-cover" src="{{item.coverUrl}}" mode="widthFix" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
+          <view wx:elif="{{item.coverType === 'video'}}" class="feed-video-wrap">
+            <video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" />
+            <text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text>
+          </view>
+          <view wx:else class="text-cover"><text>{{item.content || '两个人的小日常'}}</text></view>
+          <view class="feed-body">
+            <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
+            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
+            <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
+            <view wx:if="{{item.canReview}}" class="review-actions"><view class="mini-action ghost" data-id="{{item.id}}" data-approved="false" bind:tap="review">暂不</view><view class="mini-action" data-id="{{item.id}}" data-approved="true" bind:tap="review">同意</view></view>
+            <text wx:if="{{item.status === 'rejected' && item.authorIsSelf}}" class="rejected-copy">这条内容没有公开，可以修改后重新发布。</text>
+          </view>
+        </view>
+      </view>
+      <view class="feed-column">
+        <view wx:for="{{rightPosts}}" wx:key="id" class="feed-card">
+          <view wx:if="{{item.coverType === 'image'}}" class="feed-cover-wrap" data-id="{{item.id}}" bind:tap="previewImage"><image class="feed-cover" src="{{item.coverUrl}}" mode="widthFix" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
+          <view wx:elif="{{item.coverType === 'video'}}" class="feed-video-wrap"><video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
+          <view wx:else class="text-cover"><text>{{item.content || '两个人的小日常'}}</text></view>
+          <view class="feed-body">
+            <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
+            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
+            <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
+            <view wx:if="{{item.canReview}}" class="review-actions"><view class="mini-action ghost" data-id="{{item.id}}" data-approved="false" bind:tap="review">暂不</view><view class="mini-action" data-id="{{item.id}}" data-approved="true" bind:tap="review">同意</view></view>
+            <text wx:if="{{item.status === 'rejected' && item.authorIsSelf}}" class="rejected-copy">这条内容没有公开，可以修改后重新发布。</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-state"><text class="empty-title">社区还没有日常</text><text class="empty-copy">发布第一条文字、照片或视频，等 TA 确认后一起分享。</text></view>
+    <view class="floating-create-action" hover-class="floating-create-action--pressed" bind:tap="createPost"><text class="floating-create-icon">＋</text><text>发布日常</text></view>
+  </block>
+</view>

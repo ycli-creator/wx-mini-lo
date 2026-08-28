@@ -1,0 +1,21 @@
+<view class="screen">
+  <lp-header title="{{waiting ? '等待对方确认' : '确认绑定'}}" subtitle="{{waiting ? '邀请方确认后，你们会进入同一个情侣空间' : '确认后将建立专属的情侣空间'}}" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步绑定状态" error-text="绑定状态暂时无法同步，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view wx:if="{{waiting}}" class="notice-card warning">
+    <text class="notice-title">绑定申请已发送</text>
+    <text class="notice-copy">请等待邀请方处理。你可以稍后回来刷新绑定状态。</text>
+  </view>
+  <view wx:elif="{{hasApplication}}" class="notice-card brand">
+    <text class="notice-title">一位用户申请与你绑定</text>
+    <text class="notice-copy">绑定后可共同管理任务、积分、奖励和文档。解绑必须由双方确认。</text>
+  </view>
+  <view wx:else class="empty-state section-gap"><text class="empty-title">还没有新的申请</text><text class="empty-copy">对方输入短码后，再回到这里查看。</text></view>
+  <lp-button wx:if="{{waiting}}" label="刷新绑定状态" bind:tap="refresh" />
+  <block wx:elif="{{hasApplication}}">
+    <lp-button label="确认绑定" loading="{{busy}}" bind:tap="approve" />
+    <lp-button label="暂不绑定" variant="text" disabled="{{busy}}" bind:tap="reject" />
+  </block>
+  <lp-button wx:else label="返回开始页" variant="text" bind:tap="goStart" />
+  </block>
+</view>
