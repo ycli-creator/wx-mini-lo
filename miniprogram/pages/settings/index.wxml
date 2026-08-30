@@ -1,9 +1,19 @@
 <view class="screen with-tabbar">
-  <lp-header title="我的" subtitle="管理你们的关系空间与数据方式" />
+  <lp-header title="隐私与设置" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步关系空间" error-text="关系空间暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
-  <view class="notice-card brand"><text class="notice-title">你与对方</text><text class="notice-copy">已建立一对一情侣空间</text></view>
+  <view class="notice-card brand"><text class="notice-title">默认保持私密</text><text class="notice-copy">共同内容公开仍需双方同意。关闭展示不会影响情侣空间内部使用。</text></view>
+  <view class="section-heading"><text class="section-title">主页隐私</text></view>
   <view class="list">
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">允许通过身份码找到我</text><text class="cell-subtitle">关闭后其他人无法用身份码搜索你</text></view><switch data-key="searchableByCode" checked="{{state.profile.privacy.searchableByCode}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示伴侣身份</text><text class="cell-subtitle">需双方都允许关系公开后才会生效</text></view><switch data-key="showPartner" checked="{{state.profile.privacy.showPartner}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示相伴天数</text><text class="cell-subtitle">属于情侣共同数据</text></view><switch data-key="showRelationshipDays" checked="{{state.profile.privacy.showRelationshipDays}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示情侣热力</text><text class="cell-subtitle">仅影响公开主页</text></view><switch data-key="showHeat" checked="{{state.profile.privacy.showHeat}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+  </view>
+  <view class="section-heading"><text class="section-title">应用设置</text></view>
+  <view class="list">
+    <view class="list-cell" hover-class="pressed" bind:tap="openRelationship"><view class="cell-icon"><t-icon name="heart" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">情侣关系设置</text><text class="cell-subtitle">恋爱日期与双方公开许可</text></view><text class="chevron">›</text></view>
+    <view class="list-cell" hover-class="pressed" bind:tap="openFriends"><view class="cell-icon"><t-icon name="usergroup-add" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">好友与身份码</text><text class="cell-subtitle">好友关系与情侣关系相互独立</text></view><text class="chevron">›</text></view>
     <view class="list-cell"><view class="cell-icon"><t-icon name="cloud" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">数据模式</text><text class="cell-subtitle">配置环境 ID 后自动切换云端</text></view><text class="cell-value">{{modeLabel}}</text></view>
     <view class="list-cell"><view class="cell-icon"><t-icon name="money" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">积分说明</text><text class="cell-subtitle">个人积分与共同积分彼此独立</text></view></view>
     <view class="list-cell"><view class="cell-icon"><t-icon name="info-circle" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">关于 Love Points</text><text class="cell-subtitle">只属于两个人的共同空间</text></view><text class="cell-value">v{{appVersion}}</text></view>

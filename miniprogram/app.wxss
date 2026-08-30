@@ -70,6 +70,7 @@ view, text, button, input, textarea { box-sizing: border-box; }
 .chevron { color: #b9aaa4; font-size: 34rpx; }
 
 .points-card { display: grid; grid-template-columns: 1fr 1fr; background: var(--lp-brand-soft); }
+.points-card.solo { grid-template-columns: 1fr; }
 .points-column + .points-column { padding-left: 40rpx; border-left: 2rpx solid #f1d9d6; }
 .points-label { display: block; color: var(--lp-text-secondary); font-size: 26rpx; }
 .points-value { display: block; margin-top: 8rpx; font-size: 44rpx; font-weight: 700; }

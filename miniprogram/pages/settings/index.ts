@@ -18,4 +18,13 @@ Page({
     if (this.data.loading || this.data.loadError) return
     wx.navigateTo({ url: this.data.state.unbindRequested ? '/pages/unbind/pending' : '/pages/unbind/pending?create=1' })
   },
+  openRelationship() { wx.navigateTo({ url: '/pages/settings/relationship' }) },
+  openFriends() { wx.navigateTo({ url: '/pages/friends/index' }) },
+  async changePrivacy(event: WechatMiniprogram.SwitchChange) {
+    const key = String(event.currentTarget.dataset.key || '') as keyof typeof this.data.state.profile.privacy
+    if (!key) return
+    const privacy = { ...this.data.state.profile.privacy, [key]: event.detail.value }
+    try { this.setData({ 'state.profile.privacy': privacy }); this.setData({ state: await lovePointsService.updateProfilePrivacy(privacy) }) }
+    catch (error) { await this.refresh(); showError(error) }
+  },
 })

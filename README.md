@@ -4,9 +4,9 @@
 
 ## 工程内容
 
-- `miniprogram/`：微信原生 TypeScript 小程序，共 23 个页面和 5 项自定义 Tab。
+- `miniprogram/`：微信原生 TypeScript 小程序，共 29 个页面和 5 项自定义 Tab。
 - `cloudfunctions/api/`：统一 CloudBase 云函数，负责身份、情侣空间隔离、事务与幂等。
-- `cloudfunctions/database-schema.json`：17 个集合及复合索引定义；周期计划使用独立的 `task_cycles` 集合。
+- `cloudfunctions/database-schema.json`：27 个集合及复合索引定义；包括周期计划、情侣热力、聊天消息、好友、成就和关系许可。
 - `web-prototype/`：与设计稿对应的 React/Vite 可交互原型。
 - `docs/DEVELOPMENT_PLAN.md`：产品规则、技术方案和实施状态。
 - `docs/DEPLOYMENT_CHECKLIST.md`：微信开发者工具、云环境与双人真机验收步骤。
@@ -36,6 +36,6 @@ npm run verify:deployment-config
 
 ## 当前外部配置
 
-代码、自动化测试、个人小程序 AppID、微信开发者工具预览和免费 CloudBase 环境均已完成。线上 V2 的 16 个集合、32 个自定义索引与 `api` 云函数已部署，云函数状态为 Active、超时 20 秒。真实 `home.summary`、`community.list` 和 `records.list` 调用均已通过。V2 新增的 `community_posts` 与 `daily_records` 已改为 `ADMINONLY`；权限回读成功，小程序客户端直写均以 `DATABASE_PERMISSION_DENIED` 被拒绝。当前代码中的周期计划会把本地结构扩展为 17 个集合、35 个自定义索引，发布前需部署新增的 `task_cycles` 集合、索引和新版云函数。
+代码、自动化测试、个人小程序 AppID、微信开发者工具预览和免费 CloudBase 环境均已完成。线上 V2 的 16 个集合、32 个自定义索引与 `api` 云函数已部署，云函数状态为 Active、超时 20 秒。真实 `home.summary`、`community.list` 和 `records.list` 调用均已通过。V2 新增的 `community_posts` 与 `daily_records` 已改为 `ADMINONLY`；权限回读成功，小程序客户端直写均以 `DATABASE_PERMISSION_DENIED` 被拒绝。当前本地结构已扩展为 27 个集合，新增周期计划、热力、聊天、分享、好友、关系许可和成就数据；发布前需部署新增集合、索引和新版云函数。
 
-当前线上体验版为 `0.2.0`，新增首次个人资料、个人页、任务页内奖励商店、公开情侣社区、伴侣共同确认发布、图片/视频/纯文字帖子，以及带隐私选项的情绪、事件和经期日历。本次仅上传体验版，未提交审核，也未正式发布。
+当前线上体验版为 `0.2.0`。本地代码已继续增加个人空间、情侣热力、@TA、统一消息中心、身份码好友、双方关系许可、成就、私密媒体记录与安全分享入口；这些新增集合、索引和云函数尚未部署，因此线上体验版暂不包含本次功能。本项目未提交审核，也未正式发布。

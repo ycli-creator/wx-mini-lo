@@ -8,6 +8,7 @@
   <view wx:else class="safe-actions">
     <lp-button label="邀请 TA" bind:tap="goInvite" />
     <lp-button label="输入短码" variant="soft" bind:tap="goJoin" />
+    <lp-button label="先自己使用" variant="ghost" bind:tap="goSolo" />
   </view>
-  <text class="field-hint">{{cloudEnabled ? '数据会同步到你们专属的云端情侣空间。' : '当前使用本机体验数据；配置云开发环境后会自动切换为双人同步。'}}</text>
+  <text class="field-hint">{{cloudEnabled ? '个人空间默认私密；绑定后会创建全新的情侣空间。' : '当前使用本机体验数据；配置云开发环境后会自动切换为双人同步。'}}</text>
 </view>

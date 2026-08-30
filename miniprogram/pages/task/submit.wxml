@@ -3,6 +3,7 @@
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取任务" error-text="任务暂时无法读取，请重新加载。" bind:retry="refresh" />
   <block wx:else>
   <lp-task-card status="{{task.status}}" title="{{task.title}}" subtitle="{{task.planType === 'daily' ? '每日计划 · ' : task.planType === 'weekly' ? '每周计划 · ' : '长期计划 · '}}{{task.cycleLabel}}" task-description="{{task.description}}" points="{{task.points}}" disabled />
+  <lp-cue-button type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/submit?id={{task.id}}" action-text="查看任务" label="@TA 看看这个任务" />
   <view wx:if="{{task.status === 'rejected'}}" class="notice-card warning"><text class="notice-title">任务已被驳回</text><text class="notice-copy">{{task.rejectionReason || '请补充完成说明后重新提交。'}}</text></view>
   <view class="form-card">
     <text class="field-label">完成说明</text>

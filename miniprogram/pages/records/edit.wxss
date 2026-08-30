@@ -13,3 +13,4 @@
 .readonly-title { display: block; margin-bottom: 24rpx; font-size: 38rpx; font-weight: 700; line-height: 58rpx; }
 .readonly-note { display: block; padding-top: 26rpx; color: var(--lp-text-primary); border-top: 2rpx solid var(--lp-border); font-size: 29rpx; line-height: 50rpx; white-space: pre-wrap; }
 .readonly-note.muted { color: var(--lp-text-secondary); }
+.record-media{margin-top:20rpx;display:grid;grid-template-columns:repeat(3,1fr);gap:12rpx}.media-item{height:190rpx;position:relative;overflow:hidden;border-radius:20rpx;background:var(--lp-disabled)}.media-item image,.media-item video{width:100%;height:100%}.remove-media{position:absolute;right:8rpx;top:8rpx;padding:6rpx 12rpx;color:#fff;background:rgba(47,41,40,.72);border-radius:999rpx;font-size:20rpx}.add-media{min-height:76rpx;display:flex;align-items:center;justify-content:center;color:var(--lp-brand-text);background:var(--lp-brand-soft);border-radius:22rpx}

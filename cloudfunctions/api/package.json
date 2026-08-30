@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "check": "node --check index.js && node --check lib/shared.js && node --check actions/invite.js && node --check actions/task.js && node --check actions/reward.js && node --check actions/documents.js && node --check actions/unbind.js && node --check actions/profile.js && node --check actions/community.js && node --check actions/records.js && node scripts/verify-schema.js",
+    "check": "node --check index.js && node --check lib/shared.js && node --check actions/invite.js && node --check actions/task.js && node --check actions/reward.js && node --check actions/documents.js && node --check actions/unbind.js && node --check actions/profile.js && node --check actions/community.js && node --check actions/records.js && node --check actions/heat.js && node --check actions/chat.js && node --check actions/share.js && node --check actions/notifications.js && node --check actions/social.js && node --check actions/relationship.js && node --check actions/achievements.js && node scripts/verify-schema.js",
     "test": "node --test tests/api.test.js",
     "verify": "npm run check && npm test"
   },

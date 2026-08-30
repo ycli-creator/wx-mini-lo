@@ -1,19 +1,15 @@
-<view class="screen with-tabbar">
-  <lp-header title="我的" subtitle="属于你的资料与生活记录" />
+<view class="screen with-tabbar profile-screen"><lp-header title="我的主页" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步个人资料" error-text="个人资料暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
-    <view class="profile-hero">
-      <image wx:if="{{state.profile.avatarUrl}}" class="profile-avatar" src="{{state.profile.avatarUrl}}" mode="aspectFill" />
-      <view wx:else class="profile-avatar profile-avatar--empty"><t-icon name="user-avatar" size="58rpx" /></view>
-      <view class="profile-hero-copy"><text class="profile-name">{{state.profile.nickname}}</text><text class="profile-meta">{{state.profile.region || '未填写地区'}} · {{genderLabel}}</text></view>
-      <view class="profile-edit-link" hover-class="pressed" bind:tap="editProfile">编辑</view>
-    </view>
-    <view class="notice-card brand"><text class="notice-title">我的爱好</text><text class="notice-copy">{{hobbiesLabel}}</text></view>
-    <view class="section-heading"><text class="section-title">生活工具</text></view>
-    <view class="list">
-      <view class="list-cell" hover-class="pressed" bind:tap="openCalendar"><view class="cell-icon"><t-icon name="calendar" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">生活日历</text><text class="cell-subtitle">记录情绪、事件和经期</text></view><text class="chevron">›</text></view>
-      <view class="list-cell" hover-class="pressed" bind:tap="openPoints"><view class="cell-icon"><t-icon name="money" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">我的积分</text><text class="cell-subtitle">个人 {{state.personalPoints}} · 共同 {{state.sharedPoints}}</text></view><text class="chevron">›</text></view>
-      <view class="list-cell" hover-class="pressed" bind:tap="openSettings"><view class="cell-icon"><t-icon name="setting" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">设置与关系空间</text><text class="cell-subtitle">数据模式、版本与解除绑定</text></view><text class="chevron">›</text></view>
-    </view>
+    <view class="profile-cover"><image wx:if="{{state.profile.backgroundUrl}}" class="cover-image" src="{{state.profile.backgroundUrl}}" mode="aspectFill"/><view class="cover-actions" bind:tap="editProfile">编辑资料</view></view>
+    <view class="identity-row"><image wx:if="{{state.profile.avatarUrl}}" class="profile-avatar" src="{{state.profile.avatarUrl}}" mode="aspectFill"/><view wx:else class="profile-avatar empty"><t-icon name="user-avatar" size="56rpx"/></view><view class="identity-copy"><text class="profile-name">{{state.profile.nickname}}</text><text class="profile-region">{{state.profile.region || '暂未填写地区'}}</text></view></view>
+    <view class="identity-code" bind:tap="copyIdentityCode"><text>身份码 {{state.profile.identityCode || '正在生成'}}</text><text class="copy-label">复制</text></view>
+    <view wx:if="{{state.bound}}" class="partner-row"><text class="partner-label">情侣空间</text><text class="partner-name">{{state.relationshipPublicApproved && state.profile.privacy.showPartner ? state.partnerProfile.nickname : '已绑定 · 未公开'}}</text></view>
+    <view class="stat-row"><view><text class="stat-value">{{state.communityPosts.length}}</text><text class="stat-label">帖子</text></view><view bind:tap="openFriends"><text class="stat-value">{{friendCount}}</text><text class="stat-label">好友</text></view><view><text class="stat-value">{{state.documents.length}}</text><text class="stat-label">文档</text></view><view><text class="stat-value">{{unlockedCount}}</text><text class="stat-label">成就</text></view></view>
+    <scroll-view scroll-x class="profile-tabs"><view class="tabs-inner"><view class="tab {{activeTab === 'posts' ? 'active' : ''}}" data-tab="posts" bind:tap="switchSection">动态</view><view class="tab {{activeTab === 'achievements' ? 'active' : ''}}" data-tab="achievements" bind:tap="switchSection">成就</view><view class="tab {{activeTab === 'documents' ? 'active' : ''}}" data-tab="documents" bind:tap="switchSection">文档</view><view class="tab {{activeTab === 'data' ? 'active' : ''}}" data-tab="data" bind:tap="switchSection">数据</view></view></scroll-view>
+    <view wx:if="{{activeTab === 'posts'}}" class="empty-state" bind:tap="openCalendar"><text class="empty-title">记录属于你的生活</text><text class="empty-copy">私密记录不会显示在公开主页；只有主动发布的内容才会出现在这里。</text></view>
+    <view wx:elif="{{activeTab === 'achievements'}}" class="achievement-grid"><view wx:for="{{achievements}}" wx:key="id" class="achievement {{item.unlocked ? 'unlocked' : ''}}"><view class="badge">{{item.badge}}</view><text class="achievement-title">{{item.title}}</text><text class="achievement-copy">{{item.progress}} / {{item.target}}</text></view></view>
+    <view wx:elif="{{activeTab === 'documents'}}" class="empty-state" bind:tap="openDocuments"><text class="empty-title">{{state.documents.length}} 篇私密文档</text><text class="empty-copy">情侣文档默认仅双方可见，不会出现在公开主页。点这里进入文档库。</text></view>
+    <view wx:else class="data-list"><view class="data-row"><text>个人积分</text><text>{{state.personalPoints}}</text></view><view class="data-row"><text>共同积分</text><text>{{state.sharedPoints}}</text></view><view class="data-row"><text>情侣热力</text><text>{{state.heat.totalHeat}}</text></view><view class="data-row"><text>相伴天数</text><text>{{relationshipDays}}</text></view><view class="data-row" bind:tap="openSettings"><text>隐私与关系设置</text><text class="chevron">›</text></view></view>
   </block>
 </view>

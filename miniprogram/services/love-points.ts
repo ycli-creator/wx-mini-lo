@@ -4,6 +4,9 @@ import type {
   CommunityPost,
   DailyRecord,
   DailyRecordType,
+  ChatMessage,
+  ChatMessageType,
+  HeatSummary,
   LovePointsState,
   PointsType,
   ProfileGender,
@@ -11,16 +14,31 @@ import type {
   RewardRedemption,
   TaskItem,
   TaskPlanType,
+  AppNotification,
+  FriendProfile,
+  AchievementItem,
 } from '../types/index'
 import { getTaskCycleMeta, rollTaskCycles } from '../store/state'
 import { runAction } from './client'
 import { isCloudEnabled } from '../config/env'
 
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+const grantLocalHeat = (draft: LovePointsState, code: string, delta: number, title: string) => {
+  const task = draft.heat.tasks.find((item) => item.code === code)
+  if (!task || task.selfCompleted) return
+  task.selfCompleted = true
+  task.progress = Math.min(task.maxParticipants, task.progress + 1)
+  task.status = task.progress >= task.maxParticipants ? 'done' : 'partial'
+  draft.heat.totalHeat += delta
+  draft.heat.todayHeat += delta
+  draft.heat.completedCount = draft.heat.tasks.filter((item) => item.status === 'done').length
+  draft.heat.ledger.unshift({ id: uid('heat'), title, delta, createdAt: new Date().toISOString() })
+}
 const normalizeState = (value: LovePointsState): LovePointsState => {
   const initial = createInitialState()
   const state = { ...initial, ...value }
   state.profile = { ...initial.profile, ...(value?.profile || {}) }
+  state.profile.privacy = { ...initial.profile.privacy, ...((value?.profile && value.profile.privacy) || {}) }
   state.partnerProfile = { ...initial.partnerProfile, ...(value?.partnerProfile || {}) }
   state.profileComplete = Boolean(value?.profileComplete || state.profile.completed || state.profile.nickname.trim())
   state.profile.completed = state.profileComplete
@@ -85,7 +103,11 @@ const applyLocalRedemption = (draft: LovePointsState, reward: Reward) => {
 }
 
 export const lovePointsService = {
-  getState: async (): Promise<LovePointsState> => normalizeState(await runAction('home.summary', {}, readState)),
+  getState: async (): Promise<LovePointsState> => {
+    const state = normalizeState(await runAction('home.summary', {}, readState))
+    if (state.bound && isCloudEnabled()) state.heat = await runAction('heat.summary', {}, () => state.heat)
+    return state
+  },
 
   updateProfile: async (input: {
     nickname: string
@@ -93,13 +115,16 @@ export const lovePointsService = {
     gender: ProfileGender
     region: string
     hobbies: string[]
+    backgroundUrl?: string
   }): Promise<LovePointsState> => runAction('profile.update', input, () => updateState((draft) => {
     const nickname = input.nickname.trim()
     if (!nickname) throw new Error('请填写你的用户名')
     if (nickname.length > 24) throw new Error('用户名最多 24 个字')
     draft.profile = {
+      ...draft.profile,
       nickname,
       avatarUrl: input.avatarUrl.trim(),
+      backgroundUrl: (input.backgroundUrl || draft.profile.backgroundUrl).trim(),
       gender: input.gender,
       region: input.region.trim().slice(0, 60),
       hobbies: input.hobbies.map((item) => item.trim()).filter(Boolean).slice(0, 12),
@@ -107,6 +132,9 @@ export const lovePointsService = {
     }
     draft.profileComplete = true
   })),
+
+  updateProfilePrivacy: async (privacy: LovePointsState['profile']['privacy']): Promise<LovePointsState> =>
+    runAction('profile.privacy.update', { ...privacy }, () => updateState((draft) => { draft.profile.privacy = { ...privacy } })),
 
   listCommunityPosts: async (): Promise<CommunityPost[]> => runAction('community.list', {}, () => readState().communityPosts),
 
@@ -154,6 +182,7 @@ export const lovePointsService = {
     mood: string
     periodFlow: DailyRecord['periodFlow']
     visibility: DailyRecord['visibility']
+    media?: CommunityMedia[]
   }): Promise<DailyRecord[]> => runAction('records.save', input, () => updateState((draft) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error('记录日期不正确')
     const title = input.title.trim()
@@ -168,7 +197,8 @@ export const lovePointsService = {
         note: input.note.trim(),
         mood: input.mood,
         periodFlow: input.periodFlow,
-        visibility: input.visibility,
+        visibility: draft.bound ? input.visibility : 'self',
+        media: (input.media || []).slice(0, 9),
         ownerIsSelf: true,
         ownerName: draft.profile.nickname || '我',
         createdAt: new Date().toISOString(),
@@ -182,9 +212,11 @@ export const lovePointsService = {
         note: input.note.trim(),
         mood: input.mood,
         periodFlow: input.periodFlow,
-        visibility: input.visibility,
+        visibility: draft.bound ? input.visibility : 'self',
+        media: (input.media || []).slice(0, 9),
       })
     }
+    if (input.type === 'mood') grantLocalHeat(draft, 'HF02', 1, '记录今日情绪')
   }).dailyRecords),
 
   deleteDailyRecord: async (recordId: string): Promise<DailyRecord[]> =>
@@ -210,7 +242,16 @@ export const lovePointsService = {
     runAction('invite.status', {}, () => ({ invite: { id: 'local-pending', status: 'applied' } })),
 
   confirmBinding: async (): Promise<LovePointsState> => runAction('invite.review', { approved: true }, () => {
-    return updateState((draft) => { draft.bound = true })
+    return updateState((draft) => {
+      draft.bound = true
+      draft.relationshipStartedAt = new Date().toISOString()
+      draft.personalPoints = 320
+      draft.sharedPoints = 580
+      draft.ledger = []
+      draft.heat = createInitialState().heat
+      draft.messages = []
+      draft.unreadMessages = 0
+    })
   }),
 
   rejectBinding: async (): Promise<LovePointsState> => runAction('invite.review', { approved: false }, () => {
@@ -306,6 +347,8 @@ export const lovePointsService = {
           type: task.pointsType,
         })
       }
+      grantLocalHeat(draft, 'HF03', 1, '完成积分任务')
+      if (task.taskType === 'shared') grantLocalHeat(draft, 'HR01', 4, '完成共同任务')
       syncSelectedTask(draft, task)
     })
   }),
@@ -520,4 +563,61 @@ export const lovePointsService = {
       draft.profileComplete = current.profileComplete
     })
   }),
+
+  getHeat: async (): Promise<HeatSummary> => runAction('heat.summary', {}, () => readState().heat),
+
+  checkInHeat: async (): Promise<HeatSummary> => runAction('heat.checkin', {}, () => updateState((draft) => {
+    if (!draft.bound) throw new Error('绑定 TA 后才能一起积累热力')
+    grantLocalHeat(draft, 'HF01', 1, '完成每日打卡')
+  }).heat),
+
+  listMessages: async (): Promise<{ messages: ChatMessage[]; unread: number }> => runAction('chat.list', {}, () => {
+    const state = updateState((draft) => { draft.unreadMessages = 0 })
+    return { messages: state.messages, unread: 0 }
+  }),
+  getUnreadMessages: async (): Promise<number> => (await runAction('chat.unread', {}, () => ({ unread: readState().unreadMessages }))).unread,
+
+  listNotifications: async (): Promise<{ items: AppNotification[]; unread: number }> => runAction('notifications.list', {}, () => ({ items: [], unread: 0 })),
+  listAchievements: async (state: LovePointsState): Promise<AchievementItem[]> => runAction('achievements.list', {}, async () => (await import('../utils/achievements')).buildAchievements(state)),
+  readNotification: async (id: string): Promise<{ items: AppNotification[]; unread: number }> => runAction('notifications.read', { id }, () => ({ items: [], unread: 0 })),
+  searchFriend: async (code: string): Promise<{ user: FriendProfile }> => runAction('friends.search', { code }, () => { throw new Error('本机体验模式无法搜索真实身份码') }),
+  requestFriend: async (code: string): Promise<{ friends: FriendProfile[]; requests: Array<{ id: string; user: FriendProfile }> }> => runAction('friends.request', { code }, () => ({ friends: [], requests: [] })),
+  listFriends: async (): Promise<{ friends: FriendProfile[]; requests: Array<{ id: string; user: FriendProfile }> }> => runAction('friends.list', {}, () => ({ friends: [], requests: [] })),
+  reviewFriend: async (id: string, approved: boolean): Promise<{ friends: FriendProfile[]; requests: Array<{ id: string; user: FriendProfile }> }> => runAction('friends.review', { id, approved }, () => ({ friends: [], requests: [] })),
+  getRelationshipSettings: async (): Promise<{ relationshipStartedAt: string; publicApproved: boolean; requests: Array<{ id: string; type: string; value: string; canReview: boolean }> }> => runAction('relationship.list', {}, () => ({ relationshipStartedAt: readState().relationshipStartedAt, publicApproved: readState().relationshipPublicApproved, requests: [] })),
+  requestRelationshipChange: async (type: 'date' | 'public', value = '') => runAction('relationship.request', { type, value }, () => ({ relationshipStartedAt: readState().relationshipStartedAt, publicApproved: readState().relationshipPublicApproved, requests: [] })),
+  reviewRelationshipChange: async (id: string, approved: boolean) => runAction('relationship.review', { id, approved }, () => ({ relationshipStartedAt: readState().relationshipStartedAt, publicApproved: readState().relationshipPublicApproved, requests: [] })),
+  revokeRelationshipPublic: async (): Promise<{ relationshipStartedAt: string; publicApproved: boolean; requests: Array<{ id: string; type: string; value: string; canReview: boolean }> }> => runAction('relationship.public.revoke', {}, () => {
+    const state = updateState((draft) => { draft.relationshipPublicApproved = false })
+    return { relationshipStartedAt: state.relationshipStartedAt, publicApproved: false, requests: [] }
+  }),
+
+  sendMessage: async (text: string): Promise<{ messages: ChatMessage[]; unread: number }> => runAction('chat.send', { text }, () => {
+    const clean = text.trim().slice(0, 500)
+    if (!clean) throw new Error('请输入消息内容')
+    const state = updateState((draft) => {
+      if (!draft.bound) throw new Error('绑定 TA 后才能聊天')
+      draft.messages.push({ id: uid('message'), type: 'text', text: clean, title: '', description: '', resourceType: '', resourceId: '', actionPath: '', actionText: '', senderIsSelf: true, createdAt: new Date().toISOString(), status: 'sent' })
+    })
+    return { messages: state.messages, unread: state.unreadMessages }
+  }),
+
+  cuePartner: async (input: { type: ChatMessageType; title: string; description: string; resourceType: string; resourceId: string; actionPath: string; actionText: string }): Promise<void> => {
+    await runAction('chat.cue', input, () => updateState((draft) => {
+      if (!draft.bound) throw new Error('绑定 TA 后才能使用 @TA')
+      draft.messages.push({ id: uid('cue'), ...input, text: '', senderIsSelf: true, createdAt: new Date().toISOString(), status: 'sent' })
+    }))
+  },
+
+  openChatCard: async (messageId: string): Promise<{ actionPath: string }> => runAction('chat.open', { messageId }, () => {
+    const state = updateState((draft) => { grantLocalHeat(draft, 'HF04', 2, '和 TA 完成一次互动') })
+    const message = state.messages.find((item) => item.id === messageId)
+    return { actionPath: message?.actionPath || '' }
+  }),
+
+  createShareIntent: async (input: { type: 'heat_task' | 'community_post' | 'couple_bind'; resourceId: string; targetPath: string }): Promise<{ token: string; path: string }> =>
+    runAction('share.create', input, () => ({ token: uid('share'), path: input.targetPath })),
+
+  resolveShareIntent: async (token: string): Promise<{ type: string; resourceId: string; targetPath: string }> =>
+    runAction('share.resolve', { token }, () => ({ type: 'local', resourceId: '', targetPath: '/pages/home/index' })),
 }

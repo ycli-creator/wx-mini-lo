@@ -9,6 +9,7 @@
       </button>
       <view class="profile-avatar-copy"><text class="cell-title">头像</text><text class="cell-subtitle">点击选择一张喜欢的照片</text></view>
     </view>
+    <view class="profile-background" bind:tap="chooseBackground"><image wx:if="{{backgroundUrl}}" src="{{backgroundUrl}}" mode="aspectFill"/><view wx:else class="background-placeholder"><text>选择主页背景</text></view><text class="background-action">更换背景</text></view>
     <view class="form-card profile-form">
       <view class="create-field"><text class="field-hint">用户名 *</text><input class="text-input" type="nickname" maxlength="24" placeholder="例如：小悦" value="{{nickname}}" bind:input="handleNickname" /></view>
       <text class="field-hint">性别</text>

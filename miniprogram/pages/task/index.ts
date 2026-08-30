@@ -84,6 +84,10 @@ Page({
       })
       this.setData({
         state,
+        taskType: state.bound ? this.data.taskType : 'personal',
+        assignee: state.bound ? this.data.assignee : 'self',
+        rewardPointsType: state.bound ? this.data.rewardPointsType : 'personal',
+        rewardApprovalRequired: state.bound ? this.data.rewardApprovalRequired : false,
         tasks,
         rewards,
         activeCount: tasks.filter((task) => task.status !== 'done').length,

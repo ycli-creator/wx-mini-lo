@@ -1,9 +1,9 @@
 :host { display: block; }
-.header { margin-bottom: 34rpx; }
-.heading-row { display: flex; align-items: flex-start; }
+.header { margin-bottom: 28rpx; }
+.heading-row { min-height: 72rpx; display: flex; align-items: center; }
 .heading-copy { min-width: 0; flex: 1; }
 .back-button { width: 72rpx; height: 72rpx; margin: 2rpx 18rpx 0 0; display: flex; flex: none; align-items: center; justify-content: center; color: #e84a57; background: #fff1f0; border: 2rpx solid #f5deda; border-radius: 50%; }
 .back-button--pressed { opacity: 0.72; transform: scale(0.96); }
 .back-icon { margin-top: -5rpx; font-size: 58rpx; font-weight: 300; line-height: 1; }
-.title { display: block; color: #2f2928; font-size: 56rpx; font-weight: 700; line-height: 76rpx; letter-spacing: -1rpx; }
-.subtitle { display: block; margin-top: -4rpx; color: #8a7c78; font-size: 28rpx; line-height: 44rpx; }
+.title { display: block; color: #2f2928; font-size: 38rpx; font-weight: 600; line-height: 56rpx; }
+.subtitle { display: block; margin-top: 2rpx; color: #8a7c78; font-size: 24rpx; line-height: 36rpx; }

@@ -1,9 +1,9 @@
 <view class="screen">
-  <lp-header title="确认解除绑定" subtitle="这是最后一次确认，操作完成后不可恢复" />
+  <lp-header title="确认解除绑定" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在确认解绑申请" error-text="当前解绑申请无法确认，请重新加载或返回设置。" bind:retry="refresh" />
   <block wx:else>
-  <view class="notice-card danger"><text class="notice-title">将清空情侣空间数据</text><text class="notice-copy">双方确认后，会清空任务、积分账户与流水、奖励、兑换记录和共享文档；微信用户身份仍会保留。</text></view>
-  <lp-button label="同意解除并清空" variant="danger" loading="{{busy}}" bind:tap="approve" />
+  <view class="notice-card danger"><text class="notice-title">情侣空间将被冻结归档</text><text class="notice-copy">双方确认后，你们会退出当前情侣空间。任务、积分、照片、视频、文档、聊天和成就将进入仅双方可申请处理的归档，不会带入下一段关系。</text></view>
+  <lp-button label="同意解除并归档" variant="danger" loading="{{busy}}" bind:tap="approve" />
   <lp-button label="拒绝解除" variant="text" disabled="{{busy}}" bind:tap="reject" />
   </block>
 </view>

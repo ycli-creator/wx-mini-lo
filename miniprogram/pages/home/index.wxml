@@ -1,13 +1,18 @@
 <view class="screen with-tabbar">
-  <lp-header title="今天也一起加一点分" subtitle="你们的一对一情侣空间" />
+  <lp-header title="首页" />
   <view wx:if="{{loading}}" class="empty-state section-gap"><text class="empty-title">正在同步情侣空间</text><text class="empty-copy">任务、积分和共同记录马上就好。</text></view>
   <view wx:elif="{{loadError}}" class="empty-state section-gap" bind:tap="refresh"><text class="empty-title">暂时无法同步</text><text class="empty-copy">点这里重新加载。</text></view>
   <block wx:else>
+    <view wx:if="{{state.bound}}" class="points-card section-gap" bind:tap="openHeat">
+      <view class="points-column"><text class="points-label">我们的热力</text><text class="points-value">{{state.heat.totalHeat}}</text></view>
+      <view class="points-column"><text class="points-label">今天一起升温</text><text class="points-value">+{{state.heat.todayHeat}}</text><text class="field-hint">{{state.heat.completedCount}} / 5 项完成</text></view>
+    </view>
     <lp-task-card wx:if="{{hasTask}}" status="{{task.status}}" title="{{task.title}}" subtitle="{{task.planType === 'daily' ? '每日 · 今天' : task.planType === 'weekly' ? '每周 · 本周' : '长期计划'}}" task-description="{{task.description}}" points="{{task.points}}" bind:tap="openTask" />
     <view wx:else class="empty-state section-gap" bind:tap="openTask"><text class="empty-title">还没有任务</text><text class="empty-copy">点这里创建第一件想一起完成的事。</text></view>
+    <view class="section-heading"><text class="section-title">常用功能</text><text class="section-caption">记录你们的今天</text></view>
     <view class="list">
     <view class="list-cell" hover-class="pressed" bind:tap="openPoints">
-      <view class="cell-icon"><t-icon name="money" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">积分中心</text><text class="cell-subtitle">查看个人与共同积分</text></view><text class="cell-value">+{{state.sharedPoints + state.personalPoints}}</text><text class="chevron">›</text>
+      <view class="cell-icon"><t-icon name="money" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">积分中心</text><text class="cell-subtitle">{{state.bound ? '查看个人与共同积分' : '查看个人空间积分'}}</text></view><text class="cell-value">+{{state.sharedPoints + state.personalPoints}}</text><text class="chevron">›</text>
     </view>
     <view class="list-cell" hover-class="pressed" bind:tap="openRewards">
       <view class="cell-icon"><t-icon name="gift" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">奖励商店</text><text class="cell-subtitle">{{rewardHint || '兑换双方自定义奖励'}}</text></view><text wx:if="{{rewardNeedsAction}}" class="status-tag status-pending">待处理</text><text wx:else class="chevron">›</text>
@@ -17,9 +22,6 @@
     </view>
     <view class="list-cell" hover-class="pressed" bind:tap="openCalendar">
       <view class="cell-icon"><t-icon name="calendar" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">生活日历</text><text class="cell-subtitle">记录情绪、事件和经期</text></view><text class="chevron">›</text>
-    </view>
-    <view class="list-cell" hover-class="pressed" bind:tap="openSettings">
-      <view class="cell-icon"><t-icon name="user-setting" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">我的</text><text class="cell-subtitle">个人资料、绑定关系与设置</text></view><text class="chevron">›</text>
     </view>
     </view>
   </block>

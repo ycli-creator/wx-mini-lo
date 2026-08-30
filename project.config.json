@@ -34,7 +34,9 @@
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
-    }
+    },
+    "swc": false,
+    "disableSWC": true
   },
   "simulatorPluginLibVersion": {},
   "packOptions": {

@@ -5,6 +5,8 @@ export type PointsType = 'personal' | 'shared'
 export type ProfileGender = 'female' | 'male' | 'other' | 'private'
 export type CommunityPostStatus = 'pending' | 'published' | 'rejected'
 export type DailyRecordType = 'mood' | 'event' | 'period'
+export type HeatTaskStatus = 'todo' | 'partial' | 'done'
+export type ChatMessageType = 'text' | 'heat_task' | 'custom_task' | 'calendar' | 'community_post' | 'shared_doc' | 'reward' | 'system'
 
 export interface UserProfile {
   nickname: string
@@ -13,6 +15,17 @@ export interface UserProfile {
   region: string
   hobbies: string[]
   completed: boolean
+  identityCode: string
+  backgroundUrl: string
+  privacy: ProfilePrivacy
+}
+
+export interface ProfilePrivacy {
+  searchableByCode: boolean
+  showPartner: boolean
+  showRelationshipDays: boolean
+  showHeat: boolean
+  showDocumentCount: boolean
 }
 
 export interface PartnerProfile {
@@ -56,6 +69,7 @@ export interface DailyRecord {
   ownerIsSelf: boolean
   ownerName: string
   createdAt: string
+  media: CommunityMedia[]
 }
 
 export interface TaskItem {
@@ -122,6 +136,81 @@ export interface SharedDocument {
   lockedByOther: boolean
 }
 
+export interface AchievementItem {
+  id: string
+  title: string
+  description: string
+  category: 'relationship' | 'task' | 'heat'
+  target: number
+  progress: number
+  unlocked: boolean
+  badge: string
+}
+
+export interface AppNotification {
+  id: string
+  type: string
+  title: string
+  body: string
+  actionPath: string
+  read: boolean
+  createdAt: string
+}
+
+export interface FriendProfile {
+  identityCode: string
+  nickname: string
+  avatarUrl: string
+  region: string
+}
+
+export interface HeatTask {
+  id: string
+  code: string
+  title: string
+  description: string
+  rewardText: string
+  progress: number
+  maxParticipants: number
+  selfCompleted: boolean
+  partnerCompleted: boolean
+  status: HeatTaskStatus
+  actionPath: string
+  actionText: string
+  canCue: boolean
+  random: boolean
+}
+
+export interface HeatLedgerEntry {
+  id: string
+  title: string
+  delta: number
+  createdAt: string
+}
+
+export interface HeatSummary {
+  totalHeat: number
+  todayHeat: number
+  completedCount: number
+  tasks: HeatTask[]
+  ledger: HeatLedgerEntry[]
+}
+
+export interface ChatMessage {
+  id: string
+  type: ChatMessageType
+  text: string
+  title: string
+  description: string
+  resourceType: string
+  resourceId: string
+  actionPath: string
+  actionText: string
+  senderIsSelf: boolean
+  createdAt: string
+  status: 'sending' | 'sent' | 'failed'
+}
+
 export interface LovePointsState {
   profile: UserProfile
   partnerProfile: PartnerProfile
@@ -154,6 +243,11 @@ export interface LovePointsState {
   ledger: LedgerEntry[]
   communityPosts: CommunityPost[]
   dailyRecords: DailyRecord[]
+  heat: HeatSummary
+  messages: ChatMessage[]
+  unreadMessages: number
+  relationshipStartedAt: string
+  relationshipPublicApproved: boolean
 }
 
 export interface ApiResult<T> {

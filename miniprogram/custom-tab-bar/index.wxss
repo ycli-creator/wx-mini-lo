@@ -5,3 +5,4 @@
 .icon-wrap { position: relative; width: 48rpx; height: 48rpx; display: flex; align-items: center; justify-content: center; }
 .dot { position: absolute; right: -2rpx; bottom: 0; width: 10rpx; height: 10rpx; background: #f65f6b; border: 4rpx solid #fff; border-radius: 50%; }
 .label { font-size: 22rpx; line-height: 32rpx; }
+.unread { position:absolute; top:-12rpx; right:-24rpx; min-width:32rpx; height:32rpx; padding:0 8rpx; color:#fff; background:#e84a57; border:4rpx solid #fff; border-radius:999rpx; font-size:18rpx; line-height:28rpx; text-align:center; }

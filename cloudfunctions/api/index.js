@@ -8,6 +8,13 @@ const unbind = require('./actions/unbind')
 const profile = require('./actions/profile')
 const community = require('./actions/community')
 const records = require('./actions/records')
+const heat = require('./actions/heat')
+const chat = require('./actions/chat')
+const share = require('./actions/share')
+const notifications = require('./actions/notifications')
+const social = require('./actions/social')
+const relationship = require('./actions/relationship')
+const achievements = require('./actions/achievements')
 
 const routes = {
   'auth.login': async ({ openid }) => projectState(openid),
@@ -15,6 +22,7 @@ const routes = {
   'points.summary': async ({ openid }) => projectState(openid),
   'points.ledger': async ({ openid }) => projectState(openid),
   'profile.update': profile.update,
+  'profile.privacy.update': profile.updatePrivacy,
 
   'community.list': community.list,
   'community.create': community.create,
@@ -23,6 +31,26 @@ const routes = {
   'records.list': records.list,
   'records.save': records.save,
   'records.delete': records.remove,
+  'heat.summary': heat.summary,
+  'heat.checkin': heat.checkin,
+  'chat.list': chat.list,
+  'chat.unread': chat.unread,
+  'chat.send': chat.send,
+  'chat.cue': chat.cue,
+  'chat.open': chat.open,
+  'share.create': share.create,
+  'share.resolve': share.resolve,
+  'notifications.list': notifications.list,
+  'notifications.read': notifications.read,
+  'friends.search': social.search,
+  'friends.request': social.request,
+  'friends.list': social.list,
+  'friends.review': social.review,
+  'relationship.list': relationship.list,
+  'relationship.request': relationship.request,
+  'relationship.review': relationship.review,
+  'relationship.public.revoke': relationship.revokePublic,
+  'achievements.list': achievements.list,
 
   'invite.create': invite.create,
   'invite.apply': invite.apply,

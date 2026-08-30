@@ -1,23 +1,25 @@
 const {
   db, command, collections, now, makeId, hashCode, getDoc, queryOne,
-  requireCouple, projectState, writeOperationLog,
+  requireSpace, projectState, writeOperationLog,
 } = require('../lib/shared')
 const { assert } = require('../lib/errors')
+const heat = require('./heat')
 
 const list = async ({ openid }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const result = await db.collection(collections.rewards).where({ coupleId, status: 'active' }).orderBy('createdAt', 'desc').limit(100).get()
   return { items: result.data }
 }
 
 const create = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId, spaceType } = await requireSpace(openid)
   const name = String(payload.name || '').trim()
   const cost = Number(payload.cost)
   const pointsType = payload.pointsType === 'personal' ? 'personal' : 'shared'
   assert(name, 'INVALID_NAME', '请填写奖励名称')
   assert(name.length <= 60, 'REWARD_NAME_TOO_LONG', '奖励名称不能超过 60 个字')
   assert(Number.isInteger(cost) && cost > 0 && cost <= 100000, 'INVALID_COST', '奖励积分必须是 1–100000 的整数')
+  assert(spaceType !== 'personal' || (pointsType === 'personal' && !payload.approvalRequired), 'COUPLE_REQUIRED', '个人空间只能创建个人积分奖励')
   const description = String(payload.description || '').trim() || '你们共同创建的奖励'
   const expiry = String(payload.expiry || '创建后 365 天内').trim()
   const condition = String(payload.condition || '由双方共同商量使用时间').trim()
@@ -46,7 +48,7 @@ const create = async ({ openid, payload }) => {
 }
 
 const redeem = async ({ openid, payload }) => {
-  const { coupleId, partnerId } = await requireCouple(openid)
+  const { coupleId, partnerId } = await requireSpace(openid)
   const rewardId = String(payload.rewardId || '')
   const idempotencyKey = String(payload.idempotencyKey || '').trim()
   assert(idempotencyKey.length >= 12 && idempotencyKey.length <= 180, 'INVALID_IDEMPOTENCY_KEY', '兑换请求缺少有效的幂等键')
@@ -153,11 +155,13 @@ const redeem = async ({ openid, payload }) => {
     })
   })
   await writeOperationLog({ coupleId, openid, action: 'reward.redeem', targetId: redemptionId })
+  const completed = await getDoc(collections.redemptions, redemptionId)
+  if (completed && completed.status === 'active' && completed.rewardSnapshot.pointsType === 'shared') await heat.grant({ openid, code: 'HR04', businessResourceId: redemptionId })
   return projectState(openid)
 }
 
 const reviewRedemption = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const where = { coupleId, reviewerOpenId: openid, status: 'pending_approval' }
   if (payload.rewardId) where.rewardId = String(payload.rewardId)
   const redemption = await queryOne(collections.redemptions, where, { field: 'createdAt', direction: 'desc' })
@@ -194,7 +198,7 @@ const reviewRedemption = async ({ openid, payload }) => {
 }
 
 const requestRefund = async ({ openid, payload }) => {
-  const { coupleId, partnerId } = await requireCouple(openid)
+  const { coupleId, partnerId } = await requireSpace(openid)
   const where = { coupleId, requesterOpenId: openid, status: 'active' }
   if (payload.rewardId) where.rewardId = String(payload.rewardId)
   const redemption = await queryOne(collections.redemptions, where, { field: 'updatedAt', direction: 'desc' })
@@ -207,7 +211,7 @@ const requestRefund = async ({ openid, payload }) => {
 }
 
 const reviewRefund = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const where = { coupleId, refundReviewerOpenId: openid, status: 'refund_requested' }
   if (payload.rewardId) where.rewardId = String(payload.rewardId)
   const redemption = await queryOne(collections.redemptions, where, { field: 'updatedAt', direction: 'desc' })

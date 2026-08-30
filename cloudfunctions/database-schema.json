@@ -1,6 +1,8 @@
 {
   "collections": [
-    { "name": "users", "indexes": [] },
+    { "name": "users", "indexes": [
+      { "name": "identity_code", "unique": true, "fields": [{ "field": "identityCode", "direction": "asc" }] }
+    ] },
     { "name": "couples", "indexes": [] },
     { "name": "invites", "indexes": [
       { "name": "code_status_created", "fields": [{ "field": "codeHash", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
@@ -51,10 +53,43 @@
       { "name": "couple_visibility_deleted_date", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "visibility", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "date", "direction": "desc" }] },
       { "name": "couple_owner_deleted_date", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "ownerOpenId", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "date", "direction": "desc" }] }
     ] },
-    { "name": "notifications", "indexes": [{ "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }] },
+    { "name": "notifications", "indexes": [
+      { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "recipient_created", "fields": [{ "field": "recipientOpenId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
     { "name": "unbind_requests", "indexes": [
       { "name": "couple_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
       { "name": "reviewer_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "reviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "heat_accounts", "indexes": [] },
+    { "name": "daily_heat_tasks", "indexes": [
+      { "name": "couple_date", "unique": true, "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "date", "direction": "desc" }] }
+    ] },
+    { "name": "friend_requests", "indexes": [
+      { "name": "recipient_status_created", "fields": [{ "field": "recipientOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "requester_recipient_status", "fields": [{ "field": "requesterOpenId", "direction": "asc" }, { "field": "recipientOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }] }
+    ] },
+    { "name": "friendships", "indexes": [
+      { "name": "members_status_created", "fields": [{ "field": "members", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "relationship_requests", "indexes": [
+      { "name": "couple_status_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "achievements", "indexes": [
+      { "name": "owner_achievement", "unique": true, "fields": [{ "field": "ownerId", "direction": "asc" }, { "field": "achievementId", "direction": "asc" }] }
+    ] },
+    { "name": "heat_ledgers", "indexes": [
+      { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "couple_date_task", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "date", "direction": "desc" }, { "field": "taskCode", "direction": "asc" }] }
+    ] },
+    { "name": "conversations", "indexes": [] },
+    { "name": "messages", "indexes": [
+      { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "asc" }] },
+      { "name": "couple_sender_resource_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "senderOpenId", "direction": "asc" }, { "field": "resourceType", "direction": "asc" }, { "field": "resourceId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
+    { "name": "share_intents", "indexes": [
+      { "name": "token_expire", "unique": true, "fields": [{ "field": "tokenHash", "direction": "asc" }, { "field": "expiresAt", "direction": "asc" }] },
+      { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
     ] },
     { "name": "operation_logs", "indexes": [
       { "name": "couple_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },

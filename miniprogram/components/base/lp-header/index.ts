@@ -4,6 +4,7 @@ const rootRoutes = new Set([
   'pages/task/index',
   'pages/community/index',
   'pages/documents/index',
+  'pages/chat/index',
   'pages/profile/index',
 ])
 

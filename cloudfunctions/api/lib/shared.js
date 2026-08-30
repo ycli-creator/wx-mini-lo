@@ -25,12 +25,29 @@ const collections = {
   operationLogs: 'operation_logs',
   communityPosts: 'community_posts',
   dailyRecords: 'daily_records',
+  heatAccounts: 'heat_accounts',
+  dailyHeatTasks: 'daily_heat_tasks',
+  heatLedgers: 'heat_ledgers',
+  conversations: 'conversations',
+  messages: 'messages',
+  shareIntents: 'share_intents',
+  friendRequests: 'friend_requests',
+  friendships: 'friendships',
+  relationshipRequests: 'relationship_requests',
+  achievements: 'achievements',
 }
 
 const now = () => new Date()
 const makeId = (prefix) => `${prefix}_${Date.now()}_${crypto.randomBytes(6).toString('hex')}`
 const hashCode = (code) => crypto.createHash('sha256').update(String(code)).digest('hex')
 const randomCode = () => String(crypto.randomInt(100000, 1000000))
+const randomIdentityCode = () => `LP-${crypto.randomBytes(4).toString('hex').toUpperCase().match(/.{1,4}/g).join('-')}`
+
+const createNotification = async ({ recipientOpenId, coupleId = null, type, title, body, actionPath = '', sourceId = '' }) => {
+  const id = makeId('notification')
+  await db.collection(collections.notifications).doc(id).set({ data: { recipientOpenId, coupleId, type, title, body, actionPath, sourceId, readAt: null, createdAt: now() } })
+  return id
+}
 
 const queryOne = async (collection, where, orderBy = null) => {
   let query = db.collection(collection).where(where)
@@ -48,7 +65,11 @@ const ensureUser = async (openid) => {
   assert(openid, 'UNAUTHENTICATED', '无法获取微信用户身份')
   const existing = await getDoc(collections.users, openid)
   if (existing) {
-    await db.collection(collections.users).doc(openid).update({ data: { lastSeenAt: db.serverDate(), updatedAt: db.serverDate() } })
+    const patch = { lastSeenAt: db.serverDate(), updatedAt: db.serverDate() }
+    if (!existing.identityCode) patch.identityCode = randomIdentityCode()
+    if (!existing.privacy) patch.privacy = { searchableByCode: true, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false }
+    await db.collection(collections.users).doc(openid).update({ data: patch })
+    Object.assign(existing, patch)
     return existing
   }
   const user = {
@@ -59,6 +80,10 @@ const ensureUser = async (openid) => {
     region: '',
     hobbies: [],
     profileCompleted: false,
+    identityCode: randomIdentityCode(),
+    backgroundUrl: '',
+    privacy: { searchableByCode: true, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false },
+    personalSpaceVersion: 0,
     createdAt: now(),
     updatedAt: now(),
     lastSeenAt: now(),
@@ -76,6 +101,17 @@ const requireCouple = async (openid) => {
   return { user, couple, coupleId: couple._id, partnerId: couple.members.find((id) => id !== openid) || '' }
 }
 
+const personalSpaceId = (openid, version = 0) => `personal_${hashCode(`${openid}:${version}`).slice(0, 40)}`
+const requireSpace = async (openid) => {
+  const user = await getDoc(collections.users, openid)
+  assert(user, 'UNAUTHENTICATED', '无法获取用户空间')
+  if (user.coupleId) return requireCouple(openid)
+  const coupleId = personalSpaceId(openid, Number(user.personalSpaceVersion || 0))
+  const account = await getDoc(collections.accounts, coupleId)
+  if (!account) await db.collection(collections.accounts).doc(coupleId).set({ data: { coupleId, personalBalances: { [openid]: 0 }, sharedBalance: 0, spaceType: 'personal', createdAt: now(), updatedAt: now() } })
+  return { user, couple: { _id: coupleId, members: [openid], status: 'active', spaceType: 'personal' }, coupleId, partnerId: openid, spaceType: 'personal' }
+}
+
 const publicProfile = (user = {}) => ({
   nickname: String(user.nickname || ''),
   avatarUrl: String(user.avatarUrl || ''),
@@ -83,6 +119,15 @@ const publicProfile = (user = {}) => ({
   region: String(user.region || ''),
   hobbies: Array.isArray(user.hobbies) ? user.hobbies.map(String).slice(0, 12) : [],
   completed: Boolean(user.profileCompleted || String(user.nickname || '').trim()),
+  identityCode: String(user.identityCode || ''),
+  backgroundUrl: String(user.backgroundUrl || ''),
+  privacy: {
+    searchableByCode: user.privacy?.searchableByCode !== false,
+    showPartner: Boolean(user.privacy?.showPartner),
+    showRelationshipDays: Boolean(user.privacy?.showRelationshipDays),
+    showHeat: Boolean(user.privacy?.showHeat),
+    showDocumentCount: Boolean(user.privacy?.showDocumentCount),
+  },
 })
 
 const SHANGHAI_OFFSET = 8 * 60 * 60 * 1000
@@ -196,15 +241,18 @@ const defaultState = (user = {}) => ({
   ledger: [],
   communityPosts: [],
   dailyRecords: [],
+  relationshipStartedAt: '',
+  relationshipPublicApproved: false,
 })
 
 const projectState = async (openid) => {
   const user = await getDoc(collections.users, openid)
-  if (!user?.coupleId) return defaultState(user)
-  const couple = await getDoc(collections.couples, user.coupleId)
+  if (!user) return defaultState(user)
+  const space = await requireSpace(openid)
+  const couple = space.couple
   if (!couple || couple.status !== 'active' || !couple.members.includes(openid)) return defaultState(user)
 
-  const coupleId = couple._id
+  const coupleId = space.coupleId
   const partnerId = couple.members.find((id) => id !== openid) || ''
   const [partner, account, taskResult, rewardResult, personalLedgerResult, sharedLedgerResult, groupResult, documentResult, latestDocument, redemptionResult, unbindResult] = await Promise.all([
     partnerId ? getDoc(collections.users, partnerId) : null,
@@ -304,7 +352,7 @@ const projectState = async (openid) => {
     profile: publicProfile(user),
     partnerProfile: { nickname: String(partner?.nickname || '你的另一半'), avatarUrl: String(partner?.avatarUrl || '') },
     profileComplete: publicProfile(user).completed,
-    bound: true,
+    bound: Boolean(user.coupleId),
     inviteCode: '',
     joinCode: '',
     taskStatus: task?.status || 'todo',
@@ -346,6 +394,8 @@ const projectState = async (openid) => {
     })),
     communityPosts: [],
     dailyRecords: [],
+    relationshipStartedAt: couple.relationshipStartedAt || couple.createdAt ? new Date(couple.relationshipStartedAt || couple.createdAt).toISOString() : '',
+    relationshipPublicApproved: Boolean(couple.publicApproved),
   }
 }
 
@@ -377,10 +427,10 @@ const seedCouple = async (transaction, { coupleId, creatorId, applicantId, invit
   const documentId = `document_seed_${coupleId}`
 
   await transaction.collection(collections.couples).doc(coupleId).set({
-    data: { members, status: 'active', inviteId, createdAt, updatedAt: createdAt },
+    data: { members, status: 'active', inviteId, relationshipStartedAt: createdAt, createdAt, updatedAt: createdAt },
   })
   await transaction.collection(collections.accounts).doc(coupleId).set({
-    data: { coupleId, personalBalances, sharedBalance: 580, createdAt, updatedAt: createdAt },
+    data: { coupleId, personalBalances, sharedBalance: 580, spaceType: 'couple', createdAt, updatedAt: createdAt },
   })
   await transaction.collection(collections.tasks).doc(taskId).set({
     data: {
@@ -455,8 +505,10 @@ const seedCouple = async (transaction, { coupleId, creatorId, applicantId, invit
       updatedAt: createdAt,
     },
   })
-  await transaction.collection(collections.users).doc(creatorId).update({ data: { coupleId, updatedAt: createdAt } })
-  await transaction.collection(collections.users).doc(applicantId).update({ data: { coupleId, updatedAt: createdAt } })
+  const creator = (await transaction.collection(collections.users).doc(creatorId).get()).data
+  const applicant = (await transaction.collection(collections.users).doc(applicantId).get()).data
+  await transaction.collection(collections.users).doc(creatorId).update({ data: { coupleId, personalSpaceVersion: Number(creator.personalSpaceVersion || 0) + 1, updatedAt: createdAt } })
+  await transaction.collection(collections.users).doc(applicantId).update({ data: { coupleId, personalSpaceVersion: Number(applicant.personalSpaceVersion || 0) + 1, updatedAt: createdAt } })
 }
 
 module.exports = {
@@ -472,6 +524,8 @@ module.exports = {
   getDoc,
   ensureUser,
   requireCouple,
+  requireSpace,
+  personalSpaceId,
   normalizePlanType,
   taskCycleWindow,
   taskCycleId,
@@ -479,4 +533,5 @@ module.exports = {
   projectState,
   writeOperationLog,
   seedCouple,
+  createNotification,
 }

@@ -1,6 +1,6 @@
 const {
   db, collections, now, makeId, hashCode, randomCode, queryOne, getDoc,
-  requireCouple, projectState, writeOperationLog, seedCouple,
+  requireCouple, projectState, writeOperationLog, seedCouple, createNotification,
 } = require('../lib/shared')
 const { assert } = require('../lib/errors')
 
@@ -52,6 +52,7 @@ const apply = async ({ openid, payload }) => {
     })
   })
   await writeOperationLog({ openid, action: 'invite.apply', targetId: invite._id })
+  await createNotification({ recipientOpenId: invite.creatorOpenId, type: 'relationship', title: '新的情侣绑定申请', body: '有人通过你的短码申请建立情侣空间', actionPath: '/pages/invite/confirm', sourceId: invite._id })
   const state = await projectState(openid)
   state.joinCode = code
   return state
@@ -79,6 +80,7 @@ const review = async ({ openid, payload }) => {
     })
   })
   await writeOperationLog({ coupleId, openid, action: 'invite.review.approve', targetId: invite._id })
+  await createNotification({ recipientOpenId: invite.applicantOpenId, coupleId, type: 'relationship', title: '情侣空间已建立', body: '对方已经同意你的绑定申请', actionPath: '/pages/home/index', sourceId: invite._id })
   return projectState(openid)
 }
 

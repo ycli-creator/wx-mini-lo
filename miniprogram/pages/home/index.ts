@@ -1,7 +1,7 @@
 import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
 import type { TaskItem } from '../../types/index'
-import { setActiveTab, showError } from '../../utils/ui'
+import { setActiveTab, setTabUnread, showError } from '../../utils/ui'
 
 const initialState = createInitialState()
 
@@ -48,6 +48,7 @@ Page({
         rewardNeedsAction: Boolean(incomingRedemption),
         loading: false,
       })
+      if (state.bound) setTabUnread(this, await lovePointsService.getUnreadMessages())
     } catch (error) {
       this.setData({ loading: false, loadError: true })
       showError(error)
@@ -74,6 +75,7 @@ Page({
   openPoints() { wx.navigateTo({ url: '/pages/points/index' }) },
   openRewards() { wx.setStorageSync('love-points-task-view', 'shop'); wx.switchTab({ url: '/pages/task/index' }) },
   openCalendar() { wx.navigateTo({ url: '/pages/records/index' }) },
-  openDocuments() { wx.switchTab({ url: '/pages/documents/index' }) },
+  openHeat() { wx.navigateTo({ url: '/pages/heat/index' }) },
+  openDocuments() { wx.navigateTo({ url: '/pages/documents/index' }) },
   openSettings() { wx.switchTab({ url: '/pages/profile/index' }) },
 })

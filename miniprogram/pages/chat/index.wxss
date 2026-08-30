@@ -1,0 +1,10 @@
+.inbox-primary { min-height:154rpx; margin-bottom:42rpx; padding:26rpx 28rpx; display:flex; align-items:center; gap:22rpx; background:#fff; border:2rpx solid var(--lp-border); border-radius:34rpx; }
+.avatar { width:82rpx; height:82rpx; flex:none; display:flex; align-items:center; justify-content:center; color:var(--lp-brand-text); background:var(--lp-brand-soft); border-radius:50%; }
+.message-copy { min-width:0; flex:1; }.message-heading { display:flex; align-items:baseline; justify-content:space-between; gap:16rpx; }
+.message-title,.message-preview { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.message-title { font-size:30rpx; font-weight:600; line-height:44rpx; }
+.message-preview,.message-time { color:var(--lp-text-secondary); font-size:24rpx; line-height:38rpx; }.message-time { flex:none; }
+.unread-count { min-width:38rpx; height:38rpx; padding:0 10rpx; color:#fff; background:var(--lp-brand); border-radius:999rpx; font-size:20rpx; line-height:38rpx; text-align:center; }
+.notification-list { margin-bottom:32rpx; background:#fff; border:2rpx solid var(--lp-border); border-radius:34rpx; overflow:hidden; }
+.notification-row { min-height:126rpx; padding:24rpx 28rpx; display:flex; align-items:center; gap:24rpx; color:var(--lp-brand-text); }.notification-row + .notification-row { border-top:2rpx solid rgba(238,223,216,.72); }
+.privacy-note { padding:24rpx 28rpx; color:var(--lp-text-secondary); background:var(--lp-brand-soft); border-radius:26rpx; font-size:24rpx; line-height:38rpx; }
+.notification-row.is-unread{background:rgba(255,241,240,.52)}.notification-dot{width:14rpx;height:14rpx;flex:none;background:var(--lp-brand);border-radius:50%}

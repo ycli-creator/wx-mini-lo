@@ -1,0 +1,2 @@
+.cue-button { min-height:72rpx; margin:16rpx 0 0; padding:0 24rpx; color:var(--lp-brand-text); background:var(--lp-brand-soft); border-radius:24rpx; font-size:26rpx; line-height:72rpx; }
+.cue-button::after { border:0; }

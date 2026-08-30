@@ -33,6 +33,7 @@ const update = async ({ openid, payload }) => {
   await db.collection(collections.users).doc(openid).update({ data: {
     nickname,
     avatarUrl: cleanText(payload.avatarUrl, 500),
+    backgroundUrl: cleanText(payload.backgroundUrl, 500),
     gender,
     region,
     hobbies,
@@ -43,4 +44,12 @@ const update = async ({ openid, payload }) => {
   return projectState(openid)
 }
 
-module.exports = { update }
+const updatePrivacy = async ({ openid, payload }) => {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const privacy = { searchableByCode: source.searchableByCode !== false, showPartner: Boolean(source.showPartner), showRelationshipDays: Boolean(source.showRelationshipDays), showHeat: Boolean(source.showHeat), showDocumentCount: Boolean(source.showDocumentCount) }
+  await db.collection(collections.users).doc(openid).update({ data: { privacy, updatedAt: db.serverDate() } })
+  await writeOperationLog({ openid, action: 'profile.privacy.update', targetId: openid })
+  return projectState(openid)
+}
+
+module.exports = { update, updatePrivacy }

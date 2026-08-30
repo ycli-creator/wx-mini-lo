@@ -1,4 +1,4 @@
-import type { CommunityPost, DailyRecord, DocumentGroup, LovePointsState, Reward, RewardRedemption, SharedDocument, TaskItem, TaskPlanType } from '../types/index'
+import type { ChatMessage, CommunityPost, DailyRecord, DocumentGroup, HeatTask, LovePointsState, Reward, RewardRedemption, SharedDocument, TaskItem, TaskPlanType } from '../types/index'
 
 const STORAGE_KEY = 'love-points-miniprogram-v1'
 
@@ -173,6 +173,16 @@ const initialDocuments: SharedDocument[] = [
   },
 ]
 
+const initialHeatTasks: HeatTask[] = [
+  { id: 'HF01', code: 'HF01', title: '每日打卡', description: '今天也来一起留个脚印。', rewardText: '+1/人 · 双方额外 +1', progress: 0, maxParticipants: 2, selfCompleted: false, partnerCompleted: false, status: 'todo', actionPath: '/pages/heat/index', actionText: '立即打卡', canCue: false, random: false },
+  { id: 'HF02', code: 'HF02', title: '记录今日情绪', description: '各自记录一次今天的心情。', rewardText: '+1/人 · 双方额外 +1', progress: 0, maxParticipants: 2, selfCompleted: false, partnerCompleted: false, status: 'todo', actionPath: '/pages/records/edit?date=today&type=mood', actionText: '去记录', canCue: true, random: false },
+  { id: 'HF03', code: 'HF03', title: '完成积分任务', description: '完成一项真实任务并通过确认。', rewardText: '+1/人 · 双方额外 +1', progress: 0, maxParticipants: 2, selfCompleted: false, partnerCompleted: false, status: 'todo', actionPath: '/pages/task/index', actionText: '去做任务', canCue: true, random: false },
+  { id: 'HF04', code: 'HF04', title: '和 TA 互动一次', description: '从情侣聊天打开对方发来的卡片。', rewardText: '共同 +2', progress: 0, maxParticipants: 1, selfCompleted: false, partnerCompleted: false, status: 'todo', actionPath: '/pages/chat/index', actionText: '去聊天', canCue: true, random: false },
+  { id: 'HR01', code: 'HR01', title: '完成一个共同任务', description: '今天一起完成一项共同积分任务。', rewardText: '共同 +4', progress: 0, maxParticipants: 1, selfCompleted: false, partnerCompleted: false, status: 'todo', actionPath: '/pages/task/index', actionText: '查看任务', canCue: true, random: true },
+]
+
+const initialMessages: ChatMessage[] = []
+
 export const createInitialState = (): LovePointsState => ({
   profile: {
     nickname: '',
@@ -181,6 +191,15 @@ export const createInitialState = (): LovePointsState => ({
     region: '',
     hobbies: [],
     completed: false,
+    identityCode: 'LP-LOCAL-01',
+    backgroundUrl: '',
+    privacy: {
+      searchableByCode: true,
+      showPartner: false,
+      showRelationshipDays: false,
+      showHeat: false,
+      showDocumentCount: false,
+    },
   },
   partnerProfile: { nickname: '你的另一半', avatarUrl: '' },
   profileComplete: false,
@@ -192,8 +211,8 @@ export const createInitialState = (): LovePointsState => ({
   taskNote: '今晚一起做了番茄牛腩，还拍了照片留念。',
   selectedTaskId: initialTasks[0].id,
   tasks: initialTasks,
-  personalPoints: 320,
-  sharedPoints: 580,
+  personalPoints: 0,
+  sharedPoints: 0,
   selectedRewardId: 'movie-night',
   redeemedRewardId: null,
   redemptionStatus: 'none',
@@ -211,24 +230,12 @@ export const createInitialState = (): LovePointsState => ({
   redemptions: [] as RewardRedemption[],
   communityPosts: [] as CommunityPost[],
   dailyRecords: [] as DailyRecord[],
-  ledger: [
-    {
-      id: 'ledger-task-demo',
-      title: '任务审批通过',
-      detail: '今天 20:30',
-      amount: 120,
-      balance: 320,
-      type: 'personal',
-    },
-    {
-      id: 'ledger-refund-demo',
-      title: '奖励退款',
-      detail: '刚刚由对方通过',
-      amount: 200,
-      balance: 580,
-      type: 'shared',
-    },
-  ],
+  ledger: [],
+  heat: { totalHeat: 0, todayHeat: 0, completedCount: 0, tasks: initialHeatTasks, ledger: [] },
+  messages: initialMessages,
+  unreadMessages: 0,
+  relationshipStartedAt: '',
+  relationshipPublicApproved: false,
 })
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
@@ -239,11 +246,15 @@ export const readState = (): LovePointsState => {
   const migrated = { ...createInitialState(), ...saved }
   migrated.profile = { ...createInitialState().profile, ...(saved.profile || {}) }
   migrated.profile.hobbies = Array.isArray(migrated.profile.hobbies) ? migrated.profile.hobbies : []
+  migrated.profile.privacy = { ...createInitialState().profile.privacy, ...((saved.profile && saved.profile.privacy) || {}) }
   migrated.profileComplete = Boolean(migrated.profile.completed || migrated.profile.nickname.trim())
   migrated.profile.completed = migrated.profileComplete
   migrated.partnerProfile = { ...createInitialState().partnerProfile, ...(saved.partnerProfile || {}) }
   migrated.communityPosts = Array.isArray(saved.communityPosts) ? saved.communityPosts : []
   migrated.dailyRecords = Array.isArray(saved.dailyRecords) ? saved.dailyRecords : []
+  migrated.heat = saved.heat && Array.isArray(saved.heat.tasks) ? saved.heat : createInitialState().heat
+  migrated.messages = Array.isArray(saved.messages) ? saved.messages : []
+  migrated.unreadMessages = Number(saved.unreadMessages || 0)
   migrated.tasks = rollTaskCycles(migrated.tasks, new Date())
   if (!Array.isArray(saved.tasks)) {
     migrated.tasks[0] = {

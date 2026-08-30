@@ -11,3 +11,8 @@ export const setActiveTab = (page: WechatMiniprogram.Page.Instance<{}, {}>, sele
   }
   pageWithTabBar.getTabBar?.()?.setData({ selected })
 }
+
+export const setTabUnread = (page: WechatMiniprogram.Page.Instance<{}, {}>, unread: number) => {
+  const pageWithTabBar = page as WechatMiniprogram.Page.Instance<{}, {}> & { getTabBar?: () => WechatMiniprogram.Component.TrivialInstance }
+  pageWithTabBar.getTabBar?.()?.setData({ unread })
+}

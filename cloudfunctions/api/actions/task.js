@@ -1,8 +1,9 @@
 const {
-  db, collections, now, makeId, requireCouple, projectState, writeOperationLog,
+  db, collections, now, makeId, requireSpace, projectState, writeOperationLog, createNotification,
   normalizePlanType, taskCycleWindow, ensureTaskCycles,
 } = require('../lib/shared')
 const { assert } = require('../lib/errors')
+const heat = require('./heat')
 
 const loadTaskDocuments = async (coupleId) => {
   const result = await db.collection(collections.tasks).where({ coupleId, deleted: false }).orderBy('createdAt', 'asc').limit(100).get()
@@ -30,7 +31,7 @@ const resolveTaskCycle = async (coupleId, referenceId, predicate = () => true) =
 const list = async ({ openid }) => projectState(openid)
 
 const create = async ({ openid, payload }) => {
-  const { coupleId, partnerId } = await requireCouple(openid)
+  const { coupleId, partnerId, spaceType } = await requireSpace(openid)
   const title = String(payload.title || '').trim()
   const description = String(payload.description || '').trim()
   const points = Number(payload.points)
@@ -39,6 +40,7 @@ const create = async ({ openid, payload }) => {
   assert(title, 'INVALID_TITLE', '请填写任务名称')
   assert(title.length <= 60 && description.length <= 200, 'TASK_TOO_LONG', '任务名称或说明超过长度限制')
   assert(Number.isInteger(points) && points > 0 && points <= 10000, 'INVALID_POINTS', '任务积分必须是 1–10000 的整数')
+  assert(spaceType !== 'personal' || (taskType === 'personal' && payload.assignee !== 'partner'), 'COUPLE_REQUIRED', '绑定 TA 后才能创建共同任务或指定伴侣完成')
   const taskId = makeId('task')
   const partnerAssigned = payload.assignee === 'partner' || payload.assigneeOpenId === partnerId
   const createdAt = now()
@@ -73,7 +75,7 @@ const create = async ({ openid, payload }) => {
 }
 
 const submit = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const note = String(payload.note || '').trim()
   assert(note, 'INVALID_NOTE', '请填写完成说明')
   assert(note.length <= 1000, 'NOTE_TOO_LONG', '完成说明不能超过 1000 个字')
@@ -107,11 +109,12 @@ const submit = async ({ openid, payload }) => {
     })
   })
   await writeOperationLog({ coupleId, openid, action: 'task.submit', targetId: cycle._id })
+  if (task.reviewerOpenId !== openid) await createNotification({ recipientOpenId: task.reviewerOpenId, coupleId, type: 'task', title: '任务待审批', body: `“${task.title}”已经提交完成`, actionPath: '/pages/task/index', sourceId: cycle._id })
   return projectState(openid)
 }
 
 const review = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const referenceId = String(payload.taskCycleId || payload.taskId || '')
   const { task, cycle } = await resolveTaskCycle(coupleId, referenceId, (candidate, item) =>
     candidate.reviewerOpenId === openid && item.status === 'pending')
@@ -167,6 +170,11 @@ const review = async ({ openid, payload }) => {
     await transaction.collection(collections.taskCycles).doc(cycle._id).update({ data: { status: 'approved', rejectionReason: '', settledAt: now(), updatedAt: now() } })
   })
   await writeOperationLog({ coupleId, openid, action: payload.approved ? 'task.review.approve' : 'task.review.reject', targetId: cycle._id })
+  if (task.assigneeOpenId !== openid) await createNotification({ recipientOpenId: task.assigneeOpenId, coupleId, type: 'task', title: payload.approved ? '任务已通过' : '任务被驳回', body: `“${task.title}”的审批结果已更新`, actionPath: '/pages/task/index', sourceId: cycle._id })
+  if (payload.approved) {
+    await heat.grant({ openid, code: 'HF03', participantOpenId: task.assigneeOpenId, businessResourceId: cycle._id })
+    if (task.taskType === 'shared') await heat.grant({ openid, code: 'HR01', businessResourceId: cycle._id })
+  }
   return projectState(openid)
 }
 

@@ -1,10 +1,11 @@
 const {
-  db, collections, now, makeId, getDoc, queryOne, requireCouple, projectState, writeOperationLog,
+  db, collections, now, makeId, getDoc, queryOne, requireSpace, projectState, writeOperationLog,
 } = require('../lib/shared')
 const { assert } = require('../lib/errors')
+const heat = require('./heat')
 
 const list = async ({ openid }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const [groups, documents] = await Promise.all([
     db.collection(collections.documentGroups).where({ coupleId }).orderBy('order', 'asc').limit(50).get(),
     db.collection(collections.documents).where({ coupleId, deleted: false }).orderBy('updatedAt', 'desc').limit(100).get(),
@@ -16,7 +17,7 @@ const list = async ({ openid }) => {
 }
 
 const detail = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const document = await getDoc(collections.documents, String(payload.documentId || ''))
   assert(document && document.coupleId === coupleId && document.deleted !== true, 'DOCUMENT_NOT_FOUND', '文档不存在')
   return {
@@ -36,7 +37,7 @@ const detail = async ({ openid, payload }) => {
 }
 
 const createGroup = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const name = String(payload.name || '').trim()
   assert(name, 'INVALID_GROUP_NAME', '请填写文档组名称')
   assert(name.length <= 30, 'GROUP_NAME_TOO_LONG', '文档组名称不能超过 30 个字')
@@ -48,7 +49,7 @@ const createGroup = async ({ openid, payload }) => {
 }
 
 const lock = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const document = payload.documentId
     ? await getDoc(collections.documents, String(payload.documentId))
     : await queryOne(collections.documents, { coupleId, deleted: false }, { field: 'updatedAt', direction: 'desc' })
@@ -67,7 +68,7 @@ const lock = async ({ openid, payload }) => {
 }
 
 const unlock = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const document = payload.documentId
     ? await getDoc(collections.documents, String(payload.documentId))
     : await queryOne(collections.documents, { coupleId, lockOwnerOpenId: openid, deleted: false }, { field: 'updatedAt', direction: 'desc' })
@@ -77,7 +78,7 @@ const unlock = async ({ openid, payload }) => {
 }
 
 const save = async ({ openid, payload }) => {
-  const { coupleId } = await requireCouple(openid)
+  const { coupleId } = await requireSpace(openid)
   const title = String(payload.title || '').trim()
   const body = String(payload.body || '').trim()
   assert(title, 'INVALID_TITLE', '文档标题不能为空')
@@ -116,6 +117,7 @@ const save = async ({ openid, payload }) => {
     } })
   })
   await writeOperationLog({ coupleId, openid, action: 'documents.save', targetId: document._id })
+  await heat.grant({ openid, code: 'HR02', businessResourceId: document._id })
   return projectState(openid)
 }
 

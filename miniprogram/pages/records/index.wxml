@@ -15,6 +15,7 @@
       <view class="calendar-legend"><view><text class="legend-emoji">🙂</text><text>情绪</text></view><view><view class="legend-dot event"></view><text>事件</text></view><view><view class="legend-dot period"></view><text>经期</text></view></view>
     </view>
     <view class="floating-create-action record-add-action" hover-class="floating-create-action--pressed" bind:tap="addRecord"><text class="floating-create-icon">＋</text><text>记录这一天</text></view>
+    <lp-cue-button type="calendar" title="一起记录今天" description="想知道你今天的心情，也想和你记住今天。" resource-type="calendar" resource-id="{{selectedDate}}" action-path="/pages/records/index" action-text="记录今天" label="@TA 一起记录" />
     <view wx:if="{{drawerOpen}}" class="drawer-backdrop" bind:tap="closeDrawer">
       <view class="record-drawer" catch:tap="noop">
         <view class="drawer-handle"></view>

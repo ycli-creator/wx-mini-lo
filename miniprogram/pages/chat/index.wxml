@@ -1,0 +1,21 @@
+<view class="screen with-tabbar inbox-screen">
+  <lp-header title="消息" />
+  <lp-page-state wx:if="{{loading}}" loading loading-text="正在收取消息" />
+  <block wx:else>
+    <view class="inbox-primary" hover-class="pressed" bind:tap="openChat">
+      <view class="avatar"><t-icon name="chat" size="36rpx" /></view>
+      <view class="message-copy"><view class="message-heading"><text class="message-title">{{bound ? partnerName : '情侣私聊'}}</text><text class="message-time">私密</text></view><text class="message-preview">{{bound ? preview : '绑定情侣后开启仅双方可见的聊天'}}</text></view>
+      <text wx:if="{{unread}}" class="unread-count">{{unread > 99 ? '99+' : unread}}</text><text wx:else class="chevron">›</text>
+    </view>
+    <view class="section-heading"><text class="section-title">通知</text></view>
+    <view wx:if="{{notifications.length}}" class="notification-list">
+      <view wx:for="{{notifications}}" wx:key="id" class="notification-row {{item.read ? '' : 'is-unread'}}" data-id="{{item.id}}" hover-class="pressed" bind:tap="openNotification"><t-icon name="notification" size="32rpx"/><view class="message-copy"><text class="message-title">{{item.title}}</text><text class="message-preview">{{item.body}}</text></view><view wx:if="{{!item.read}}" class="notification-dot"></view><text wx:else class="chevron">›</text></view>
+    </view>
+    <view class="notification-list">
+      <view class="notification-row" hover-class="pressed" bind:tap="openCommunity"><t-icon name="thumb-up" size="32rpx" /><view class="message-copy"><text class="message-title">互动消息</text><text class="message-preview">点赞、评论、关注和收藏会出现在这里</text></view><text class="chevron">›</text></view>
+      <view class="notification-row" hover-class="pressed" bind:tap="openTasks"><t-icon name="task" size="32rpx" /><view class="message-copy"><text class="message-title">任务与奖励</text><text class="message-preview">提交、审批、兑换和退款提醒</text></view><text class="chevron">›</text></view>
+      <view class="notification-row"><t-icon name="notification" size="32rpx" /><view class="message-copy"><text class="message-title">官方消息</text><text class="message-preview">功能更新和必要的服务通知</text></view><text class="status-tag status-todo">{{notificationUnread ? notificationUnread + ' 条' : '暂无'}}</text></view>
+    </view>
+    <view class="privacy-note"><text>情侣私聊与情侣空间内容仅双方可见；主动发布到社区的内容除外。</text></view>
+  </block>
+</view>

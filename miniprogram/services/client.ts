@@ -6,6 +6,9 @@ const retryableReadActions = new Set([
   'invite.pending', 'invite.status', 'task.list', 'reward.list',
   'documents.list', 'documents.groups', 'documents.detail',
   'community.list', 'records.list',
+  'heat.summary', 'chat.list', 'chat.unread',
+  'share.resolve',
+  'notifications.list', 'friends.search', 'friends.list', 'relationship.list', 'achievements.list',
 ])
 
 const silentActions = new Set(['documents.lock', 'documents.unlock'])

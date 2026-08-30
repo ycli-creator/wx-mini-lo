@@ -1,14 +1,14 @@
 <view class="screen">
-  <lp-header title="积分中心" subtitle="个人积分归个人，共同积分由双方共享" />
+  <lp-header title="积分中心" subtitle="{{state.bound ? '个人积分归个人，共同积分由双方共享' : '个人空间积分只由自己获得和使用'}}" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步积分" error-text="积分暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
-  <view class="points-card">
+  <view class="points-card {{state.bound ? '' : 'solo'}}">
     <view class="points-column"><text class="points-label">我的积分</text><text class="points-value">{{state.personalPoints}}</text></view>
-    <view class="points-column"><text class="points-label">共同积分</text><text class="points-value">{{state.sharedPoints}}</text></view>
+    <view wx:if="{{state.bound}}" class="points-column"><text class="points-label">共同积分</text><text class="points-value">{{state.sharedPoints}}</text></view>
   </view>
   <view class="segment">
     <view class="segment-item {{tab === 'personal' ? 'active' : ''}}" data-tab="personal" bind:tap="selectTab">个人积分</view>
-    <view class="segment-item {{tab === 'shared' ? 'active' : ''}}" data-tab="shared" bind:tap="selectTab">共同积分</view>
+    <view wx:if="{{state.bound}}" class="segment-item {{tab === 'shared' ? 'active' : ''}}" data-tab="shared" bind:tap="selectTab">共同积分</view>
   </view>
   <view wx:if="{{entries.length}}" class="list">
     <view wx:for="{{entries}}" wx:key="id" class="ledger-row">

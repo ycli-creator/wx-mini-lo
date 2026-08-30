@@ -9,6 +9,7 @@
       <text wx:if="{{type === 'period'}}" class="readonly-title">经期记录 · {{periodFlow === 'light' ? '少量' : periodFlow === 'heavy' ? '较多' : '正常'}}</text>
       <text wx:if="{{note}}" class="readonly-note">{{note}}</text>
       <text wx:else class="readonly-note muted">没有补充说明</text>
+      <view wx:if="{{media.length}}" class="record-media"><view wx:for="{{media}}" wx:key="fileId" class="media-item"><image wx:if="{{item.type === 'image'}}" src="{{item.fileId}}" mode="aspectFill"/><video wx:else src="{{item.fileId}}" poster="{{item.posterFileId}}" controls/></view></view>
     </view>
   </block>
   <block wx:else>
@@ -28,6 +29,7 @@
     <view class="form-card">
       <text class="field-hint">补充说明</text><textarea class="text-area" maxlength="500" placeholder="可以写下细节、感受或需要记住的事" value="{{note}}" bind:input="handleNote" />
     </view>
+    <view class="form-card"><view class="section-heading"><text class="field-label">照片与视频</text><text class="section-caption">最多 9 个</text></view><view wx:if="{{media.length}}" class="record-media"><view wx:for="{{media}}" wx:key="localPath" class="media-item"><image src="{{item.type === 'video' ? item.posterPath : item.localPath}}" mode="aspectFill"/><view class="remove-media" data-index="{{index}}" bind:tap="removeMedia">移除</view></view></view><view class="add-media" bind:tap="chooseMedia">选择照片或视频</view></view>
     <view class="switch-row sharing-row"><view><text class="cell-title">与 TA 共享</text><text class="cell-subtitle">关闭时只有你自己能看到；经期等敏感记录默认关闭</text></view><switch color="#f65f6b" checked="{{shared}}" bind:change="handleShared" /></view>
     <lp-button label="保存记录" disabled="{{type === 'event' && !title}}" loading="{{busy}}" bind:tap="save" />
     <view wx:if="{{id}}" class="delete-record" bind:tap="remove">删除这条记录</view>

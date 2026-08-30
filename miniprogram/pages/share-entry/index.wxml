@@ -1,0 +1,1 @@
+<view class="screen"><lp-header title="爱心点数" subtitle="安全打开分享内容" show-back="{{true}}" /><view class="empty-state"><text class="empty-title">{{message}}</text><text class="empty-copy">私密内容只允许当前情侣双方查看。</text><view class="heat-action" bind:tap="openApp">打开爱心点数</view></view></view>

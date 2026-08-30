@@ -1,5 +1,5 @@
 const {
-  cloud, db, collections, now, hashCode, queryOne, requireCouple, projectState, writeOperationLog,
+  cloud, db, collections, now, hashCode, queryOne, requireCouple, projectState, writeOperationLog, createNotification,
 } = require('../lib/shared')
 const { assert } = require('../lib/errors')
 
@@ -33,6 +33,7 @@ const request = async ({ openid }) => {
       updatedAt: now(),
     } })
     await writeOperationLog({ coupleId, openid, action: 'unbind.request', targetId: requestId })
+    await createNotification({ recipientOpenId: partnerId, coupleId, type: 'relationship', title: '解除绑定待确认', body: '对方发起了解除情侣关系申请', actionPath: '/pages/unbind/confirm', sourceId: requestId })
   }
   return projectState(openid)
 }
@@ -82,42 +83,18 @@ const cleanupCommunityMedia = async (coupleId) => {
 }
 
 const cleanupCoupleData = async (coupleId, members, pendingRequestId) => {
-  // Keep the couple and the approved request active until every child record is
-  // gone. If a batch fails, the reviewer can safely retry the same operation.
-  await cleanupCommunityMedia(coupleId)
-  const removable = [
-    collections.tasks,
-    collections.taskCycles,
-    collections.submissions,
-    collections.accounts,
-    collections.ledgers,
-    collections.rewards,
-    collections.redemptions,
-    collections.documentGroups,
-    collections.documents,
-    collections.notifications,
-    collections.operationLogs,
-    collections.communityPosts,
-    collections.dailyRecords,
-  ]
-  for (const collection of removable) {
-    await removeWhere(collection, { coupleId })
-  }
-  for (const memberId of members) {
-    await removeWhere(collections.invites, { creatorOpenId: memberId })
-    await removeWhere(collections.invites, { applicantOpenId: memberId })
-    await removeWhere(collections.operationLogs, { actorOpenId: memberId })
-  }
-  await removeWhere(collections.unbindRequests, { coupleId }, pendingRequestId)
-
+  // Unbinding freezes the former space instead of deleting high-value memories.
+  // The archived couple remains inaccessible through requireCouple and is never
+  // attached to a future relationship. Export/deletion can be added as a
+  // separate dual-consent workflow without risking accidental loss here.
   await db.runTransaction(async (transaction) => {
     const couple = (await transaction.collection(collections.couples).doc(coupleId).get()).data
     if (!couple) return
     for (const memberId of members) {
       await transaction.collection(collections.users).doc(memberId).update({ data: { coupleId: null, updatedAt: now() } })
     }
-    await transaction.collection(collections.unbindRequests).doc(pendingRequestId).remove()
-    await transaction.collection(collections.couples).doc(coupleId).remove()
+    await transaction.collection(collections.unbindRequests).doc(pendingRequestId).update({ data: { status: 'approved', archivedAt: now(), updatedAt: now() } })
+    await transaction.collection(collections.couples).doc(coupleId).update({ data: { status: 'archived', archivedAt: now(), updatedAt: now() } })
   })
 }
 

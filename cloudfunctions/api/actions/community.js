@@ -1,7 +1,8 @@
 const {
-  cloud, db, command, collections, now, makeId, getDoc, requireCouple, writeOperationLog,
+  cloud, db, command, collections, now, makeId, getDoc, requireCouple, writeOperationLog, createNotification,
 } = require('../lib/shared')
 const { assert } = require('../lib/errors')
+const heat = require('./heat')
 
 const cleanText = (value, maxLength) => String(value || '').trim().slice(0, maxLength)
 
@@ -101,6 +102,7 @@ const create = async ({ openid, payload }) => {
     updatedAt: now(),
   } })
   await writeOperationLog({ coupleId, openid, action: 'community.create', targetId: postId })
+  await createNotification({ recipientOpenId: partnerId, coupleId, type: 'community', title: '共同帖子待确认', body: `${authorName}希望发布一条共同内容`, actionPath: '/pages/community/index', sourceId: postId })
   return list({ openid })
 }
 
@@ -119,6 +121,8 @@ const review = async ({ openid, payload }) => {
     updatedAt: db.serverDate(),
   } })
   await writeOperationLog({ coupleId, openid, action: approved ? 'community.review.approve' : 'community.review.reject', targetId: postId })
+  await createNotification({ recipientOpenId: post.authorOpenId, coupleId, type: 'community', title: approved ? '共同帖子已发布' : '共同帖子未通过', body: approved ? '双方已经同意公开这条内容' : '对方没有同意公开这条内容', actionPath: '/pages/community/index', sourceId: postId })
+  if (approved) await heat.grant({ openid, code: 'HR05', businessResourceId: postId })
   return list({ openid })
 }
 

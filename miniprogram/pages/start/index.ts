@@ -22,4 +22,5 @@ Page({
   },
   goInvite() { wx.navigateTo({ url: '/pages/invite/create' }) },
   goJoin() { wx.navigateTo({ url: '/pages/invite/join' }) },
+  goSolo() { wx.switchTab({ url: '/pages/home/index' }) },
 })

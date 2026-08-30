@@ -5,6 +5,7 @@
   <view class="notice-card {{locked ? 'danger' : 'warning'}}"><text class="notice-title">{{locked ? '对方正在编辑' : (isNew ? '创建共同记录' : '当前由你编辑')}}</text><text class="notice-copy">{{locked ? '当前内容为只读，请稍后再试。' : '云端模式会建立编辑锁；你离开或保存后自动释放。'}}</text></view>
   <view class="form-card"><text class="field-label">标题</text><input class="text-input" disabled="{{locked}}" value="{{title}}" maxlength="60" bind:input="handleTitle" /></view>
   <view class="form-card"><text class="field-label">正文</text><textarea class="text-area document" disabled="{{locked}}" value="{{body}}" maxlength="5000" bind:input="handleBody" /></view>
+  <lp-cue-button wx:if="{{!isNew}}" type="shared_doc" title="{{title}}" description="来一起完善这份共同记录。" resource-type="shared_doc" resource-id="{{documentId}}" action-path="/pages/documents/edit?id={{documentId}}" action-text="打开文档" label="@TA 来补充" />
   <lp-button wx:if="{{locked && !isNew}}" label="重新获取编辑权" variant="soft" loading="{{busy}}" bind:tap="retryLock" />
   <lp-button label="保存文档" disabled="{{locked || !title}}" loading="{{busy}}" bind:tap="save" />
   <lp-button label="取消" variant="text" bind:tap="goBack" />

@@ -7,7 +7,7 @@
     hover-class="pressed"
     bind:tap="switchTab"
   >
-    <view class="icon-wrap"><t-icon name="{{selected === index ? item.activeIcon : item.icon}}" size="44rpx" /><view wx:if="{{selected === index}}" class="dot"></view></view>
+    <view class="icon-wrap"><t-icon name="{{selected === index ? item.activeIcon : item.icon}}" size="44rpx" /><view wx:if="{{selected === index}}" class="dot"></view><view wx:if="{{item.text === '消息' && unread > 0}}" class="unread">{{unread > 99 ? '99+' : unread}}</view></view>
     <text class="label">{{item.text}}</text>
   </view>
 </view>
