@@ -1,0 +1,17 @@
+<view class="screen onboarding-screen">
+  <lp-header title="你想怎样使用爱心点数？" subtitle="这只是默认偏好，之后可以随时在个人主页修改" />
+  <view class="mode-list">
+    <view class="mode-option {{selected === 'record' ? 'selected' : ''}}" data-mode="record" bind:tap="selectMode">
+      <view class="mode-icon"><t-icon name="lock-on" size="42rpx" /></view>
+      <view class="mode-copy"><text class="mode-title">专注记录自己的生活</text><text class="mode-description">优先显示任务、日历与记录；减少公开展示和社交提醒。</text></view>
+      <view class="mode-check"><t-icon wx:if="{{selected === 'record'}}" name="check" size="26rpx" /></view>
+    </view>
+    <view class="mode-option {{selected === 'social' ? 'selected' : ''}}" data-mode="social" bind:tap="selectMode">
+      <view class="mode-icon"><t-icon name="usergroup" size="42rpx" /></view>
+      <view class="mode-copy"><text class="mode-title">分享生活，也看看更多人</text><text class="mode-description">提高社区、消息和互动的优先级，但内容仍然默认私密。</text></view>
+      <view class="mode-check"><t-icon wx:if="{{selected === 'social'}}" name="check" size="26rpx" /></view>
+    </view>
+  </view>
+  <view class="privacy-promise"><t-icon name="shield" size="32rpx"/><text>无论选择哪种方式，内容都不会自动公开。</text></view>
+  <lp-button label="按这个方式开始" loading="{{busy}}" bind:tap="continue" />
+</view>

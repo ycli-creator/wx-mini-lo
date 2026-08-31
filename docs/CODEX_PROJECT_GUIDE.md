@@ -1,6 +1,6 @@
 # Love Points 工程导航（Codex / 开发者快速上手）
 
-> 更新日期：2026-08-30
+> 更新日期：2026-08-31
 > 用途：帮助后续开发快速定位代码、判断改动范围，并沿用项目已有的业务与安全约束。产品规则以 `DEVELOPMENT_PLAN.md` 和对应功能规格为准。
 
 ## 1. 一句话架构
@@ -22,7 +22,7 @@
 
 | 路径 | 职责 |
 |---|---|
-| `miniprogram/` | 微信原生小程序：29 个页面、5 个项目内组件、TDesign 依赖、本机体验数据与客户端服务层 |
+| `miniprogram/` | 微信原生小程序：31 个页面、6 个项目内组件、TDesign 依赖、本机体验数据与客户端服务层 |
 | `cloudfunctions/api/` | 单入口 CloudBase 云函数，按邀请、任务、奖励、文档、解绑、资料、社区、生活记录 8 个领域拆分 |
 | `cloudfunctions/database-schema.json` | 27 个集合和索引的声明式定义；包含周期任务、热力、聊天、好友、成就和关系许可集合 |
 | `web-prototype/` | React/Vite 原型，用于设计和交互对照 |
@@ -37,16 +37,16 @@
 
 - `miniprogram/app.ts`：只在启用云端模式时初始化 `wx.cloud`。
 - `miniprogram/config/env.ts`：CloudBase 环境 ID、云函数名和应用版本；当前环境 ID 非空，因此默认走真实云端。
-- `miniprogram/app.json`：注册 23 个页面、全局组件和 5 项自定义 Tab：首页、任务、社区、文档、我的。
+- `miniprogram/app.json`：注册 31 个页面、全局组件和 5 项自定义 Tab：首页、任务、社区、消息、我的。
 - `miniprogram/styles/tokens.wxss`：设计令牌；全局样式在 `app.wxss`。
 
 ### 3.2 页面分区
 
 | 领域 | 页面 |
 |---|---|
-| 进入与绑定 | `start`、`invite/create`、`invite/join`、`invite/confirm` |
+| 进入与绑定 | `start`、`profile/edit`、`onboarding`、`invite/create`、`invite/join`、`invite/confirm` |
 | 首页与积分 | `home`、`points` |
-| 任务与周期计划 | `task/index`、`task/submit`、`task/review` |
+| 任务与周期计划 | `task/index`、`task/detail`、`task/submit`、`task/review` |
 | 奖励与退款 | `reward/list`、`reward/detail`、`reward/redemption` |
 | 社区 | `community/index`、`community/create` |
 | 生活记录 | `records/index`、`records/edit` |
@@ -60,6 +60,7 @@
 - `components/base/lp-page-state`：加载、空状态和错误状态。
 - `components/business/lp-task-card`：任务卡片。
 - `components/business/lp-cue-button`：向当前伴侣发送统一业务卡片。
+- `components/business/lp-space-switch`：在个人空间与情侣空间之间切换，并阻止未绑定用户进入情侣空间。
 - `custom-tab-bar/`：五项底部导航。
 - `types/index.ts`：客户端共享类型，是新增字段时首先要检查的位置。
 - `store/state.ts`：本机体验模式的初始数据、缓存、迁移和周期滚动逻辑。

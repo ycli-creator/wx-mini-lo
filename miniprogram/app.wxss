@@ -79,6 +79,8 @@ view, text, button, input, textarea { box-sizing: border-box; }
 .segment-item { min-height: 80rpx; display: flex; align-items: center; justify-content: center; color: var(--lp-text-secondary); border-radius: 22rpx; }
 .segment-item.active { color: var(--lp-text-primary); background: var(--lp-bg-surface); font-weight: 600; box-shadow: 0 4rpx 16rpx rgba(77, 50, 42, 0.07); }
 .plan-type-segment { grid-template-columns: repeat(3, 1fr); }
+.task-kind-segment { grid-template-columns: repeat(3, 1fr); margin-top: 12rpx; }
+.segment-item.disabled { opacity: .45; }
 .plan-filter-scroll { width: 100%; margin: -4rpx 0 28rpx; white-space: nowrap; }
 .plan-filters { display: inline-flex; gap: 14rpx; padding: 2rpx; }
 .plan-filter { min-width: 126rpx; min-height: 68rpx; padding: 12rpx 24rpx; display: inline-flex; align-items: center; justify-content: center; color: var(--lp-text-secondary); background: #fff; border: 2rpx solid var(--lp-border); border-radius: 999rpx; }
@@ -152,3 +154,15 @@ view, text, button, input, textarea { box-sizing: border-box; }
 .confirmation-row { min-height: 116rpx; padding: 20rpx 28rpx; display: flex; align-items: center; justify-content: space-between; gap: 20rpx; background: #fff; border: 2rpx solid var(--lp-border); border-radius: 30rpx; }
 .confirmation-copy { min-width: 0; }
 .confirmation-value { color: var(--lp-brand-text); font-size: 24rpx; white-space: nowrap; }
+.project-explain { margin-bottom: 22rpx; padding: 24rpx; background: var(--lp-brand-soft); border-radius: 26rpx; }
+.project-step-editor { margin-bottom: 20rpx; padding: 24rpx; background: var(--lp-bg-canvas); border: 2rpx solid var(--lp-border); border-radius: 28rpx; }
+.project-step-editor .section-heading { margin-top: 0; }
+.remove-step { color: var(--lp-brand-text); font-size: 22rpx; }
+.step-title-input { margin-bottom: 16rpx; padding: 0 18rpx; background: #fff; border-radius: 18rpx; }
+.segment.compact { margin-bottom: 14rpx; }
+.choice-wrap.compact { margin-bottom: 4rpx; }
+.choice-wrap.compact .choice-chip { min-height: 58rpx; padding: 8rpx 18rpx; font-size: 22rpx; }
+.add-step { min-height: 76rpx; margin: 12rpx 0 26rpx; display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: #fff; border: 2rpx dashed var(--lp-brand); border-radius: 24rpx; font-weight: 600; }
+.task-list-cell.project-task { min-height: 164rpx; background: var(--lp-brand-soft); }
+.mini-progress { height: 8rpx; margin-top: 12rpx; overflow: hidden; background: #efdcd8; border-radius: 999rpx; }
+.mini-progress-bar { height: 100%; background: var(--lp-brand); border-radius: inherit; }

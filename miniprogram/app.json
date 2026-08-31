@@ -2,11 +2,13 @@
   "pages": [
     "pages/start/index",
     "pages/profile/edit",
+    "pages/onboarding/index",
     "pages/invite/create",
     "pages/invite/join",
     "pages/invite/confirm",
     "pages/home/index",
     "pages/task/index",
+    "pages/task/detail",
     "pages/task/submit",
     "pages/task/review",
     "pages/community/index",
@@ -44,6 +46,7 @@
     "lp-page-state": "/components/base/lp-page-state/index",
     "lp-task-card": "/components/business/lp-task-card/index",
     "lp-cue-button": "/components/business/lp-cue-button/index",
+    "lp-space-switch": "/components/business/lp-space-switch/index",
     "t-icon": "tdesign-miniprogram/icon/icon"
   },
   "tabBar": {

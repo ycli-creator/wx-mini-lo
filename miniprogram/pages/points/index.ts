@@ -16,7 +16,8 @@ Page({
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      this.setData({ state, entries: state.ledger.filter((entry) => entry.type === this.data.tab), loading: false })
+      const tab: PointsType = state.activeSpaceType === 'couple' ? 'shared' : 'personal'
+      this.setData({ state, tab, entries: state.ledger.filter((entry) => entry.type === tab), loading: false })
     } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
   selectTab(event: WechatMiniprogram.TouchEvent) {

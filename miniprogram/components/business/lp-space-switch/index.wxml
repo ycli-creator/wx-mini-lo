@@ -1,0 +1,4 @@
+<view class="space-switch" aria-label="当前使用空间">
+  <view class="space-option {{active === 'personal' ? 'active' : ''}}" data-space="personal" bind:tap="choose"><text class="space-name">个人空间</text><text class="space-note">只属于我</text></view>
+  <view class="space-option {{active === 'couple' ? 'active' : ''}} {{!bound ? 'disabled' : ''}}" data-space="couple" bind:tap="choose"><text class="space-name">情侣空间</text><text class="space-note">{{bound ? '我和 TA' : '待绑定'}}</text></view>
+</view>

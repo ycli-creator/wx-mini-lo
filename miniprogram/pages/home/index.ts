@@ -2,6 +2,7 @@ import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
 import type { TaskItem } from '../../types/index'
 import { setActiveTab, setTabUnread, showError } from '../../utils/ui'
+import { relationshipDays } from '../../utils/achievements'
 
 const initialState = createInitialState()
 
@@ -14,6 +15,8 @@ Page({
     rewardNeedsAction: false,
     loading: true,
     loadError: false,
+    homeTab: 'today' as 'today' | 'tools',
+    relationshipDays: 0,
   },
   async onShow() {
     setActiveTab(this, 0)
@@ -46,6 +49,7 @@ Page({
         hasTask: Boolean(task),
         rewardHint,
         rewardNeedsAction: Boolean(incomingRedemption),
+        relationshipDays: relationshipDays(state.relationshipStartedAt),
         loading: false,
       })
       if (state.bound) setTabUnread(this, await lovePointsService.getUnreadMessages())
@@ -54,6 +58,7 @@ Page({
       showError(error)
     }
   },
+  switchHomeTab(event: WechatMiniprogram.TouchEvent) { this.setData({ homeTab: event.currentTarget.dataset.tab as 'today' | 'tools' }) },
   openTask() {
     if (!this.data.hasTask) {
       wx.setStorageSync('love-points-task-view', 'tasks')
@@ -61,16 +66,7 @@ Page({
       return
     }
     const task = this.data.task
-    if (task.status === 'missed') {
-      wx.showToast({ title: '这个周期已经结束', icon: 'none' })
-      return
-    }
-    if (!task.assigneeIsSelf && !['pending', 'done'].includes(task.status)) {
-      wx.showToast({ title: '等待对方完成这个任务', icon: 'none' })
-      return
-    }
-    const url = ['pending', 'done'].includes(task.status) ? '/pages/task/review' : '/pages/task/submit'
-    wx.navigateTo({ url: `${url}?id=${encodeURIComponent(task.id)}` })
+    wx.navigateTo({ url: `/pages/task/detail?id=${encodeURIComponent(task.id)}` })
   },
   openPoints() { wx.navigateTo({ url: '/pages/points/index' }) },
   openRewards() { wx.setStorageSync('love-points-task-view', 'shop'); wx.switchTab({ url: '/pages/task/index' }) },

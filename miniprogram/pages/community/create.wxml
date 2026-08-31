@@ -1,6 +1,11 @@
 <view class="screen community-create-screen">
-  <lp-header title="分享你们的日常" subtitle="照片、视频或一句话，都需要 TA 确认后才会公开" />
+  <lp-header title="记录一段日常" subtitle="先留在情侣空间，需要时再同步到社区" />
+  <view class="form-card title-card">
+    <text class="field-label">标题</text>
+    <input class="text-input" maxlength="60" placeholder="给这段日常起个标题" value="{{title}}" bind:input="handleTitle" />
+  </view>
   <view class="form-card">
+    <text class="field-label">正文</text>
     <textarea class="text-area post-editor" maxlength="1000" placeholder="记录今天发生的小事……" value="{{content}}" bind:input="handleContent" />
     <text class="editor-count">{{content.length}} / 1000</text>
   </view>
@@ -12,6 +17,10 @@
     </view>
   </view>
   <view class="media-picker" hover-class="pressed" bind:tap="chooseMedia"><view class="cell-icon"><t-icon name="image" size="32rpx" /></view><view class="cell-copy"><text class="cell-title">添加照片或视频</text><text class="cell-subtitle">最多 9 个，支持图文、视频和纯文字</text></view><text class="cell-value">{{media.length}} / 9</text></view>
-  <view class="notice-card brand"><text class="notice-title">两个人共同发布</text><text class="notice-copy">提交后先进入情侣确认。TA 同意后才会出现在公开社区，个人性别、地区和爱好不会随帖子公开。</text></view>
-  <lp-button label="{{uploadProgress || '提交给 TA 确认'}}" disabled="{{!content && !media.length}}" loading="{{busy}}" bind:tap="publish" />
+  <view class="community-sync {{syncToCommunity ? 'is-public' : ''}}">
+    <view class="sync-copy"><text class="sync-title">同步到公开社区</text><text class="sync-description">{{privateMode ? '你已开启一键不展示，帖子只能留在情侣空间。' : syncToCommunity ? '发布后会先由 TA 确认，双方同意才会公开。' : '默认仅你和 TA 可见，不会出现在公开社区。'}}</text></view>
+    <switch checked="{{syncToCommunity}}" disabled="{{privateMode}}" color="#f65f6b" bind:change="toggleCommunity" />
+  </view>
+  <view class="visibility-result"><t-icon name="lock-on" size="30rpx"/><text>{{syncToCommunity ? '当前：情侣确认后公开' : '当前：仅情侣空间可见'}}</text></view>
+  <lp-button label="{{uploadProgress || (syncToCommunity ? '提交并请 TA 确认' : '保存到情侣空间')}}" disabled="{{!title || (!content && !media.length)}}" loading="{{busy}}" bind:tap="publish" />
 </view>

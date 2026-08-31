@@ -1,0 +1,3 @@
+.submit-image-grid { margin: 18rpx 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12rpx; }
+.submit-image-grid image { width: 100%; height: 170rpx; border-radius: 20rpx; }
+.add-submit-image { min-height: 76rpx; display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: var(--lp-brand-soft); border-radius: 22rpx; }

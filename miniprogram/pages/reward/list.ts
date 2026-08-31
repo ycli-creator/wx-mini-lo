@@ -1,6 +1,6 @@
 import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
-import type { PointsType, Reward } from '../../types/index'
+import type { Reward } from '../../types/index'
 import { setActiveTab, showError, showSuccess } from '../../utils/ui'
 
 type DisplayReward = Reward & { enough: boolean; redeemed: boolean; pointsLabel: string; statusLabel: string; statusClass: string }
@@ -13,13 +13,14 @@ Page({
     loadError: false,
     busy: false,
     createOpen: false,
+    rewardFilter: 'all' as 'all' | 'available' | 'purchased' | 'pending' | 'refund',
     name: '一起看日落',
     description: '找一个天气好的傍晚散步',
     cost: '150',
-    pointsType: 'shared' as PointsType,
     expiry: '创建后 365 天内',
     condition: '由双方共同商量使用时间',
     approvalRequired: false,
+    beneficiaryType: 'couple' as Reward['beneficiaryType'],
   },
   async onShow() {
     setActiveTab(this, 2)
@@ -29,7 +30,7 @@ Page({
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      const rewards = state.rewards.map((reward) => {
+      const allRewards = state.rewards.map((reward) => {
         const balance = reward.pointsType === 'shared' ? state.sharedPoints : state.personalPoints
         const enough = balance >= reward.cost
         const redemption = state.redemptions.find((item) => item.rewardId === reward.id && item.status !== 'refunded')
@@ -43,7 +44,20 @@ Page({
           statusClass: redemption?.status === 'pending' || redemption?.refundStatus === 'requested' ? 'status-pending' : redeemed ? 'status-done' : enough ? 'status-todo' : 'status-warning',
         }
       })
-      this.setData({ state, rewards, loading: false })
+      const rewards = allRewards.filter((reward) => {
+        if (this.data.rewardFilter === 'available') return reward.enough && !reward.redeemed
+        if (this.data.rewardFilter === 'purchased') return reward.redeemed
+        if (this.data.rewardFilter === 'pending') return reward.statusLabel === '待审批'
+        if (this.data.rewardFilter === 'refund') return reward.statusLabel === '退款中'
+        return true
+      })
+      this.setData({
+        state,
+        rewards,
+        approvalRequired: state.activeSpaceType === 'couple' ? this.data.approvalRequired : false,
+        beneficiaryType: state.activeSpaceType === 'couple' ? this.data.beneficiaryType : 'self',
+        loading: false,
+      })
     } catch (error) {
       this.setData({ loading: false, loadError: true })
       showError(error)
@@ -56,7 +70,11 @@ Page({
   handleExpiry(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ expiry: event.detail.value }) },
   handleCondition(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ condition: event.detail.value }) },
   handleApproval(event: WechatMiniprogram.CustomEvent<{ value: boolean }>) { this.setData({ approvalRequired: event.detail.value }) },
-  selectPointsType(event: WechatMiniprogram.TouchEvent) { this.setData({ pointsType: event.currentTarget.dataset.type as PointsType }) },
+  selectRewardFilter(event: WechatMiniprogram.TouchEvent) {
+    this.setData({ rewardFilter: event.currentTarget.dataset.filter })
+    this.refresh()
+  },
+  selectBeneficiary(event: WechatMiniprogram.TouchEvent) { this.setData({ beneficiaryType: event.currentTarget.dataset.beneficiary as Reward['beneficiaryType'] }) },
   async createReward() {
     if (this.data.busy) return
     this.setData({ busy: true })
@@ -65,10 +83,11 @@ Page({
         name: this.data.name,
         description: this.data.description,
         cost: Number(this.data.cost),
-        pointsType: this.data.pointsType,
+        pointsType: this.data.state.activeSpaceType === 'couple' ? 'shared' : 'personal',
         expiry: this.data.expiry,
         condition: this.data.condition,
         approvalRequired: this.data.approvalRequired,
+        beneficiaryType: this.data.beneficiaryType,
       })
       this.setData({ createOpen: false })
       showSuccess('奖励已创建')

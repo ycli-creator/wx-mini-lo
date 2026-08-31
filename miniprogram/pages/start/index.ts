@@ -13,6 +13,10 @@ Page({
         wx.navigateTo({ url: '/pages/profile/edit?onboarding=1' })
         return
       }
+      if (!state.preferences.onboardingCompleted) {
+        wx.navigateTo({ url: '/pages/onboarding/index' })
+        return
+      }
       if (state.bound) {
         wx.switchTab({ url: '/pages/home/index' })
         return

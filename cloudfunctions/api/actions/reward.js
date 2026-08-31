@@ -15,7 +15,10 @@ const create = async ({ openid, payload }) => {
   const { coupleId, spaceType } = await requireSpace(openid)
   const name = String(payload.name || '').trim()
   const cost = Number(payload.cost)
-  const pointsType = payload.pointsType === 'personal' ? 'personal' : 'shared'
+  const pointsType = spaceType === 'personal' ? 'personal' : 'shared'
+  const beneficiaryType = spaceType === 'personal'
+    ? 'self'
+    : ['self', 'partner', 'couple'].includes(payload.beneficiaryType) ? payload.beneficiaryType : 'couple'
   assert(name, 'INVALID_NAME', '请填写奖励名称')
   assert(name.length <= 60, 'REWARD_NAME_TOO_LONG', '奖励名称不能超过 60 个字')
   assert(Number.isInteger(cost) && cost > 0 && cost <= 100000, 'INVALID_COST', '奖励积分必须是 1–100000 的整数')
@@ -35,6 +38,7 @@ const create = async ({ openid, payload }) => {
       expiry,
       condition,
       approvalRequired: Boolean(payload.approvalRequired),
+      beneficiaryType,
       status: 'active',
       createdBy: openid,
       createdAt: now(),
@@ -204,7 +208,7 @@ const requestRefund = async ({ openid, payload }) => {
   const redemption = await queryOne(collections.redemptions, where, { field: 'updatedAt', direction: 'desc' })
   assert(redemption, 'NO_REFUNDABLE_REDEMPTION', '当前没有可退款的奖励')
   await db.collection(collections.redemptions).doc(redemption._id).update({
-    data: { status: 'refund_requested', refundStatus: 'requested', refundReviewerOpenId: partnerId, updatedAt: db.serverDate() },
+    data: { status: 'refund_requested', refundStatus: 'requested', refundReviewerOpenId: partnerId || openid, updatedAt: db.serverDate() },
   })
   await writeOperationLog({ coupleId, openid, action: 'reward.refund.request', targetId: redemption._id })
   return projectState(openid)

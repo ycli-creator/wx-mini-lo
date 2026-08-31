@@ -1,0 +1,6 @@
+.space-switch { margin-bottom: 26rpx; padding: 8rpx; display: grid; grid-template-columns: 1fr 1fr; gap: 8rpx; background: #f5ece7; border-radius: 30rpx; }
+.space-option { min-height: 88rpx; padding: 10rpx 20rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--lp-text-secondary); border-radius: 24rpx; }
+.space-option.active { color: var(--lp-text-primary); background: #fff; box-shadow: 0 6rpx 20rpx rgba(78, 48, 39, 0.08); }
+.space-option.disabled { opacity: .5; }
+.space-name { font-size: 27rpx; font-weight: 700; line-height: 38rpx; }
+.space-note { font-size: 20rpx; line-height: 28rpx; }

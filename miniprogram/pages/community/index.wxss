@@ -9,6 +9,7 @@
 .media-count { position: absolute; top: 14rpx; right: 14rpx; padding: 4rpx 10rpx; color: #fff; background: rgba(0, 0, 0, 0.48); border-radius: 999rpx; font-size: 20rpx; }
 .text-cover { min-height: 250rpx; padding: 28rpx; display: flex; align-items: flex-end; color: #5c3f3d; background: linear-gradient(145deg, #ffe9e7, #fff8ec); font-size: 32rpx; font-weight: 600; line-height: 48rpx; }
 .feed-body { padding: 22rpx; }
+.feed-title { display: -webkit-box; overflow: hidden; margin-bottom: 8rpx; font-size: 28rpx; font-weight: 700; line-height: 40rpx; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .feed-content { display: -webkit-box; overflow: hidden; margin-bottom: 18rpx; font-size: 27rpx; font-weight: 600; line-height: 40rpx; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .couple-row { display: flex; align-items: center; gap: 10rpx; }
 .mini-avatar { width: 34rpx; height: 34rpx; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: var(--lp-brand-soft); border-radius: 50%; }

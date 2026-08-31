@@ -11,8 +11,9 @@
             <video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" />
             <text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text>
           </view>
-          <view wx:else class="text-cover"><text>{{item.content || '两个人的小日常'}}</text></view>
+          <view wx:else class="text-cover"><text>{{item.title || '两个人的小日常'}}</text></view>
           <view class="feed-body">
+            <text class="feed-title">{{item.title}}</text>
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
             <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
@@ -25,8 +26,9 @@
         <view wx:for="{{rightPosts}}" wx:key="id" class="feed-card">
           <view wx:if="{{item.coverType === 'image'}}" class="feed-cover-wrap" data-id="{{item.id}}" bind:tap="previewImage"><image class="feed-cover" src="{{item.coverUrl}}" mode="widthFix" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
           <view wx:elif="{{item.coverType === 'video'}}" class="feed-video-wrap"><video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
-          <view wx:else class="text-cover"><text>{{item.content || '两个人的小日常'}}</text></view>
+          <view wx:else class="text-cover"><text>{{item.title || '两个人的小日常'}}</text></view>
           <view class="feed-body">
+            <text class="feed-title">{{item.title}}</text>
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
             <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
@@ -36,7 +38,7 @@
         </view>
       </view>
     </view>
-    <view wx:else class="empty-state"><text class="empty-title">社区还没有日常</text><text class="empty-copy">发布第一条文字、照片或视频，等 TA 确认后一起分享。</text></view>
-    <view class="floating-create-action" hover-class="floating-create-action--pressed" bind:tap="createPost"><text class="floating-create-icon">＋</text><text>发布日常</text></view>
+    <view wx:else class="empty-state"><text class="empty-title">还没有共同日常</text><text class="empty-copy">先保存到情侣空间，需要时再同步给社区。</text></view>
+    <view class="floating-create-action" hover-class="floating-create-action--pressed" bind:tap="createPost"><text class="floating-create-icon">＋</text><text>{{bound ? '发布日常' : '绑定后发布'}}</text></view>
   </block>
 </view>

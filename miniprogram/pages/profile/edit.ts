@@ -91,7 +91,8 @@ Page({
         backgroundUrl,
       })
       showSuccess('个人资料已保存')
-      wx.navigateBack()
+      if (this.data.onboarding) wx.redirectTo({ url: '/pages/onboarding/index' })
+      else wx.navigateBack()
     } catch (error) { showError(error) }
     finally { this.setData({ busy: false }) }
   },

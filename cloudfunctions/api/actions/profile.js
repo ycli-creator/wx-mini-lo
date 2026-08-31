@@ -46,10 +46,55 @@ const update = async ({ openid, payload }) => {
 
 const updatePrivacy = async ({ openid, payload }) => {
   const source = payload && typeof payload === 'object' ? payload : {}
-  const privacy = { searchableByCode: source.searchableByCode !== false, showPartner: Boolean(source.showPartner), showRelationshipDays: Boolean(source.showRelationshipDays), showHeat: Boolean(source.showHeat), showDocumentCount: Boolean(source.showDocumentCount) }
+  const privateMode = Boolean(source.privateMode)
+  const privacy = {
+    searchableByCode: privateMode ? false : source.searchableByCode === true,
+    showPartner: privateMode ? false : Boolean(source.showPartner),
+    showRelationshipDays: privateMode ? false : Boolean(source.showRelationshipDays),
+    showHeat: privateMode ? false : Boolean(source.showHeat),
+    showDocumentCount: privateMode ? false : Boolean(source.showDocumentCount),
+    privateMode,
+  }
   await db.collection(collections.users).doc(openid).update({ data: { privacy, updatedAt: db.serverDate() } })
+  if (privateMode) {
+    await db.collection(collections.communityPosts).where({ authorOpenId: openid, status: db.command.in(['published', 'pending_approval']) }).update({
+      data: { status: 'couple_only', visibility: 'couple', partnerApproved: false, publishedAt: null, updatedAt: db.serverDate() },
+    })
+  }
   await writeOperationLog({ openid, action: 'profile.privacy.update', targetId: openid })
   return projectState(openid)
 }
 
-module.exports = { update, updatePrivacy }
+const updatePreferences = async ({ openid, payload }) => {
+  const usageMode = payload.usageMode === 'social' ? 'social' : 'record'
+  const current = await db.collection(collections.users).doc(openid).get()
+  const existing = current.data || {}
+  const preferences = {
+    onboardingCompleted: true,
+    usageMode,
+    communityGuideSeen: Boolean(payload.communityGuideSeen ?? existing.preferences?.communityGuideSeen),
+    taskGuideSeen: Boolean(payload.taskGuideSeen ?? existing.preferences?.taskGuideSeen),
+  }
+  const privacy = usageMode === 'record'
+    ? { searchableByCode: false, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: Boolean(existing.privacy?.privateMode) }
+    : { ...existing.privacy, searchableByCode: true, privateMode: false }
+  await db.collection(collections.users).doc(openid).update({ data: { preferences, privacy, updatedAt: db.serverDate() } })
+  if (usageMode === 'record' && payload.hideExistingPublic === true) {
+    await db.collection(collections.communityPosts).where({ authorOpenId: openid, status: 'published' }).update({
+      data: { status: 'couple_only', visibility: 'couple', updatedAt: db.serverDate() },
+    })
+  }
+  await writeOperationLog({ openid, action: 'profile.preferences.update', targetId: openid })
+  return projectState(openid)
+}
+
+const switchSpace = async ({ openid, payload }) => {
+  const spaceType = payload.spaceType === 'couple' ? 'couple' : 'personal'
+  const current = await db.collection(collections.users).doc(openid).get()
+  assert(spaceType !== 'couple' || current.data?.coupleId, 'COUPLE_REQUIRED', '请先绑定 TA，再进入情侣空间')
+  await db.collection(collections.users).doc(openid).update({ data: { activeSpaceType: spaceType, updatedAt: db.serverDate() } })
+  await writeOperationLog({ openid, action: 'space.switch', targetId: spaceType })
+  return projectState(openid)
+}
+
+module.exports = { update, updatePrivacy, updatePreferences, switchSpace }

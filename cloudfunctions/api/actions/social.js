@@ -2,7 +2,17 @@ const { db, command, collections, now, makeId, getDoc, createNotification, write
 const { assert } = require('../lib/errors')
 
 const cleanCode = (value) => String(value || '').trim().toUpperCase().slice(0, 20)
-const profile = (user) => ({ identityCode: user.identityCode || '', nickname: user.nickname || 'Love Points 用户', avatarUrl: user.avatarUrl || '', region: user.region || '' })
+const profile = (user) => {
+  const privateMode = Boolean(user.privacy?.privateMode)
+  return {
+    identityCode: user.identityCode || '',
+    nickname: privateMode ? '一位 Love Points 用户' : user.nickname || 'Love Points 用户',
+    avatarUrl: privateMode ? '' : user.avatarUrl || '',
+    region: privateMode ? '' : user.region || '',
+    bound: Boolean(user.coupleId),
+    privateMode,
+  }
+}
 const search = async ({ openid, payload }) => {
   const code = cleanCode(payload.code)
   assert(/^LP-[0-9A-F]{4}-[0-9A-F]{4}$/.test(code), 'IDENTITY_CODE_INVALID', '请输入完整身份码')

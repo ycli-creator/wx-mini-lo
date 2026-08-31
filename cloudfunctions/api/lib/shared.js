@@ -42,6 +42,8 @@ const makeId = (prefix) => `${prefix}_${Date.now()}_${crypto.randomBytes(6).toSt
 const hashCode = (code) => crypto.createHash('sha256').update(String(code)).digest('hex')
 const randomCode = () => String(crypto.randomInt(100000, 1000000))
 const randomIdentityCode = () => `LP-${crypto.randomBytes(4).toString('hex').toUpperCase().match(/.{1,4}/g).join('-')}`
+const defaultPrivacy = () => ({ searchableByCode: false, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: false })
+const defaultPreferences = () => ({ onboardingCompleted: false, usageMode: 'record', communityGuideSeen: false, taskGuideSeen: false })
 
 const createNotification = async ({ recipientOpenId, coupleId = null, type, title, body, actionPath = '', sourceId = '' }) => {
   const id = makeId('notification')
@@ -67,7 +69,9 @@ const ensureUser = async (openid) => {
   if (existing) {
     const patch = { lastSeenAt: db.serverDate(), updatedAt: db.serverDate() }
     if (!existing.identityCode) patch.identityCode = randomIdentityCode()
-    if (!existing.privacy) patch.privacy = { searchableByCode: true, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false }
+    if (!existing.privacy) patch.privacy = defaultPrivacy()
+    if (!existing.preferences) patch.preferences = defaultPreferences()
+    if (!existing.activeSpaceType) patch.activeSpaceType = existing.coupleId ? 'couple' : 'personal'
     await db.collection(collections.users).doc(openid).update({ data: patch })
     Object.assign(existing, patch)
     return existing
@@ -82,7 +86,9 @@ const ensureUser = async (openid) => {
     profileCompleted: false,
     identityCode: randomIdentityCode(),
     backgroundUrl: '',
-    privacy: { searchableByCode: true, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false },
+    privacy: defaultPrivacy(),
+    preferences: defaultPreferences(),
+    activeSpaceType: 'personal',
     personalSpaceVersion: 0,
     createdAt: now(),
     updatedAt: now(),
@@ -102,14 +108,21 @@ const requireCouple = async (openid) => {
 }
 
 const personalSpaceId = (openid, version = 0) => `personal_${hashCode(`${openid}:${version}`).slice(0, 40)}`
-const requireSpace = async (openid) => {
+const requireSpace = async (openid, requestedSpaceType = '') => {
   const user = await getDoc(collections.users, openid)
   assert(user, 'UNAUTHENTICATED', '无法获取用户空间')
-  if (user.coupleId) return requireCouple(openid)
+  const activeSpaceType = requestedSpaceType === 'couple' || requestedSpaceType === 'personal'
+    ? requestedSpaceType
+    : user.activeSpaceType || (user.coupleId ? 'couple' : 'personal')
+  if (activeSpaceType === 'couple') {
+    assert(user.coupleId, 'COUPLE_REQUIRED', '请先绑定 TA，再进入情侣空间')
+    const coupleSpace = await requireCouple(openid)
+    return { ...coupleSpace, spaceType: 'couple' }
+  }
   const coupleId = personalSpaceId(openid, Number(user.personalSpaceVersion || 0))
   const account = await getDoc(collections.accounts, coupleId)
   if (!account) await db.collection(collections.accounts).doc(coupleId).set({ data: { coupleId, personalBalances: { [openid]: 0 }, sharedBalance: 0, spaceType: 'personal', createdAt: now(), updatedAt: now() } })
-  return { user, couple: { _id: coupleId, members: [openid], status: 'active', spaceType: 'personal' }, coupleId, partnerId: openid, spaceType: 'personal' }
+  return { user, couple: { _id: coupleId, members: [openid], status: 'active', spaceType: 'personal' }, coupleId, partnerId: '', spaceType: 'personal' }
 }
 
 const publicProfile = (user = {}) => ({
@@ -122,11 +135,12 @@ const publicProfile = (user = {}) => ({
   identityCode: String(user.identityCode || ''),
   backgroundUrl: String(user.backgroundUrl || ''),
   privacy: {
-    searchableByCode: user.privacy?.searchableByCode !== false,
+    searchableByCode: user.privacy?.searchableByCode === true,
     showPartner: Boolean(user.privacy?.showPartner),
     showRelationshipDays: Boolean(user.privacy?.showRelationshipDays),
     showHeat: Boolean(user.privacy?.showHeat),
     showDocumentCount: Boolean(user.privacy?.showDocumentCount),
+    privateMode: Boolean(user.privacy?.privateMode),
   },
 })
 
@@ -214,6 +228,9 @@ const defaultState = (user = {}) => ({
   partnerProfile: { nickname: '', avatarUrl: '' },
   profileComplete: publicProfile(user).completed,
   bound: false,
+  activeSpaceType: 'personal',
+  availableSpaces: ['personal'],
+  preferences: { ...defaultPreferences(), ...(user.preferences || {}) },
   inviteCode: '',
   joinCode: '',
   taskStatus: 'todo',
@@ -253,7 +270,7 @@ const projectState = async (openid) => {
   if (!couple || couple.status !== 'active' || !couple.members.includes(openid)) return defaultState(user)
 
   const coupleId = space.coupleId
-  const partnerId = couple.members.find((id) => id !== openid) || ''
+  const partnerId = space.spaceType === 'couple' ? couple.members.find((id) => id !== openid) || '' : ''
   const [partner, account, taskResult, rewardResult, personalLedgerResult, sharedLedgerResult, groupResult, documentResult, latestDocument, redemptionResult, unbindResult] = await Promise.all([
     partnerId ? getDoc(collections.users, partnerId) : null,
     getDoc(collections.accounts, coupleId),
@@ -301,6 +318,7 @@ const projectState = async (openid) => {
     expiry: reward.expiry,
     condition: reward.condition,
     approvalRequired: Boolean(reward.approvalRequired),
+    beneficiaryType: ['self', 'partner', 'couple'].includes(reward.beneficiaryType) ? reward.beneficiaryType : reward.pointsType === 'shared' ? 'couple' : 'self',
   }))
   const tasks = taskCycles
     .map((cycle) => ({ cycle, item: taskDocumentById.get(cycle.taskId) }))
@@ -328,6 +346,27 @@ const projectState = async (openid) => {
       periodStart: cycle.periodStart ? new Date(cycle.periodStart).toISOString() : '',
       periodEnd: cycle.periodEnd ? new Date(cycle.periodEnd).toISOString() : '',
       isCurrentCycle: cycle.cycleKey === taskCycleWindow(item.planType).cycleKey,
+      kind: item.kind === 'project' ? 'project' : item.kind === 'recurring' || normalizePlanType(item.planType) !== 'long_term' ? 'recurring' : 'one_time',
+      completionRequirement: ['direct', 'note', 'image'].includes(item.completionRequirement) ? item.completionRequirement : 'note',
+      evidence: Array.isArray(cycle.evidence) ? cycle.evidence : [],
+      projectSteps: (Array.isArray(item.projectSteps) ? item.projectSteps : []).map((step) => ({
+        id: step.id,
+        title: step.title,
+        description: step.description || '',
+        assignee: step.assigneeOpenId === openid ? 'self' : 'partner',
+        assigneeIsSelf: step.assigneeOpenId === openid,
+        completionRequirement: ['direct', 'note', 'image'].includes(step.completionRequirement) ? step.completionRequirement : 'direct',
+        status: step.status === 'done' ? 'done' : 'todo',
+        completedBySelf: step.completedBy === openid,
+        completedAt: step.completedAt ? new Date(step.completedAt).toISOString() : '',
+        note: step.note || '',
+        evidence: Array.isArray(step.evidence) ? step.evidence : [],
+        rewardPoints: Number(step.rewardPoints || Math.floor(Number(item.points || 0) * 0.1)),
+      })),
+      projectFinalized: Boolean(item.projectFinalized),
+      progressPercent: item.kind === 'project'
+        ? Math.min(100, (Array.isArray(item.projectSteps) ? item.projectSteps.filter((step) => step.status === 'done').length : 0) * 10 + (item.projectFinalized ? Math.max(0, 100 - (Array.isArray(item.projectSteps) ? item.projectSteps.filter((step) => step.status === 'done').length : 0) * 10) : 0))
+        : cycle.status === 'approved' ? 100 : cycle.status === 'pending' ? 80 : 0,
     }))
   const task = tasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
     || tasks.find((item) => item.planType === 'daily' && item.isCurrentCycle && ['todo', 'rejected', 'done'].includes(item.status) && item.assigneeIsSelf)
@@ -353,14 +392,17 @@ const projectState = async (openid) => {
     partnerProfile: { nickname: String(partner?.nickname || '你的另一半'), avatarUrl: String(partner?.avatarUrl || '') },
     profileComplete: publicProfile(user).completed,
     bound: Boolean(user.coupleId),
+    activeSpaceType: space.spaceType,
+    availableSpaces: user.coupleId ? ['personal', 'couple'] : ['personal'],
+    preferences: { ...defaultPreferences(), ...(user.preferences || {}) },
     inviteCode: '',
     joinCode: '',
     taskStatus: task?.status || 'todo',
-    taskCanReview: Boolean(task?.reviewerIsSelf),
+    taskCanReview: Boolean(task?.reviewerIsSelf && task?.status === 'pending'),
     taskNote: task?.latestNote || '',
     selectedTaskId: task?.id || '',
     tasks,
-    personalPoints: Number(personalBalances[openid] || 0),
+    personalPoints: space.spaceType === 'personal' ? Number(personalBalances[openid] || 0) : 0,
     sharedPoints: Number(account?.sharedBalance || 0),
     selectedRewardId: redemption?.rewardId || rewards[0]?.id || '',
     redeemedRewardId: redemption && redemption.status !== 'refunded' ? redemption.rewardId : null,
@@ -394,8 +436,8 @@ const projectState = async (openid) => {
     })),
     communityPosts: [],
     dailyRecords: [],
-    relationshipStartedAt: couple.relationshipStartedAt || couple.createdAt ? new Date(couple.relationshipStartedAt || couple.createdAt).toISOString() : '',
-    relationshipPublicApproved: Boolean(couple.publicApproved),
+    relationshipStartedAt: space.spaceType === 'couple' && (couple.relationshipStartedAt || couple.createdAt) ? new Date(couple.relationshipStartedAt || couple.createdAt).toISOString() : '',
+    relationshipPublicApproved: space.spaceType === 'couple' && Boolean(couple.publicApproved),
   }
 }
 
@@ -437,8 +479,8 @@ const seedCouple = async (transaction, { coupleId, creatorId, applicantId, invit
       coupleId,
       title: '一起完成晚餐',
       description: '准备两个人都喜欢的菜，完成后一起记录。',
-      taskType: 'personal',
-      pointsType: 'personal',
+      taskType: 'shared',
+      pointsType: 'shared',
       points: 120,
       planType: 'long_term',
       timezone: 'Asia/Shanghai',
@@ -465,6 +507,7 @@ const seedCouple = async (transaction, { coupleId, creatorId, applicantId, invit
       expiry: '2026 年 12 月 31 日',
       condition: '周末或节假日',
       approvalRequired: false,
+      beneficiaryType: 'couple',
       status: 'active',
       createdBy: creatorId,
       createdAt,
@@ -481,6 +524,7 @@ const seedCouple = async (transaction, { coupleId, creatorId, applicantId, invit
       expiry: '2027 年 06 月 30 日',
       condition: '提前一周商量目的地',
       approvalRequired: true,
+      beneficiaryType: 'couple',
       status: 'active',
       createdBy: creatorId,
       createdAt,
@@ -507,8 +551,8 @@ const seedCouple = async (transaction, { coupleId, creatorId, applicantId, invit
   })
   const creator = (await transaction.collection(collections.users).doc(creatorId).get()).data
   const applicant = (await transaction.collection(collections.users).doc(applicantId).get()).data
-  await transaction.collection(collections.users).doc(creatorId).update({ data: { coupleId, personalSpaceVersion: Number(creator.personalSpaceVersion || 0) + 1, updatedAt: createdAt } })
-  await transaction.collection(collections.users).doc(applicantId).update({ data: { coupleId, personalSpaceVersion: Number(applicant.personalSpaceVersion || 0) + 1, updatedAt: createdAt } })
+  await transaction.collection(collections.users).doc(creatorId).update({ data: { coupleId, activeSpaceType: 'couple', updatedAt: createdAt } })
+  await transaction.collection(collections.users).doc(applicantId).update({ data: { coupleId, activeSpaceType: 'couple', updatedAt: createdAt } })
 }
 
 module.exports = {

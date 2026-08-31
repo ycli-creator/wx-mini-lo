@@ -23,6 +23,8 @@ const routes = {
   'points.ledger': async ({ openid }) => projectState(openid),
   'profile.update': profile.update,
   'profile.privacy.update': profile.updatePrivacy,
+  'profile.preferences.update': profile.updatePreferences,
+  'space.switch': profile.switchSpace,
 
   'community.list': community.list,
   'community.create': community.create,
@@ -62,6 +64,8 @@ const routes = {
   'task.create': task.create,
   'task.submit': task.submit,
   'task.review': task.review,
+  'task.project.step.complete': task.completeProjectStep,
+  'task.project.complete': task.completeProject,
 
   'reward.list': reward.list,
   'reward.create': reward.create,

@@ -52,12 +52,34 @@ test('two users can complete the full cloud flow with idempotent point mutations
 
   const applicantHome = await call(applicant, 'home.summary')
   assert.equal(applicantHome.data.bound, true)
-  assert.equal(applicantHome.data.personalPoints, 320)
+  assert.equal(applicantHome.data.activeSpaceType, 'couple')
+  assert.deepEqual(applicantHome.data.availableSpaces, ['personal', 'couple'])
+  assert.equal(applicantHome.data.personalPoints, 0)
   assert.equal(applicantHome.data.sharedPoints, 580)
   assert.equal(applicantHome.data.tasks.length, 1)
   assert.equal(applicantHome.data.documentGroups.length, 1)
   assert.equal(applicantHome.data.documents.length, 1)
   const firstCoupleId = fakeCloud.dump('users').find((item) => item._id === creator).coupleId
+
+  const personalSpace = await call(applicant, 'space.switch', { spaceType: 'personal' })
+  assert.equal(personalSpace.data.activeSpaceType, 'personal')
+  assert.equal(personalSpace.data.sharedPoints, 0)
+  assert.equal(personalSpace.data.tasks.length, 0)
+  const personalTaskState = await call(applicant, 'task.create', {
+    title: '整理个人书单', description: '只属于个人空间', points: 30,
+    taskType: 'shared', assignee: 'self', planType: 'long_term', kind: 'one_time', completionRequirement: 'direct',
+  })
+  const personalTask = personalTaskState.data.tasks.find((item) => item.title === '整理个人书单')
+  assert.equal(personalTask.pointsType, 'personal')
+  await call(applicant, 'task.submit', { taskId: personalTask.id })
+  await call(applicant, 'task.review', { taskId: personalTask.id, approved: true })
+  const personalAfterTask = await call(applicant, 'home.summary')
+  assert.equal(personalAfterTask.data.personalPoints, 30)
+  await call(applicant, 'space.switch', { spaceType: 'couple' })
+  const isolatedCoupleSpace = await call(applicant, 'home.summary')
+  assert.equal(isolatedCoupleSpace.data.personalPoints, 0)
+  assert.equal(isolatedCoupleSpace.data.sharedPoints, 580)
+  assert.equal(isolatedCoupleSpace.data.tasks.some((item) => item.id === personalTask.id), false)
 
   const dailyCreated = await call(applicant, 'task.create', {
     title: '每天拥抱一次', description: '验证每日计划跨日更新', points: 15,
@@ -111,15 +133,15 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(approved.ok, true)
   const afterApproval = await call(applicant, 'home.summary')
   assert.equal(afterApproval.data.tasks.find((item) => item.id === seedTaskId).status, 'done')
-  assert.equal(afterApproval.data.personalPoints, 440)
-  const personalLedgerId = afterApproval.data.ledger.find((item) => item.title === '一起完成晚餐').id
-  const creatorAfterPersonalApproval = await call(creator, 'home.summary')
-  assert.equal(creatorAfterPersonalApproval.data.ledger.some((item) => item.id === personalLedgerId), false)
+  assert.equal(afterApproval.data.sharedPoints, 700)
+  const sharedLedgerId = afterApproval.data.ledger.find((item) => item.title === '一起完成晚餐').id
+  const creatorAfterSharedApproval = await call(creator, 'home.summary')
+  assert.equal(creatorAfterSharedApproval.data.ledger.some((item) => item.id === sharedLedgerId), true)
 
   await call(creator, 'task.review', { taskId: seedTaskId, approved: true })
   const afterDuplicateApproval = await call(applicant, 'home.summary')
-  assert.equal(afterDuplicateApproval.data.personalPoints, 440)
-  assert.equal(fakeCloud.dump('point_ledgers').filter((item) => item.sourceType === 'task_approval').length, 1)
+  assert.equal(afterDuplicateApproval.data.sharedPoints, 700)
+  assert.equal(fakeCloud.dump('point_ledgers').filter((item) => item.sourceType === 'task_approval' && item.coupleId === firstCoupleId).length, 1)
 
   const createdTask = await call(applicant, 'task.create', {
     title: '自动化共同任务', description: '验证任务列表', points: 75, taskType: 'shared', assignee: 'self',
@@ -134,7 +156,30 @@ test('two users can complete the full cloud flow with idempotent point mutations
   await call(applicant, 'task.submit', { taskId: sharedTask.id, note: '已经补充说明并重新提交' })
   await call(creator, 'task.review', { taskId: sharedTask.id, approved: true })
   const afterSharedTask = await call(applicant, 'home.summary')
-  assert.equal(afterSharedTask.data.sharedPoints, 655)
+  assert.equal(afterSharedTask.data.sharedPoints, 775)
+
+  const projectCreated = await call(applicant, 'task.create', {
+    title: '周末爬山', description: '验证大任务分步发放', points: 100,
+    kind: 'project', planType: 'long_term', completionRequirement: 'direct',
+    projectSteps: [
+      { title: '准备食物', assignee: 'self', completionRequirement: 'direct' },
+      { title: '准备登山服', assignee: 'partner', completionRequirement: 'note' },
+    ],
+  })
+  const project = projectCreated.data.tasks.find((item) => item.title === '周末爬山')
+  assert.equal(project.kind, 'project')
+  const applicantStep = project.projectSteps.find((item) => item.assigneeIsSelf)
+  const partnerStep = project.projectSteps.find((item) => !item.assigneeIsSelf)
+  const afterApplicantStep = await call(applicant, 'task.project.step.complete', { taskId: project.id, stepId: applicantStep.id })
+  assert.equal(afterApplicantStep.data.sharedPoints, 785)
+  const afterPartnerStep = await call(creator, 'task.project.step.complete', { taskId: project.id, stepId: partnerStep.id, note: '登山服已准备' })
+  assert.equal(afterPartnerStep.data.sharedPoints, 795)
+  const projectCompleted = await call(applicant, 'task.project.complete', { taskId: project.id })
+  assert.equal(projectCompleted.data.sharedPoints, 875)
+  assert.equal(projectCompleted.data.tasks.find((item) => item.id === project.id).status, 'done')
+  const projectCompletedAgain = await call(creator, 'task.project.complete', { taskId: project.id })
+  assert.equal(projectCompletedAgain.data.sharedPoints, 875)
+  assert.equal(fakeCloud.dump('point_ledgers').filter((item) => ['project_step', 'project_completion'].includes(item.sourceType)).length, 3)
 
   const movieReward = afterDuplicateApproval.data.rewards.find((item) => item.cost === 200)
   const outsiderRewardAttempt = await call(outsiderCreator, 'reward.redeem', {
@@ -166,7 +211,7 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(insufficientApproval.code, 'INSUFFICIENT_POINTS')
 
   const redeemed = await call(applicant, 'reward.redeem', { rewardId: movieReward.id, idempotencyKey: 'redeem-movie-001' })
-  assert.equal(redeemed.data.sharedPoints, 455)
+  assert.equal(redeemed.data.sharedPoints, 675)
   const creatorSeesSharedRedemption = await call(creator, 'home.summary')
   const partnerVisibleRedemption = creatorSeesSharedRedemption.data.redemptions.find((item) => item.rewardId === movieReward.id)
   assert.equal(partnerVisibleRedemption.status, 'active')
@@ -174,7 +219,7 @@ test('two users can complete the full cloud flow with idempotent point mutations
   await call(applicant, 'reward.redeem', { rewardId: movieReward.id, idempotencyKey: 'redeem-movie-001' })
   await call(applicant, 'reward.redeem', { rewardId: movieReward.id, idempotencyKey: 'redeem-movie-002' })
   const afterDuplicateRedeem = await call(applicant, 'home.summary')
-  assert.equal(afterDuplicateRedeem.data.sharedPoints, 455)
+  assert.equal(afterDuplicateRedeem.data.sharedPoints, 675)
   assert.equal(fakeCloud.dump('redemptions').filter((item) => item.rewardId === movieReward.id).length, 1)
   assert.equal(fakeCloud.dump('point_ledgers').filter((item) => item.sourceType === 'reward_redemption').length, 1)
 
@@ -186,7 +231,7 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(duplicateRefundApproval.ok, false)
   assert.equal(duplicateRefundApproval.code, 'NO_PENDING_REFUND')
   const afterRefund = await call(applicant, 'home.summary')
-  assert.equal(afterRefund.data.sharedPoints, 655)
+  assert.equal(afterRefund.data.sharedPoints, 875)
   assert.equal(afterRefund.data.refundStatus, 'approved')
 
   const createdReward = await call(applicant, 'reward.create', {
@@ -196,10 +241,10 @@ test('two users can complete the full cloud flow with idempotent point mutations
   const approvalReward = createdReward.data.rewards.find((item) => item.name === '审批奖励')
   const pendingReward = await call(applicant, 'reward.redeem', { rewardId: approvalReward.id, idempotencyKey: 'approval-reward-001' })
   assert.equal(pendingReward.data.redemptionStatus, 'pending')
-  assert.equal(pendingReward.data.sharedPoints, 655)
+  assert.equal(pendingReward.data.sharedPoints, 875)
   await call(creator, 'reward.redeem.review', { approved: true })
   const afterRewardApproval = await call(applicant, 'home.summary')
-  assert.equal(afterRewardApproval.data.sharedPoints, 555)
+  assert.equal(afterRewardApproval.data.sharedPoints, 775)
   assert.equal(afterRewardApproval.data.redemptions.some((item) => item.rewardId === movieReward.id && item.status === 'refunded'), true)
   assert.equal(afterRewardApproval.data.redemptions.some((item) => item.rewardId === approvalReward.id && item.status === 'active'), true)
 
@@ -223,8 +268,11 @@ test('two users can complete the full cloud flow with idempotent point mutations
   const newDocument = await call(applicant, 'documents.save', { groupId: group.id, title: '分组文档', body: '独立新文档' })
   assert.ok(newDocument.data.documents.some((item) => item.groupId === group.id && item.title === '分组文档'))
 
-  const pendingCommunity = await call(applicant, 'community.create', { content: '一起散步看到很漂亮的晚霞', media: [] })
-  const pendingPost = pendingCommunity.data.find((item) => item.content.includes('晚霞'))
+  const coupleOnlyCommunity = await call(applicant, 'community.create', { title: '只给我们', content: '一起散步看到晚霞', media: [] })
+  const coupleOnlyPost = coupleOnlyCommunity.data.find((item) => item.title === '只给我们')
+  assert.equal(coupleOnlyPost.status, 'couple_only')
+  const pendingCommunity = await call(applicant, 'community.create', { title: '周末晚霞', content: '一起散步看到很漂亮的晚霞', media: [], syncToCommunity: true })
+  const pendingPost = pendingCommunity.data.find((item) => item.title === '周末晚霞')
   assert.ok(pendingPost)
   assert.equal(pendingPost.status, 'pending')
   assert.equal(pendingPost.authorIsSelf, true)
@@ -239,6 +287,14 @@ test('two users can complete the full cloud flow with idempotent point mutations
   const outsiderAfterApproval = await call(outsiderCreator, 'community.list')
   assert.equal(outsiderAfterApproval.data.some((item) => item.id === pendingPost.id && item.status === 'published'), true)
   assert.equal(outsiderAfterApproval.data.find((item) => item.id === pendingPost.id).pairLabel, '阿辰 × 林悦')
+  const privacyEnabled = await call(applicant, 'profile.privacy.update', {
+    searchableByCode: true, showPartner: true, showRelationshipDays: true, showHeat: true, showDocumentCount: true, privateMode: true,
+  })
+  assert.equal(privacyEnabled.data.profile.privacy.showPartner, false)
+  const outsiderAfterPrivacy = await call(outsiderCreator, 'community.list')
+  assert.equal(outsiderAfterPrivacy.data.some((item) => item.id === pendingPost.id), false)
+  const coupleAfterPrivacy = await call(creator, 'community.list')
+  assert.equal(coupleAfterPrivacy.data.find((item) => item.id === pendingPost.id).status, 'couple_only')
 
   const selfRecordList = await call(applicant, 'records.save', {
     date: '2026-08-25', type: 'period', title: '', note: '第一天', mood: '', periodFlow: 'medium', visibility: 'self',
@@ -275,6 +331,8 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(approvedUnbind.data.bound, false)
   const applicantAfterUnbind = await call(applicant, 'home.summary')
   assert.equal(applicantAfterUnbind.data.bound, false)
+  assert.equal(applicantAfterUnbind.data.activeSpaceType, 'personal')
+  assert.equal(applicantAfterUnbind.data.personalPoints, 30)
   assert.equal(fakeCloud.dump('point_ledgers').some((item) => item.coupleId === firstCoupleId), true)
   assert.equal(fakeCloud.dump('document_groups').some((item) => item.coupleId === firstCoupleId), true)
   assert.equal(fakeCloud.dump('community_posts').some((item) => item.coupleId === firstCoupleId), true)
@@ -295,8 +353,11 @@ test('personal spaces stay private and couple heat, chat, share are isolated and
   assert.equal(soloHome.data.personalPoints, 0)
   const soloTask = await call(solo, 'task.create', { title: '读十页书', description: '', points: 5, taskType: 'personal', assignee: 'self', planType: 'daily' })
   assert.equal(soloTask.ok, true)
-  const blockedSharedTask = await call(solo, 'task.create', { title: '共同任务', description: '', points: 5, taskType: 'shared', assignee: 'self' })
-  assert.equal(blockedSharedTask.code, 'COUPLE_REQUIRED')
+  const normalizedPersonalTask = await call(solo, 'task.create', { title: '输入为共同任务', description: '', points: 5, taskType: 'shared', assignee: 'self' })
+  assert.equal(normalizedPersonalTask.ok, true)
+  assert.equal(normalizedPersonalTask.data.tasks.find((item) => item.title === '输入为共同任务').pointsType, 'personal')
+  const soloCommunity = await call(solo, 'community.list')
+  assert.equal(soloCommunity.ok, true)
 
   const a = 'heat-a'
   const b = 'heat-b'

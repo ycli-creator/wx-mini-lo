@@ -41,9 +41,12 @@ const checkTextSafety = async (openid, content) => {
 
 const mapPost = (item, openid) => ({
   id: item._id,
+  title: item.title || '',
   content: item.content || '',
   media: Array.isArray(item.media) ? item.media : [],
-  status: item.status === 'published' ? 'published' : item.status === 'rejected' ? 'rejected' : 'pending',
+  visibility: item.visibility === 'community' || item.status === 'published' || item.status === 'pending_approval' ? 'community' : 'couple',
+  syncToCommunity: item.visibility === 'community' || item.status === 'published' || item.status === 'pending_approval',
+  status: item.status === 'published' ? 'published' : item.status === 'rejected' ? 'rejected' : item.status === 'couple_only' ? 'couple_only' : 'pending',
   authorName: item.authorSnapshot?.nickname || 'Love Points 情侣',
   authorAvatarUrl: item.authorSnapshot?.avatarUrl || '',
   pairLabel: item.coupleSnapshot?.pairLabel || '两个人的日常',
@@ -55,14 +58,15 @@ const mapPost = (item, openid) => ({
 })
 
 const list = async ({ openid }) => {
-  const { coupleId } = await requireCouple(openid)
+  const user = await getDoc(collections.users, openid)
+  const coupleId = user?.coupleId || ''
   const [published, ownPending] = await Promise.all([
     db.collection(collections.communityPosts)
       .where({ status: 'published', deleted: command.neq(true) })
       .orderBy('publishedAt', 'desc').limit(60).get(),
-    db.collection(collections.communityPosts)
-      .where({ coupleId, status: command.in(['pending_approval', 'rejected']), deleted: command.neq(true) })
-      .orderBy('createdAt', 'desc').limit(30).get(),
+    coupleId ? db.collection(collections.communityPosts)
+      .where({ coupleId, status: command.in(['couple_only', 'pending_approval', 'rejected']), deleted: command.neq(true) })
+      .orderBy('createdAt', 'desc').limit(30).get() : Promise.resolve({ data: [] }),
   ])
   const posts = [...ownPending.data, ...published.data]
   const unique = [...new Map(posts.map((item) => [item._id, item])).values()]
@@ -76,10 +80,13 @@ const create = async ({ openid, payload }) => {
     getDoc(collections.users, partnerId),
   ])
   assert(author?.profileCompleted || author?.nickname, 'PROFILE_REQUIRED', '请先完成个人资料')
+  const title = cleanText(payload.title, 60)
   const content = cleanText(payload.content, 1000)
   const media = validateMedia(payload.media || [])
-  assert(content || media.length, 'COMMUNITY_EMPTY', '写点文字，或选择照片和视频')
-  await checkTextSafety(openid, content)
+  assert(title, 'COMMUNITY_TITLE_REQUIRED', '请填写帖子标题')
+  assert(content || media.length, 'COMMUNITY_EMPTY', '写点正文，或选择照片和视频')
+  await checkTextSafety(openid, `${title} ${content}`.trim())
+  const syncToCommunity = Boolean(payload.syncToCommunity) && !author.privacy?.privateMode
 
   const postId = makeId('post')
   const authorName = cleanText(author.nickname, 24) || 'Love Points 用户'
@@ -92,17 +99,19 @@ const create = async ({ openid, payload }) => {
     partnerApproved: false,
     authorSnapshot: { nickname: authorName, avatarUrl: cleanText(author.avatarUrl, 500) },
     coupleSnapshot: { pairLabel: `${authorName} × ${partnerName}` },
+    title,
     content,
     media,
-    status: 'pending_approval',
+    visibility: syncToCommunity ? 'community' : 'couple',
+    status: syncToCommunity ? 'pending_approval' : 'couple_only',
     rejectionReason: '',
     publishedAt: null,
     deleted: false,
     createdAt: now(),
     updatedAt: now(),
   } })
-  await writeOperationLog({ coupleId, openid, action: 'community.create', targetId: postId })
-  await createNotification({ recipientOpenId: partnerId, coupleId, type: 'community', title: '共同帖子待确认', body: `${authorName}希望发布一条共同内容`, actionPath: '/pages/community/index', sourceId: postId })
+  await writeOperationLog({ coupleId, openid, action: syncToCommunity ? 'community.create.public' : 'community.create.couple', targetId: postId })
+  if (syncToCommunity) await createNotification({ recipientOpenId: partnerId, coupleId, type: 'community', title: '共同帖子待确认', body: `${authorName}希望把“${title}”同步到社区`, actionPath: '/pages/community/index', sourceId: postId })
   return list({ openid })
 }
 

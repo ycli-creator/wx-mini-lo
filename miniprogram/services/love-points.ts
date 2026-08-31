@@ -17,6 +17,11 @@ import type {
   AppNotification,
   FriendProfile,
   AchievementItem,
+  CompletionRequirement,
+  ProjectStep,
+  SpaceType,
+  TaskKind,
+  UsageMode,
 } from '../types/index'
 import { getTaskCycleMeta, rollTaskCycles } from '../store/state'
 import { runAction } from './client'
@@ -39,13 +44,22 @@ const normalizeState = (value: LovePointsState): LovePointsState => {
   const state = { ...initial, ...value }
   state.profile = { ...initial.profile, ...(value?.profile || {}) }
   state.profile.privacy = { ...initial.profile.privacy, ...((value?.profile && value.profile.privacy) || {}) }
+  state.preferences = { ...initial.preferences, ...(value?.preferences || {}) }
+  state.activeSpaceType = value?.activeSpaceType === 'couple' && state.bound ? 'couple' : 'personal'
+  state.availableSpaces = state.bound ? ['personal', 'couple'] : ['personal']
   state.partnerProfile = { ...initial.partnerProfile, ...(value?.partnerProfile || {}) }
   state.profileComplete = Boolean(value?.profileComplete || state.profile.completed || state.profile.nickname.trim())
   state.profile.completed = state.profileComplete
   state.communityPosts = Array.isArray(value?.communityPosts) ? value.communityPosts : []
   state.dailyRecords = Array.isArray(value?.dailyRecords) ? value.dailyRecords : []
   const receivedTasks = Array.isArray(value?.tasks) ? value.tasks : initial.tasks
-  state.tasks = isCloudEnabled() ? receivedTasks : rollTaskCycles(receivedTasks)
+  state.tasks = isCloudEnabled()
+    ? receivedTasks
+    : rollTaskCycles(receivedTasks).filter((item) => !item.spaceType || item.spaceType === state.activeSpaceType)
+  if (!isCloudEnabled()) {
+    state.rewards = state.rewards.filter((item) => !item.spaceType || item.spaceType === state.activeSpaceType)
+    state.dailyRecords = state.dailyRecords.filter((item) => !item.spaceType || item.spaceType === state.activeSpaceType)
+  }
   return state
 }
 const operationKey = (scope: string) => {
@@ -57,8 +71,10 @@ const operationKey = (scope: string) => {
   return { key, storageKey }
 }
 
-const currentTask = (state: LovePointsState, taskId?: string) =>
-  state.tasks.find((task) => task.id === (taskId || state.selectedTaskId)) || state.tasks[0]
+const currentTask = (state: LovePointsState, taskId?: string) => {
+  const tasks = state.tasks.filter((task) => !task.spaceType || task.spaceType === state.activeSpaceType)
+  return tasks.find((task) => task.id === (taskId || state.selectedTaskId)) || tasks[0]
+}
 
 const upsertRedemption = (draft: LovePointsState, rewardId: string, values: Omit<RewardRedemption, 'rewardId'>) => {
   const existing = draft.redemptions.find((item) => item.rewardId === rewardId)
@@ -69,7 +85,7 @@ const upsertRedemption = (draft: LovePointsState, rewardId: string, values: Omit
 const syncSelectedTask = (draft: LovePointsState, task: TaskItem) => {
   draft.selectedTaskId = task.id
   draft.taskStatus = task.status
-  draft.taskCanReview = task.reviewerIsSelf
+  draft.taskCanReview = task.reviewerIsSelf && task.status === 'pending'
   draft.taskNote = task.latestNote
 }
 
@@ -134,27 +150,87 @@ export const lovePointsService = {
   })),
 
   updateProfilePrivacy: async (privacy: LovePointsState['profile']['privacy']): Promise<LovePointsState> =>
-    runAction('profile.privacy.update', { ...privacy }, () => updateState((draft) => { draft.profile.privacy = { ...privacy } })),
+    runAction('profile.privacy.update', { ...privacy }, () => updateState((draft) => {
+      draft.profile.privacy = privacy.privateMode
+        ? { ...privacy, searchableByCode: false, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false }
+        : { ...privacy }
+      if (privacy.privateMode) {
+        draft.communityPosts.forEach((post) => {
+          if (post.status === 'published' || post.status === 'pending') {
+            post.status = 'couple_only'
+            post.visibility = 'couple'
+            post.syncToCommunity = false
+            post.canReview = false
+          }
+        })
+      }
+    })),
+
+  updateUsageMode: async (usageMode: UsageMode, hideExistingPublic = false): Promise<LovePointsState> =>
+    runAction('profile.preferences.update', { usageMode, hideExistingPublic }, () => updateState((draft) => {
+      draft.preferences = { ...draft.preferences, onboardingCompleted: true, usageMode }
+      if (usageMode === 'record') {
+        draft.profile.privacy = {
+          ...draft.profile.privacy,
+          searchableByCode: false,
+          showPartner: false,
+          showRelationshipDays: false,
+          showHeat: false,
+          showDocumentCount: false,
+        }
+        if (hideExistingPublic) {
+          draft.communityPosts.forEach((post) => {
+            if (post.status === 'published') {
+              post.status = 'couple_only'
+              post.visibility = 'couple'
+              post.syncToCommunity = false
+            }
+          })
+        }
+      } else {
+        draft.profile.privacy.searchableByCode = true
+        draft.profile.privacy.privateMode = false
+      }
+    })),
+
+  markGuideSeen: async (guide: 'community' | 'task'): Promise<LovePointsState> => {
+    const current = readState()
+    const preferences = { ...current.preferences, [guide === 'community' ? 'communityGuideSeen' : 'taskGuideSeen']: true }
+    return runAction('profile.preferences.update', { ...preferences, usageMode: current.preferences.usageMode }, () => updateState((draft) => { draft.preferences = preferences }))
+  },
+
+  switchSpace: async (spaceType: SpaceType): Promise<LovePointsState> =>
+    runAction('space.switch', { spaceType }, () => updateState((draft) => {
+      if (spaceType === 'couple' && !draft.bound) throw new Error('请先绑定 TA，再进入情侣空间')
+      draft.activeSpaceType = spaceType
+    })),
 
   listCommunityPosts: async (): Promise<CommunityPost[]> => runAction('community.list', {}, () => readState().communityPosts),
 
-  createCommunityPost: async (input: { content: string; media: CommunityMedia[] }): Promise<CommunityPost[]> =>
+  createCommunityPost: async (input: { title?: string; content: string; media: CommunityMedia[]; syncToCommunity?: boolean }): Promise<CommunityPost[]> =>
     runAction('community.create', input, () => updateState((draft) => {
+      const title = String(input.title || '').trim()
       const content = input.content.trim()
-      if (!content && !input.media.length) throw new Error('写点文字，或选择照片和视频')
+      if (!title) throw new Error('请填写帖子标题')
+      if (!content && !input.media.length) throw new Error('写点正文，或选择照片和视频')
+      const syncToCommunity = Boolean(input.syncToCommunity) && !draft.profile.privacy.privateMode
       const post: CommunityPost = {
         id: uid('post'),
+        title: title.slice(0, 60),
         content: content.slice(0, 1000),
         media: input.media.slice(0, 9),
-        status: 'pending',
+        visibility: syncToCommunity ? 'community' : 'couple',
+        syncToCommunity,
+        status: syncToCommunity ? 'pending' : 'couple_only',
         authorName: draft.profile.nickname || '我',
         authorAvatarUrl: draft.profile.avatarUrl,
         pairLabel: `${draft.profile.nickname || '我'} × ${draft.partnerProfile.nickname || 'TA'}`,
         authorIsSelf: true,
-        canReview: true,
+        canReview: syncToCommunity,
         createdAt: new Date().toISOString(),
         publishedAt: '',
         rejectionReason: '',
+        spaceType: draft.activeSpaceType,
       }
       draft.communityPosts.unshift(post)
     }).communityPosts),
@@ -202,6 +278,7 @@ export const lovePointsService = {
         ownerIsSelf: true,
         ownerName: draft.profile.nickname || '我',
         createdAt: new Date().toISOString(),
+        spaceType: draft.activeSpaceType,
       }
       draft.dailyRecords.unshift(record)
     } else {
@@ -244,8 +321,9 @@ export const lovePointsService = {
   confirmBinding: async (): Promise<LovePointsState> => runAction('invite.review', { approved: true }, () => {
     return updateState((draft) => {
       draft.bound = true
+      draft.activeSpaceType = 'couple'
+      draft.availableSpaces = ['personal', 'couple']
       draft.relationshipStartedAt = new Date().toISOString()
-      draft.personalPoints = 320
       draft.sharedPoints = 580
       draft.ledger = []
       draft.heat = createInitialState().heat
@@ -274,27 +352,56 @@ export const lovePointsService = {
     taskType: 'personal' | 'shared'
     assignee: 'self' | 'partner'
     planType: TaskPlanType
+    kind?: TaskKind
+    completionRequirement?: CompletionRequirement
+    projectSteps?: Array<{ title: string; description?: string; assignee: 'self' | 'partner'; completionRequirement: CompletionRequirement }>
   }): Promise<LovePointsState> => runAction('task.create', input, () => updateState((draft) => {
     if (!input.title.trim()) throw new Error('请填写任务名称')
     if (!Number.isInteger(input.points) || input.points <= 0 || input.points > 10000) {
       throw new Error('任务积分必须是 1–10000 的整数')
     }
+    const kind: TaskKind = input.kind || (input.planType === 'long_term' ? 'one_time' : 'recurring')
+    if (kind === 'project' && (!draft.bound || draft.activeSpaceType !== 'couple')) throw new Error('大任务只能创建在情侣空间')
+    const planType = kind === 'project' || kind === 'one_time' ? 'long_term' : input.planType === 'weekly' ? 'weekly' : 'daily'
+    const rawSteps = input.projectSteps || []
+    if (kind === 'project' && (rawSteps.length < 2 || rawSteps.length > 8)) throw new Error('大任务需要设置 2–8 个环节')
     const templateId = uid('task-template')
-    const meta = getTaskCycleMeta(input.planType)
+    const meta = getTaskCycleMeta(planType)
+    const projectSteps: ProjectStep[] = rawSteps.map((step, index) => ({
+      id: `${templateId}-step-${index + 1}`,
+      title: step.title.trim(),
+      description: String(step.description || '').trim(),
+      assignee: step.assignee,
+      assigneeIsSelf: step.assignee === 'self',
+      completionRequirement: step.completionRequirement,
+      status: 'todo',
+      completedBySelf: false,
+      completedAt: '',
+      note: '',
+      evidence: [],
+      rewardPoints: Math.floor(input.points * 0.1),
+    }))
     const task: TaskItem = {
-      id: input.planType === 'long_term' ? templateId : `${templateId}:${meta.cycleKey}`,
+      id: planType === 'long_term' ? templateId : `${templateId}:${meta.cycleKey}`,
       templateId,
       title: input.title.trim(),
       description: input.description.trim() || '你们共同创建的新任务',
-      taskType: input.taskType,
-      pointsType: input.taskType === 'shared' ? 'shared' : 'personal',
+      taskType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
+      pointsType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
       points: input.points,
       status: 'todo',
       assigneeIsSelf: input.assignee === 'self',
       reviewerIsSelf: input.assignee === 'partner',
       latestNote: '',
       rejectionReason: '',
-      planType: input.planType,
+      planType,
+      kind,
+      completionRequirement: input.completionRequirement || 'note',
+      evidence: [],
+      progressPercent: 0,
+      projectSteps,
+      projectFinalized: false,
+      spaceType: draft.activeSpaceType,
       ...meta,
       isCurrentCycle: true,
     }
@@ -302,22 +409,75 @@ export const lovePointsService = {
     syncSelectedTask(draft, task)
   })),
 
-  submitTask: async (note: string, taskId?: string): Promise<LovePointsState> => runAction('task.submit', { note, taskId }, () => {
-    if (!note.trim()) throw new Error('请填写完成说明')
+  submitTask: async (note: string, taskId?: string, evidence: CommunityMedia[] = []): Promise<LovePointsState> => runAction('task.submit', { note, taskId, evidence }, () => {
     return updateState((draft) => {
       const task = currentTask(draft, taskId)
       if (!task) throw new Error('任务不存在')
+      if (task.kind === 'project') throw new Error('请在大任务详情中完成具体环节')
+      if (task.completionRequirement === 'note' && !note.trim()) throw new Error('请填写完成说明')
+      if (task.completionRequirement === 'image' && !evidence.length) throw new Error('请至少上传一张完成图片')
       if (!task.assigneeIsSelf) throw new Error('只有任务执行人可以提交')
       if (!['todo', 'rejected'].includes(task.status)) throw new Error('任务当前状态不可提交')
       if (!task.isCurrentCycle && task.planType !== 'long_term') throw new Error('这个周期已经结束，不能补交')
       task.latestNote = note.trim()
-      task.status = 'pending'
+      task.evidence = evidence.slice(0, 9)
+      task.status = draft.activeSpaceType === 'personal' ? 'done' : 'pending'
       task.rejectionReason = ''
+      if (draft.activeSpaceType === 'personal') {
+        const ledgerId = `${task.id}-self-completed`
+        if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
+          draft.personalPoints += task.points
+          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '个人任务完成', amount: task.points, balance: draft.personalPoints, type: 'personal' })
+        }
+        task.progressPercent = 100
+      }
       // 本机体验模式用同一台设备模拟双方，提交后切换为审批视角；云端模式由 OpenID 权限决定。
       task.reviewerIsSelf = true
       syncSelectedTask(draft, task)
     })
   }),
+
+  completeProjectStep: async (taskId: string, stepId: string, note = '', evidence: CommunityMedia[] = []): Promise<LovePointsState> =>
+    runAction('task.project.step.complete', { taskId, stepId, note, evidence }, () => updateState((draft) => {
+      const task = currentTask(draft, taskId)
+      if (!task || task.kind !== 'project') throw new Error('大任务不存在')
+      const step = task.projectSteps.find((item) => item.id === stepId)
+      if (!step) throw new Error('任务环节不存在')
+      if (!step.assigneeIsSelf) throw new Error('这个环节由 TA 完成')
+      if (step.status === 'done') return
+      if (step.completionRequirement === 'note' && !note.trim()) throw new Error('请填写完成说明')
+      if (step.completionRequirement === 'image' && !evidence.length) throw new Error('请至少上传一张完成图片')
+      step.status = 'done'
+      step.completedBySelf = true
+      step.completedAt = new Date().toISOString()
+      step.note = note.trim()
+      step.evidence = evidence.slice(0, 9)
+      const ledgerId = `${task.templateId}-${step.id}-completed`
+      if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
+        draft.sharedPoints += step.rewardPoints
+        draft.ledger.unshift({ id: ledgerId, title: `${task.title} · ${step.title}`, detail: '完成大任务环节', amount: step.rewardPoints, balance: draft.sharedPoints, type: 'shared' })
+      }
+      task.progressPercent = task.projectSteps.filter((item) => item.status === 'done').length * 10
+    })),
+
+  completeProject: async (taskId: string): Promise<LovePointsState> =>
+    runAction('task.project.complete', { taskId }, () => updateState((draft) => {
+      const task = currentTask(draft, taskId)
+      if (!task || task.kind !== 'project') throw new Error('大任务不存在')
+      if (task.projectSteps.some((step) => step.status !== 'done')) throw new Error('完成所有环节后才能结束大任务')
+      if (task.projectFinalized) return
+      const stepPoints = task.projectSteps.reduce((sum, step) => sum + step.rewardPoints, 0)
+      const remaining = Math.max(0, task.points - stepPoints)
+      task.projectFinalized = true
+      task.status = 'done'
+      task.progressPercent = 100
+      const ledgerId = `${task.templateId}-project-completed`
+      if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
+        draft.sharedPoints += remaining
+        draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '共同计划全部完成', amount: remaining, balance: draft.sharedPoints, type: 'shared' })
+      }
+      syncSelectedTask(draft, task)
+    })),
 
   reviewTask: async (approved: boolean, taskId?: string, reason = ''): Promise<LovePointsState> => runAction('task.review', { approved, taskId, reason }, () => {
     return updateState((draft) => {
@@ -363,6 +523,7 @@ export const lovePointsService = {
     expiry?: string
     condition?: string
     approvalRequired?: boolean
+    beneficiaryType?: Reward['beneficiaryType']
   }): Promise<LovePointsState> =>
     runAction('reward.create', input, () => updateState((draft) => {
       if (!input.name.trim() || !Number.isFinite(input.cost) || input.cost <= 0) {
@@ -373,10 +534,12 @@ export const lovePointsService = {
         name: input.name.trim(),
         description: input.description.trim() || '你们共同创建的奖励',
         cost: input.cost,
-        pointsType: input.pointsType,
+        pointsType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
         expiry: input.expiry?.trim() || '创建后 365 天内',
         condition: input.condition?.trim() || '由双方共同商量使用时间',
-        approvalRequired: Boolean(input.approvalRequired),
+        approvalRequired: draft.activeSpaceType === 'couple' && Boolean(input.approvalRequired),
+        beneficiaryType: draft.activeSpaceType === 'couple' ? (input.beneficiaryType || 'couple') : 'self',
+        spaceType: draft.activeSpaceType,
       }
       draft.rewards.push(reward)
       draft.selectedRewardId = reward.id
@@ -386,7 +549,7 @@ export const lovePointsService = {
     const operation = operationKey(`redeem-${rewardId}`)
     const result = await runAction('reward.redeem', { rewardId, idempotencyKey: operation.key }, () => {
       return updateState((draft) => {
-      const reward = draft.rewards.find((item) => item.id === rewardId)
+      const reward = draft.rewards.find((item) => item.id === rewardId && (!item.spaceType || item.spaceType === draft.activeSpaceType))
       if (!reward) throw new Error('奖励不存在或已下架')
       if (draft.redeemedRewardId === reward.id && ['pending', 'active'].includes(draft.redemptionStatus)) return
       const balance = reward.pointsType === 'shared' ? draft.sharedPoints : draft.personalPoints
@@ -561,6 +724,10 @@ export const lovePointsService = {
     return updateState((draft) => {
       draft.profile = current.profile
       draft.profileComplete = current.profileComplete
+      draft.preferences = current.preferences
+      draft.activeSpaceType = 'personal'
+      draft.availableSpaces = ['personal']
+      draft.personalPoints = current.personalPoints
     })
   }),
 

@@ -91,7 +91,7 @@ const cleanupCoupleData = async (coupleId, members, pendingRequestId) => {
     const couple = (await transaction.collection(collections.couples).doc(coupleId).get()).data
     if (!couple) return
     for (const memberId of members) {
-      await transaction.collection(collections.users).doc(memberId).update({ data: { coupleId: null, updatedAt: now() } })
+      await transaction.collection(collections.users).doc(memberId).update({ data: { coupleId: null, activeSpaceType: 'personal', updatedAt: now() } })
     }
     await transaction.collection(collections.unbindRequests).doc(pendingRequestId).update({ data: { status: 'approved', archivedAt: now(), updatedAt: now() } })
     await transaction.collection(collections.couples).doc(coupleId).update({ data: { status: 'archived', archivedAt: now(), updatedAt: now() } })

@@ -1,9 +1,13 @@
 export type TaskStatus = 'todo' | 'pending' | 'done' | 'rejected' | 'missed'
 export type TaskPlanType = 'daily' | 'weekly' | 'long_term'
+export type TaskKind = 'one_time' | 'recurring' | 'project'
+export type CompletionRequirement = 'direct' | 'note' | 'image'
+export type SpaceType = 'personal' | 'couple'
+export type UsageMode = 'record' | 'social'
 export type RefundStatus = 'none' | 'requested' | 'approved'
 export type PointsType = 'personal' | 'shared'
 export type ProfileGender = 'female' | 'male' | 'other' | 'private'
-export type CommunityPostStatus = 'pending' | 'published' | 'rejected'
+export type CommunityPostStatus = 'couple_only' | 'pending' | 'published' | 'rejected'
 export type DailyRecordType = 'mood' | 'event' | 'period'
 export type HeatTaskStatus = 'todo' | 'partial' | 'done'
 export type ChatMessageType = 'text' | 'heat_task' | 'custom_task' | 'calendar' | 'community_post' | 'shared_doc' | 'reward' | 'system'
@@ -26,6 +30,7 @@ export interface ProfilePrivacy {
   showRelationshipDays: boolean
   showHeat: boolean
   showDocumentCount: boolean
+  privateMode: boolean
 }
 
 export interface PartnerProfile {
@@ -44,8 +49,11 @@ export interface CommunityMedia {
 
 export interface CommunityPost {
   id: string
+  title: string
   content: string
   media: CommunityMedia[]
+  visibility: 'couple' | 'community'
+  syncToCommunity: boolean
   status: CommunityPostStatus
   authorName: string
   authorAvatarUrl: string
@@ -55,6 +63,22 @@ export interface CommunityPost {
   createdAt: string
   publishedAt: string
   rejectionReason: string
+  spaceType?: SpaceType
+}
+
+export interface ProjectStep {
+  id: string
+  title: string
+  description: string
+  assignee: 'self' | 'partner'
+  assigneeIsSelf: boolean
+  completionRequirement: CompletionRequirement
+  status: 'todo' | 'done'
+  completedBySelf: boolean
+  completedAt: string
+  note: string
+  evidence: CommunityMedia[]
+  rewardPoints: number
 }
 
 export interface DailyRecord {
@@ -70,6 +94,7 @@ export interface DailyRecord {
   ownerName: string
   createdAt: string
   media: CommunityMedia[]
+  spaceType?: SpaceType
 }
 
 export interface TaskItem {
@@ -91,6 +116,13 @@ export interface TaskItem {
   periodStart: string
   periodEnd: string
   isCurrentCycle: boolean
+  kind: TaskKind
+  completionRequirement: CompletionRequirement
+  evidence: CommunityMedia[]
+  progressPercent: number
+  projectSteps: ProjectStep[]
+  projectFinalized: boolean
+  spaceType?: SpaceType
 }
 
 export interface Reward {
@@ -102,6 +134,8 @@ export interface Reward {
   expiry: string
   condition: string
   approvalRequired: boolean
+  beneficiaryType: 'self' | 'partner' | 'couple'
+  spaceType?: SpaceType
 }
 
 export interface RewardRedemption {
@@ -162,6 +196,8 @@ export interface FriendProfile {
   nickname: string
   avatarUrl: string
   region: string
+  bound: boolean
+  privateMode: boolean
 }
 
 export interface HeatTask {
@@ -216,6 +252,14 @@ export interface LovePointsState {
   partnerProfile: PartnerProfile
   profileComplete: boolean
   bound: boolean
+  activeSpaceType: SpaceType
+  availableSpaces: SpaceType[]
+  preferences: {
+    onboardingCompleted: boolean
+    usageMode: UsageMode
+    communityGuideSeen: boolean
+    taskGuideSeen: boolean
+  }
   inviteCode: string
   joinCode: string
   taskStatus: TaskStatus

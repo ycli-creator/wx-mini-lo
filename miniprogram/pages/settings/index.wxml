@@ -3,8 +3,11 @@
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步关系空间" error-text="关系空间暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
   <view class="notice-card brand"><text class="notice-title">默认保持私密</text><text class="notice-copy">共同内容公开仍需双方同意。关闭展示不会影响情侣空间内部使用。</text></view>
+  <view class="section-heading"><text class="section-title">使用偏好</text></view>
+  <view class="segment"><view class="segment-item {{state.preferences.usageMode === 'record' ? 'active' : ''}}" data-mode="record" bind:tap="changeUsageMode">专注记录</view><view class="segment-item {{state.preferences.usageMode === 'social' ? 'active' : ''}}" data-mode="social" bind:tap="changeUsageMode">分享生活</view></view>
   <view class="section-heading"><text class="section-title">主页隐私</text></view>
   <view class="list">
+    <view class="switch-row privacy-master"><view class="cell-copy"><text class="cell-title">一键不展示</text><text class="cell-subtitle">所有帖子转为情侣可见，并隐藏公开身份与关系详情</text></view><switch data-key="privateMode" checked="{{state.profile.privacy.privateMode}}" color="#f65f6b" bind:change="changePrivacy" /></view>
     <view class="switch-row"><view class="cell-copy"><text class="cell-title">允许通过身份码找到我</text><text class="cell-subtitle">关闭后其他人无法用身份码搜索你</text></view><switch data-key="searchableByCode" checked="{{state.profile.privacy.searchableByCode}}" color="#f65f6b" bind:change="changePrivacy" /></view>
     <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示伴侣身份</text><text class="cell-subtitle">需双方都允许关系公开后才会生效</text></view><switch data-key="showPartner" checked="{{state.profile.privacy.showPartner}}" color="#f65f6b" bind:change="changePrivacy" /></view>
     <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示相伴天数</text><text class="cell-subtitle">属于情侣共同数据</text></view><switch data-key="showRelationshipDays" checked="{{state.profile.privacy.showRelationshipDays}}" color="#f65f6b" bind:change="changePrivacy" /></view>

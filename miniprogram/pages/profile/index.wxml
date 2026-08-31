@@ -1,4 +1,5 @@
 <view class="screen with-tabbar profile-screen"><lp-header title="我的主页" />
+  <lp-space-switch active="{{state.activeSpaceType}}" bound="{{state.bound}}" bind:change="switchSpace" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步个人资料" error-text="个人资料暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
     <view class="profile-cover"><image wx:if="{{state.profile.backgroundUrl}}" class="cover-image" src="{{state.profile.backgroundUrl}}" mode="aspectFill"/><view class="cover-actions" bind:tap="editProfile">编辑资料</view></view>

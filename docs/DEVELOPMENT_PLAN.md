@@ -5,6 +5,8 @@
 > 开发原则：先完成完整闭环，再逐步调整视觉与细节
 > 设计来源：[Love App Figma / P02 Prototype Flow](https://www.figma.com/design/L5xhU7v3Us9sYGvqJQtNUI/love-app?node-id=9-25)
 
+> 2026-08-31 更新：本期已由仓库根目录 `PRODUCT.md` 接管最新产品规则，包括个人/情侣空间隔离、记录/分享 onboarding、帖子默认情侣可见、单次/重复/大任务、奖励空间切换和隐私总开关。本文件后续章节保留为 V1/V2 历史背景；出现冲突时以 `PRODUCT.md` 为准。
+
 ## 1. 项目结论
 
 Love Points 是一个以一对一情侣空间为核心的微信原生小程序。产品通过“任务—审批—积分—奖励—共同记录”形成互动闭环，并在 V2 增加个人资料、公开情侣社区和生活日历。

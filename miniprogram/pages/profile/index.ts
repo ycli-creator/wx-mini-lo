@@ -22,6 +22,10 @@ Page({
     } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
   switchSection(event: WechatMiniprogram.TouchEvent) { this.setData({ activeTab: String(event.currentTarget.dataset.tab || 'posts') }) },
+  async switchSpace(event: WechatMiniprogram.CustomEvent<{ spaceType: 'personal' | 'couple' }>) {
+    try { await lovePointsService.switchSpace(event.detail.spaceType); await this.refresh() }
+    catch (error) { showError(error) }
+  },
   editProfile() { wx.navigateTo({ url: '/pages/profile/edit' }) },
   openCalendar() { wx.navigateTo({ url: '/pages/records/index' }) },
   openPoints() { wx.navigateTo({ url: '/pages/points/index' }) },

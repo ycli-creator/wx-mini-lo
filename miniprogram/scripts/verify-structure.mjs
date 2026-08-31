@@ -6,8 +6,8 @@ const root = process.cwd()
 const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'))
 const errors = []
 
-if (appConfig.pages.length !== 29) {
-  errors.push(`应有 29 个页面，当前为 ${appConfig.pages.length} 个`)
+if (appConfig.pages.length !== 31) {
+  errors.push(`应有 31 个页面，当前为 ${appConfig.pages.length} 个`)
 }
 
 for (const page of appConfig.pages) {
@@ -41,11 +41,11 @@ walk(root)
 
 const requiredActions = [
   'home.summary', 'invite.create', 'invite.apply', 'invite.review', 'invite.pending', 'invite.status',
-  'task.create', 'task.submit', 'task.review', 'reward.create', 'reward.redeem', 'reward.redeem.review',
+  'task.create', 'task.submit', 'task.review', 'task.project.step.complete', 'task.project.complete', 'reward.create', 'reward.redeem', 'reward.redeem.review',
   'reward.refund.request', 'reward.refund.review', 'documents.groups.create', 'documents.detail', 'documents.save',
   'documents.lock', 'documents.unlock',
   'unbind.request', 'unbind.cancel', 'unbind.review',
-  'profile.update', 'profile.privacy.update',
+  'profile.update', 'profile.privacy.update', 'profile.preferences.update', 'space.switch',
   'community.list', 'community.create', 'community.review',
   'records.list', 'records.save', 'records.delete',
   'heat.summary', 'heat.checkin',

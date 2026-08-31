@@ -12,6 +12,8 @@ const initialRewards: Reward[] = [
     expiry: '2026 年 12 月 31 日',
     condition: '周末或节假日',
     approvalRequired: false,
+    beneficiaryType: 'couple',
+    spaceType: 'couple',
   },
   {
     id: 'weekend-trip',
@@ -22,6 +24,8 @@ const initialRewards: Reward[] = [
     expiry: '2027 年 06 月 30 日',
     condition: '提前一周商量目的地',
     approvalRequired: true,
+    beneficiaryType: 'couple',
+    spaceType: 'couple',
   },
 ]
 
@@ -68,7 +72,26 @@ const normalizeTask = (task: TaskItem, at: Date): TaskItem => {
   const current = getTaskCycleMeta(planType, at)
   let status = task.status
   if (planType !== 'long_term' && meta.periodEnd && new Date(meta.periodEnd).getTime() <= at.getTime() && ['todo', 'rejected'].includes(status)) status = 'missed'
-  return { ...task, templateId, planType, ...meta, status, isCurrentCycle: planType === 'long_term' || meta.cycleKey === current.cycleKey, rejectionReason: task.rejectionReason || '' }
+  const kind = task.kind || (planType === 'long_term' ? 'one_time' : 'recurring')
+  const projectSteps = Array.isArray(task.projectSteps) ? task.projectSteps : []
+  const completedSteps = projectSteps.filter((step) => step.status === 'done').length
+  return {
+    ...task,
+    templateId,
+    planType,
+    ...meta,
+    status,
+    kind,
+    completionRequirement: task.completionRequirement || 'note',
+    evidence: Array.isArray(task.evidence) ? task.evidence : [],
+    projectSteps,
+    projectFinalized: Boolean(task.projectFinalized),
+    progressPercent: kind === 'project'
+      ? Math.min(100, completedSteps * 10 + (task.projectFinalized ? Math.max(0, 100 - completedSteps * 10) : 0))
+      : task.status === 'done' ? 100 : task.status === 'pending' ? 80 : 0,
+    isCurrentCycle: planType === 'long_term' || meta.cycleKey === current.cycleKey,
+    rejectionReason: task.rejectionReason || '',
+  }
 }
 
 export const rollTaskCycles = (tasks: TaskItem[], at = new Date()): TaskItem[] => {
@@ -112,6 +135,13 @@ const initialTasks: TaskItem[] = [
     latestNote: '今晚一起做了番茄牛腩，还拍了照片留念。',
     rejectionReason: '',
     planType: 'daily',
+    kind: 'recurring',
+    completionRequirement: 'note',
+    evidence: [],
+    progressPercent: 0,
+    projectSteps: [],
+    projectFinalized: false,
+    spaceType: 'personal',
   }),
   makeInitialTask({
     templateId: 'task-walk',
@@ -126,6 +156,13 @@ const initialTasks: TaskItem[] = [
     latestNote: '',
     rejectionReason: '',
     planType: 'weekly',
+    kind: 'recurring',
+    completionRequirement: 'direct',
+    evidence: [],
+    progressPercent: 0,
+    projectSteps: [],
+    projectFinalized: false,
+    spaceType: 'couple',
   }),
   makeInitialTask({
     templateId: 'task-photos',
@@ -140,6 +177,13 @@ const initialTasks: TaskItem[] = [
     latestNote: '',
     rejectionReason: '',
     planType: 'long_term',
+    kind: 'one_time',
+    completionRequirement: 'image',
+    evidence: [],
+    progressPercent: 0,
+    projectSteps: [],
+    projectFinalized: false,
+    spaceType: 'personal',
   }),
 ]
 
@@ -199,11 +243,20 @@ export const createInitialState = (): LovePointsState => ({
       showRelationshipDays: false,
       showHeat: false,
       showDocumentCount: false,
+      privateMode: false,
     },
   },
   partnerProfile: { nickname: '你的另一半', avatarUrl: '' },
   profileComplete: false,
   bound: false,
+  activeSpaceType: 'personal',
+  availableSpaces: ['personal'],
+  preferences: {
+    onboardingCompleted: false,
+    usageMode: 'record',
+    communityGuideSeen: false,
+    taskGuideSeen: false,
+  },
   inviteCode: '528913',
   joinCode: '',
   taskStatus: 'todo',
@@ -247,6 +300,9 @@ export const readState = (): LovePointsState => {
   migrated.profile = { ...createInitialState().profile, ...(saved.profile || {}) }
   migrated.profile.hobbies = Array.isArray(migrated.profile.hobbies) ? migrated.profile.hobbies : []
   migrated.profile.privacy = { ...createInitialState().profile.privacy, ...((saved.profile && saved.profile.privacy) || {}) }
+  migrated.preferences = { ...createInitialState().preferences, ...(saved.preferences || {}) }
+  migrated.activeSpaceType = saved.activeSpaceType === 'couple' && saved.bound ? 'couple' : 'personal'
+  migrated.availableSpaces = saved.bound ? ['personal', 'couple'] : ['personal']
   migrated.profileComplete = Boolean(migrated.profile.completed || migrated.profile.nickname.trim())
   migrated.profile.completed = migrated.profileComplete
   migrated.partnerProfile = { ...createInitialState().partnerProfile, ...(saved.partnerProfile || {}) }
@@ -256,6 +312,10 @@ export const readState = (): LovePointsState => {
   migrated.messages = Array.isArray(saved.messages) ? saved.messages : []
   migrated.unreadMessages = Number(saved.unreadMessages || 0)
   migrated.tasks = rollTaskCycles(migrated.tasks, new Date())
+  migrated.rewards = (Array.isArray(saved.rewards) ? saved.rewards : createInitialState().rewards).map((reward) => ({
+    ...reward,
+    beneficiaryType: reward.beneficiaryType || (reward.pointsType === 'shared' ? 'couple' : 'self'),
+  }))
   if (!Array.isArray(saved.tasks)) {
     migrated.tasks[0] = {
       ...migrated.tasks[0],

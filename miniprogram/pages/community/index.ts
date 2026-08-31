@@ -22,14 +22,14 @@ const formatDate = (value: string) => {
 
 const displayPost = (post: CommunityPost): DisplayPost => {
   const firstMedia = post.media[0]
-  const statusLabel = post.status === 'pending' ? (post.canReview ? '等你确认' : '等待 TA 确认') : post.status === 'rejected' ? '未通过' : ''
+  const statusLabel = post.status === 'couple_only' ? '仅我们可见' : post.status === 'pending' ? (post.canReview ? '等你确认' : '等待 TA 确认') : post.status === 'rejected' ? '未通过' : ''
   return {
     ...post,
     coverUrl: firstMedia?.type === 'video' ? firstMedia.posterFileId || '' : firstMedia?.fileId || '',
     coverType: firstMedia?.type || 'text',
     mediaCount: post.media.length,
     statusLabel,
-    statusClass: post.status === 'rejected' ? 'status-warning' : 'status-pending',
+    statusClass: post.status === 'rejected' ? 'status-warning' : post.status === 'couple_only' ? 'status-done' : 'status-pending',
     dateLabel: formatDate(post.publishedAt || post.createdAt),
   }
 }
@@ -43,6 +43,7 @@ Page({
     loading: true,
     loadError: false,
     busyPostId: '',
+    bound: false,
   },
   async onShow() {
     setActiveTab(this, 2)
@@ -55,12 +56,14 @@ Page({
   async refresh(showLoading = true) {
     if (showLoading) this.setData({ loading: true, loadError: false })
     try {
-      const posts = (await lovePointsService.listCommunityPosts()).map(displayPost)
+      const [state, sourcePosts] = await Promise.all([lovePointsService.getState(), lovePointsService.listCommunityPosts()])
+      const posts = sourcePosts.map(displayPost)
       this.setData({
         posts,
         leftPosts: posts.filter((_, index) => index % 2 === 0),
         rightPosts: posts.filter((_, index) => index % 2 === 1),
         pendingCount: posts.filter((item) => item.status === 'pending').length,
+        bound: state.bound,
         loading: false,
         loadError: false,
       })
@@ -69,7 +72,10 @@ Page({
       showError(error)
     }
   },
-  createPost() { wx.navigateTo({ url: '/pages/community/create' }) },
+  createPost() {
+    if (!this.data.bound) return wx.showModal({ title: '创建情侣空间后发布', content: '公开帖子来自情侣空间，并默认先保存在两个人之间。你仍然可以浏览社区内容。', showCancel: false, confirmText: '我知道了' })
+    wx.navigateTo({ url: '/pages/community/create' })
+  },
   previewImage(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id)
     const post = this.data.posts.find((item) => item.id === id)
