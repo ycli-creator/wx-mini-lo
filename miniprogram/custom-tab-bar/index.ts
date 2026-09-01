@@ -1,6 +1,6 @@
 const tabs = [
   { pagePath: '/pages/home/index', text: '首页', icon: 'heart', activeIcon: 'heart-filled' },
-  { pagePath: '/pages/task/index', text: '任务', icon: 'task', activeIcon: 'task-filled' },
+  { pagePath: '/pages/task/index', text: '待办', icon: 'task', activeIcon: 'task-filled' },
   { pagePath: '/pages/community/index', text: '社区', icon: 'image', activeIcon: 'image-filled' },
   { pagePath: '/pages/chat/index', text: '消息', icon: 'chat', activeIcon: 'chat-filled' },
   { pagePath: '/pages/profile/index', text: '我的', icon: 'user-circle', activeIcon: 'user-circle-filled' },

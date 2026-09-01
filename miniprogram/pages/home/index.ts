@@ -26,8 +26,8 @@ Page({
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      const task = state.tasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
-        || state.tasks.find((item) => item.planType === 'daily' && item.isCurrentCycle && ['todo', 'rejected', 'done'].includes(item.status) && item.assigneeIsSelf)
+      const task = state.tasks.find((item) => item.planType === 'daily' && item.isCurrentCycle && ['todo', 'partial', 'rejected', 'pending', 'done'].includes(item.status) && (item.assigneeIsSelf || item.reviewerIsSelf))
+        || state.tasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
         || state.tasks.find((item) => item.planType === 'weekly' && item.isCurrentCycle && ['todo', 'rejected'].includes(item.status) && item.assigneeIsSelf)
         || state.tasks.find((item) => item.planType === 'long_term' && ['todo', 'rejected'].includes(item.status) && item.assigneeIsSelf)
         || state.tasks.find((item) => item.id === state.selectedTaskId)
@@ -41,7 +41,7 @@ Page({
           : ownPendingRedemption?.refundStatus === 'requested'
             ? '退款处理中'
             : ownPendingRedemption?.status === 'pending'
-              ? '兑换处理中'
+              ? '心愿兑换处理中'
               : ''
       this.setData({
         state,

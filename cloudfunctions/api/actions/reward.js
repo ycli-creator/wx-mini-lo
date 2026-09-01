@@ -19,14 +19,14 @@ const create = async ({ openid, payload }) => {
   const beneficiaryType = spaceType === 'personal'
     ? 'self'
     : ['self', 'partner', 'couple'].includes(payload.beneficiaryType) ? payload.beneficiaryType : 'couple'
-  assert(name, 'INVALID_NAME', '请填写奖励名称')
-  assert(name.length <= 60, 'REWARD_NAME_TOO_LONG', '奖励名称不能超过 60 个字')
-  assert(Number.isInteger(cost) && cost > 0 && cost <= 100000, 'INVALID_COST', '奖励积分必须是 1–100000 的整数')
-  assert(spaceType !== 'personal' || (pointsType === 'personal' && !payload.approvalRequired), 'COUPLE_REQUIRED', '个人空间只能创建个人积分奖励')
-  const description = String(payload.description || '').trim() || '你们共同创建的奖励'
+  assert(name, 'INVALID_NAME', '请填写心愿名称')
+  assert(name.length <= 60, 'REWARD_NAME_TOO_LONG', '心愿名称不能超过 60 个字')
+  assert(Number.isInteger(cost) && cost > 0 && cost <= 100000, 'INVALID_COST', '心愿积分必须是 1–100000 的整数')
+  assert(spaceType !== 'personal' || (pointsType === 'personal' && !payload.approvalRequired), 'COUPLE_REQUIRED', '个人空间只能创建个人心愿')
+  const description = String(payload.description || '').trim() || '你们共同创建的心愿'
   const expiry = String(payload.expiry || '创建后 365 天内').trim()
   const condition = String(payload.condition || '由双方共同商量使用时间').trim()
-  assert(description.length <= 500 && expiry.length <= 100 && condition.length <= 300, 'REWARD_CONTENT_TOO_LONG', '奖励说明、有效期或使用条件超过长度限制')
+  assert(description.length <= 500 && expiry.length <= 100 && condition.length <= 300, 'REWARD_CONTENT_TOO_LONG', '心愿说明、有效期或使用条件超过长度限制')
   const rewardId = makeId('reward')
   await db.collection(collections.rewards).doc(rewardId).set({
     data: {
@@ -57,7 +57,7 @@ const redeem = async ({ openid, payload }) => {
   const idempotencyKey = String(payload.idempotencyKey || '').trim()
   assert(idempotencyKey.length >= 12 && idempotencyKey.length <= 180, 'INVALID_IDEMPOTENCY_KEY', '兑换请求缺少有效的幂等键')
   const reward = await getDoc(collections.rewards, rewardId)
-  assert(reward && reward.coupleId === coupleId && reward.status === 'active', 'REWARD_NOT_FOUND', '奖励不存在或已下架')
+  assert(reward && reward.coupleId === coupleId && reward.status === 'active', 'REWARD_NOT_FOUND', '心愿不存在或已下架')
 
   const existing = await queryOne(collections.redemptions, {
     coupleId,
@@ -81,14 +81,14 @@ const redeem = async ({ openid, payload }) => {
     if (activeForReward.data.length) return
     const latestReward = (await transaction.collection(collections.rewards).doc(rewardId).get()).data
     const account = (await transaction.collection(collections.accounts).doc(coupleId).get()).data
-    assert(latestReward?.status === 'active', 'REWARD_NOT_FOUND', '奖励不存在或已下架')
+    assert(latestReward?.status === 'active', 'REWARD_NOT_FOUND', '心愿不存在或已下架')
     assert(account, 'ACCOUNT_NOT_FOUND', '积分账户不存在')
 
     const personalBalances = { ...(account.personalBalances || {}) }
     const currentBalance = latestReward.pointsType === 'shared'
       ? Number(account.sharedBalance || 0)
       : Number(personalBalances[openid] || 0)
-    assert(currentBalance >= latestReward.cost, 'INSUFFICIENT_POINTS', '当前积分不足，先一起完成任务吧')
+    assert(currentBalance >= latestReward.cost, 'INSUFFICIENT_POINTS', '当前积分不足，先一起完成待办吧')
 
     if (latestReward.approvalRequired) {
       // Touch the shared account in the same transaction. This gives two
@@ -136,7 +136,7 @@ const redeem = async ({ openid, payload }) => {
         sourceId: redemptionId,
         actorOpenId: openid,
         title: `兑换「${latestReward.name}」`,
-        detail: '奖励兑换成功',
+        detail: '心愿兑换成功',
         idempotencyKey: ledgerId,
         createdAt: now(),
       },
@@ -169,13 +169,13 @@ const reviewRedemption = async ({ openid, payload }) => {
   const where = { coupleId, reviewerOpenId: openid, status: 'pending_approval' }
   if (payload.rewardId) where.rewardId = String(payload.rewardId)
   const redemption = await queryOne(collections.redemptions, where, { field: 'createdAt', direction: 'desc' })
-  assert(redemption, 'NO_PENDING_REDEMPTION', '当前没有待审批的奖励兑换')
+  assert(redemption, 'NO_PENDING_REDEMPTION', '当前没有待确认的心愿兑换')
   if (!payload.approved) {
     await db.collection(collections.redemptions).doc(redemption._id).update({ data: { status: 'rejected', updatedAt: db.serverDate() } })
     return projectState(openid)
   }
   const reward = await getDoc(collections.rewards, redemption.rewardId)
-  assert(reward?.status === 'active', 'REWARD_NOT_FOUND', '奖励不存在或已下架')
+  assert(reward?.status === 'active', 'REWARD_NOT_FOUND', '心愿不存在或已下架')
   await db.runTransaction(async (transaction) => {
     const latest = (await transaction.collection(collections.redemptions).doc(redemption._id).get()).data
     if (latest.status !== 'pending_approval') return
@@ -244,7 +244,7 @@ const reviewRefund = async ({ openid, payload }) => {
       coupleId, accountOwnerOpenId: snapshot.pointsType === 'personal' ? latest.requesterOpenId : null,
       pointsType: snapshot.pointsType, direction: 'credit', amount: snapshot.cost, balanceAfter,
       sourceType: 'reward_refund', sourceId: redemption._id, actorOpenId: openid,
-      title: `奖励退款「${snapshot.name}」`, detail: '对方已同意退款', idempotencyKey: ledgerId, createdAt: now(),
+      title: `心愿退款「${snapshot.name}」`, detail: '对方已同意退款', idempotencyKey: ledgerId, createdAt: now(),
     } })
     await transaction.collection(collections.redemptions).doc(redemption._id).update({ data: { status: 'refunded', refundStatus: 'approved', refundLedgerId: ledgerId, updatedAt: now() } })
   })

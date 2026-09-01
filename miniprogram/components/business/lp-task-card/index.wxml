@@ -3,13 +3,15 @@
     <view class="icon"><t-icon name="task-checked" size="36rpx" /></view>
     <view class="copy">
       <text class="title">{{title}}</text>
-      <text class="subtitle">{{subtitle || ('完成可得 ' + points + ' 积分')}}</text>
+      <text class="subtitle">{{subtitle || ('完成待办可得 ' + points + ' 积分')}}</text>
     </view>
     <text class="tag tag--{{status}}">{{label}}</text>
   </view>
   <text class="description">{{taskDescription || description}}</text>
   <view class="progress-row">
-    <text>进度 {{progress}}%</text>
-    <view class="track"><view class="bar" style="width: {{progress}}%;"></view></view>
+    <text>进度 {{bothRequired ? (selfCompleted ? 50 : 0) + (partnerCompleted ? 50 : 0) : progress}}%</text>
+    <view wx:if="{{bothRequired}}" class="track dual-track"><view class="dual-card-half self {{selfCompleted ? 'filled' : ''}}"></view><view class="dual-card-half partner {{partnerCompleted ? 'filled' : ''}}"></view></view>
+    <view wx:else class="track"><view class="bar" style="width: {{progress}}%;"></view></view>
   </view>
+  <view wx:if="{{bothRequired}}" class="dual-card-labels"><text>蓝色 · 我{{selfCompleted ? '已完成' : '待完成'}}</text><text>粉色 · TA{{partnerCompleted ? '已完成' : '待完成'}}</text></view>
 </view>

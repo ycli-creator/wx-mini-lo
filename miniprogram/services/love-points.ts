@@ -21,6 +21,7 @@ import type {
   ProjectStep,
   SpaceType,
   TaskKind,
+  TaskAssigneeMode,
   UsageMode,
 } from '../types/index'
 import { getTaskCycleMeta, rollTaskCycles } from '../store/state'
@@ -28,6 +29,28 @@ import { runAction } from './client'
 import { isCloudEnabled } from '../config/env'
 
 const uid = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`
+const addLocalTaskLog = (task: TaskItem, type: TaskItem['activityLogs'][number]['type'], summary: string, actorIsSelf = true) => {
+  task.activityLogs.unshift({ id: uid('task-log'), type, actorIsSelf, actorName: actorIsSelf ? '我' : 'TA', summary, createdAt: new Date().toISOString() })
+  task.activityLogs = task.activityLogs.slice(0, 50)
+}
+const normalizeClientTask = (task: TaskItem): TaskItem => {
+  const bothRequired = Boolean(task.bothRequired || task.assigneeMode === 'both')
+  const emptyCompletion = { completed: false, completedAt: '', note: '', evidence: [] as CommunityMedia[] }
+  const selfCompletion = { ...emptyCompletion, ...(task.selfCompletion || {}) }
+  const partnerCompletion = { ...emptyCompletion, ...(task.partnerCompletion || {}) }
+  return {
+    ...task,
+    assigneeMode: bothRequired ? 'both' : task.assigneeMode || (task.assigneeIsSelf ? 'self' : 'partner'),
+    bothRequired,
+    selfCompletion,
+    partnerCompletion,
+    media: Array.isArray(task.media) ? task.media : [],
+    dailyHistory: Array.isArray(task.dailyHistory) ? task.dailyHistory : [],
+    activityLogs: Array.isArray(task.activityLogs) ? task.activityLogs : [],
+    projectSteps: (Array.isArray(task.projectSteps) ? task.projectSteps : []).map((step) => ({ ...step, media: Array.isArray(step.media) ? step.media : [] })),
+    progressPercent: bothRequired ? (selfCompletion.completed ? 50 : 0) + (partnerCompletion.completed ? 50 : 0) : task.progressPercent,
+  }
+}
 const grantLocalHeat = (draft: LovePointsState, code: string, delta: number, title: string) => {
   const task = draft.heat.tasks.find((item) => item.code === code)
   if (!task || task.selfCompleted) return
@@ -54,7 +77,7 @@ const normalizeState = (value: LovePointsState): LovePointsState => {
   state.dailyRecords = Array.isArray(value?.dailyRecords) ? value.dailyRecords : []
   const receivedTasks = Array.isArray(value?.tasks) ? value.tasks : initial.tasks
   state.tasks = isCloudEnabled()
-    ? receivedTasks
+    ? receivedTasks.map(normalizeClientTask)
     : rollTaskCycles(receivedTasks).filter((item) => !item.spaceType || item.spaceType === state.activeSpaceType)
   if (!isCloudEnabled()) {
     state.rewards = state.rewards.filter((item) => !item.spaceType || item.spaceType === state.activeSpaceType)
@@ -91,7 +114,7 @@ const syncSelectedTask = (draft: LovePointsState, task: TaskItem) => {
 
 const applyLocalRedemption = (draft: LovePointsState, reward: Reward) => {
   const balance = reward.pointsType === 'shared' ? draft.sharedPoints : draft.personalPoints
-  if (balance < reward.cost) throw new Error('当前积分不足，先一起完成任务吧')
+  if (balance < reward.cost) throw new Error('当前积分不足，先一起完成待办吧')
   const nextBalance = balance - reward.cost
   if (reward.pointsType === 'shared') draft.sharedPoints = nextBalance
   else draft.personalPoints = nextBalance
@@ -350,21 +373,23 @@ export const lovePointsService = {
     description: string
     points: number
     taskType: 'personal' | 'shared'
-    assignee: 'self' | 'partner'
+    assignee: TaskAssigneeMode
     planType: TaskPlanType
     kind?: TaskKind
     completionRequirement?: CompletionRequirement
     projectSteps?: Array<{ title: string; description?: string; assignee: 'self' | 'partner'; completionRequirement: CompletionRequirement }>
   }): Promise<LovePointsState> => runAction('task.create', input, () => updateState((draft) => {
-    if (!input.title.trim()) throw new Error('请填写任务名称')
+    if (!input.title.trim()) throw new Error('请填写待办名称')
     if (!Number.isInteger(input.points) || input.points <= 0 || input.points > 10000) {
-      throw new Error('任务积分必须是 1–10000 的整数')
+      throw new Error('待办积分必须是 1–10000 的整数')
     }
     const kind: TaskKind = input.kind || (input.planType === 'long_term' ? 'one_time' : 'recurring')
-    if (kind === 'project' && (!draft.bound || draft.activeSpaceType !== 'couple')) throw new Error('大任务只能创建在情侣空间')
+    if (kind === 'project' && (!draft.bound || draft.activeSpaceType !== 'couple')) throw new Error('大计划只能创建在情侣空间')
     const planType = kind === 'project' || kind === 'one_time' ? 'long_term' : input.planType === 'weekly' ? 'weekly' : 'daily'
+    const bothRequired = input.assignee === 'both'
+    if (bothRequired && (draft.activeSpaceType !== 'couple' || kind !== 'recurring' || planType !== 'daily')) throw new Error('双方完成模式仅用于情侣空间的每日待办')
     const rawSteps = input.projectSteps || []
-    if (kind === 'project' && (rawSteps.length < 2 || rawSteps.length > 8)) throw new Error('大任务需要设置 2–8 个环节')
+    if (kind === 'project' && (rawSteps.length < 2 || rawSteps.length > 8)) throw new Error('大计划需要设置 2–8 个环节')
     const templateId = uid('task-template')
     const meta = getTaskCycleMeta(planType)
     const projectSteps: ProjectStep[] = rawSteps.map((step, index) => ({
@@ -379,25 +404,33 @@ export const lovePointsService = {
       completedAt: '',
       note: '',
       evidence: [],
+      media: [],
       rewardPoints: Math.floor(input.points * 0.1),
     }))
     const task: TaskItem = {
       id: planType === 'long_term' ? templateId : `${templateId}:${meta.cycleKey}`,
       templateId,
       title: input.title.trim(),
-      description: input.description.trim() || '你们共同创建的新任务',
+      description: input.description.trim() || '你们共同创建的新待办',
       taskType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
       pointsType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
       points: input.points,
       status: 'todo',
-      assigneeIsSelf: input.assignee === 'self',
-      reviewerIsSelf: input.assignee === 'partner',
+      assigneeMode: bothRequired ? 'both' : input.assignee,
+      bothRequired,
+      assigneeIsSelf: input.assignee !== 'partner',
+      reviewerIsSelf: !bothRequired && input.assignee === 'partner',
+      selfCompletion: { completed: false, completedAt: '', note: '', evidence: [] },
+      partnerCompletion: { completed: false, completedAt: '', note: '', evidence: [] },
       latestNote: '',
       rejectionReason: '',
       planType,
       kind,
       completionRequirement: input.completionRequirement || 'note',
       evidence: [],
+      media: [],
+      dailyHistory: [],
+      activityLogs: [],
       progressPercent: 0,
       projectSteps,
       projectFinalized: false,
@@ -405,6 +438,7 @@ export const lovePointsService = {
       ...meta,
       isCurrentCycle: true,
     }
+    addLocalTaskLog(task, 'created', bothRequired ? '创建了双方每日都要完成的待办' : '创建了待办')
     draft.tasks.unshift(task)
     syncSelectedTask(draft, task)
   })),
@@ -412,12 +446,33 @@ export const lovePointsService = {
   submitTask: async (note: string, taskId?: string, evidence: CommunityMedia[] = []): Promise<LovePointsState> => runAction('task.submit', { note, taskId, evidence }, () => {
     return updateState((draft) => {
       const task = currentTask(draft, taskId)
-      if (!task) throw new Error('任务不存在')
-      if (task.kind === 'project') throw new Error('请在大任务详情中完成具体环节')
+      if (!task) throw new Error('待办不存在')
+      if (task.kind === 'project') throw new Error('请在大计划详情中完成具体环节')
       if (task.completionRequirement === 'note' && !note.trim()) throw new Error('请填写完成说明')
       if (task.completionRequirement === 'image' && !evidence.length) throw new Error('请至少上传一张完成图片')
-      if (!task.assigneeIsSelf) throw new Error('只有任务执行人可以提交')
-      if (!['todo', 'rejected'].includes(task.status)) throw new Error('任务当前状态不可提交')
+      if (task.bothRequired) {
+        if (!task.isCurrentCycle) throw new Error('这个周期已经结束，不能补交')
+        if (task.selfCompletion.completed) return
+        const completedAt = new Date().toISOString()
+        task.selfCompletion = { completed: true, completedAt, note: note.trim(), evidence: evidence.slice(0, 9) }
+        task.latestNote = note.trim()
+        task.evidence = evidence.slice(0, 9)
+        task.status = task.partnerCompletion.completed ? 'done' : 'partial'
+        task.progressPercent = task.partnerCompletion.completed ? 100 : 50
+        const ledgerId = `${task.id}-participant-self-completed`
+        if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
+          draft.sharedPoints += task.points
+          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '我完成了双方每日待办', amount: task.points, balance: draft.sharedPoints, type: 'shared' })
+        }
+        const historyEntry = task.dailyHistory.find((item) => item.date === task.cycleKey)
+        if (historyEntry) historyEntry.selfCompleted = true
+        else task.dailyHistory.unshift({ date: task.cycleKey, selfCompleted: true, partnerCompleted: task.partnerCompletion.completed })
+        addLocalTaskLog(task, 'completed', `完成了今日待办，情侣积分 +${task.points}`)
+        syncSelectedTask(draft, task)
+        return
+      }
+      if (!task.assigneeIsSelf) throw new Error('只有待办执行人可以提交')
+      if (!['todo', 'rejected'].includes(task.status)) throw new Error('待办当前状态不可提交')
       if (!task.isCurrentCycle && task.planType !== 'long_term') throw new Error('这个周期已经结束，不能补交')
       task.latestNote = note.trim()
       task.evidence = evidence.slice(0, 9)
@@ -427,12 +482,13 @@ export const lovePointsService = {
         const ledgerId = `${task.id}-self-completed`
         if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
           draft.personalPoints += task.points
-          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '个人任务完成', amount: task.points, balance: draft.personalPoints, type: 'personal' })
+          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '个人待办完成', amount: task.points, balance: draft.personalPoints, type: 'personal' })
         }
         task.progressPercent = 100
       }
       // 本机体验模式用同一台设备模拟双方，提交后切换为审批视角；云端模式由 OpenID 权限决定。
       task.reviewerIsSelf = true
+      addLocalTaskLog(task, 'completed', draft.activeSpaceType === 'personal' ? `完成待办，个人积分 +${task.points}` : '提交了完成记录，等待对方确认')
       syncSelectedTask(draft, task)
     })
   }),
@@ -440,9 +496,9 @@ export const lovePointsService = {
   completeProjectStep: async (taskId: string, stepId: string, note = '', evidence: CommunityMedia[] = []): Promise<LovePointsState> =>
     runAction('task.project.step.complete', { taskId, stepId, note, evidence }, () => updateState((draft) => {
       const task = currentTask(draft, taskId)
-      if (!task || task.kind !== 'project') throw new Error('大任务不存在')
+      if (!task || task.kind !== 'project') throw new Error('大计划不存在')
       const step = task.projectSteps.find((item) => item.id === stepId)
-      if (!step) throw new Error('任务环节不存在')
+      if (!step) throw new Error('计划环节不存在')
       if (!step.assigneeIsSelf) throw new Error('这个环节由 TA 完成')
       if (step.status === 'done') return
       if (step.completionRequirement === 'note' && !note.trim()) throw new Error('请填写完成说明')
@@ -455,16 +511,17 @@ export const lovePointsService = {
       const ledgerId = `${task.templateId}-${step.id}-completed`
       if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
         draft.sharedPoints += step.rewardPoints
-        draft.ledger.unshift({ id: ledgerId, title: `${task.title} · ${step.title}`, detail: '完成大任务环节', amount: step.rewardPoints, balance: draft.sharedPoints, type: 'shared' })
+        draft.ledger.unshift({ id: ledgerId, title: `${task.title} · ${step.title}`, detail: '完成大计划环节', amount: step.rewardPoints, balance: draft.sharedPoints, type: 'shared' })
       }
       task.progressPercent = task.projectSteps.filter((item) => item.status === 'done').length * 10
+      addLocalTaskLog(task, 'step_completed', `完成环节“${step.title}”，情侣积分 +${step.rewardPoints}`)
     })),
 
   completeProject: async (taskId: string): Promise<LovePointsState> =>
     runAction('task.project.complete', { taskId }, () => updateState((draft) => {
       const task = currentTask(draft, taskId)
-      if (!task || task.kind !== 'project') throw new Error('大任务不存在')
-      if (task.projectSteps.some((step) => step.status !== 'done')) throw new Error('完成所有环节后才能结束大任务')
+      if (!task || task.kind !== 'project') throw new Error('大计划不存在')
+      if (task.projectSteps.some((step) => step.status !== 'done')) throw new Error('完成所有环节后才能结束大计划')
       if (task.projectFinalized) return
       const stepPoints = task.projectSteps.reduce((sum, step) => sum + step.rewardPoints, 0)
       const remaining = Math.max(0, task.points - stepPoints)
@@ -482,16 +539,17 @@ export const lovePointsService = {
   reviewTask: async (approved: boolean, taskId?: string, reason = ''): Promise<LovePointsState> => runAction('task.review', { approved, taskId, reason }, () => {
     return updateState((draft) => {
       const task = currentTask(draft, taskId)
-      if (!task) throw new Error('任务不存在')
-      if (!task.reviewerIsSelf) throw new Error('只有指定审批人可以处理任务')
+      if (!task) throw new Error('待办不存在')
+      if (!task.reviewerIsSelf) throw new Error('只有指定确认人可以处理待办')
       if (!approved) {
         task.status = 'rejected'
         task.rejectionReason = reason.trim()
+        addLocalTaskLog(task, 'reviewed', `要求补充完成记录${reason.trim() ? `：${reason.trim()}` : ''}`)
         syncSelectedTask(draft, task)
         return
       }
       if (task.status === 'done') return
-      if (task.status !== 'pending') throw new Error('任务当前不在待审批状态')
+      if (task.status !== 'pending') throw new Error('待办当前不在待确认状态')
       task.status = 'done'
       const nextBalance = (task.pointsType === 'shared' ? draft.sharedPoints : draft.personalPoints) + task.points
       if (task.pointsType === 'shared') draft.sharedPoints = nextBalance
@@ -501,17 +559,59 @@ export const lovePointsService = {
         draft.ledger.unshift({
           id: ledgerId,
           title: task.title,
-          detail: '刚刚由对方审批通过',
+          detail: '刚刚由对方确认完成',
           amount: task.points,
           balance: nextBalance,
           type: task.pointsType,
         })
       }
+      addLocalTaskLog(task, 'reviewed', `确认完成，${task.pointsType === 'shared' ? '情侣' : '个人'}积分 +${task.points}`)
       grantLocalHeat(draft, 'HF03', 1, '完成积分任务')
-      if (task.taskType === 'shared') grantLocalHeat(draft, 'HR01', 4, '完成共同任务')
+      if (task.taskType === 'shared') grantLocalHeat(draft, 'HR01', 4, '完成共同待办')
       syncSelectedTask(draft, task)
     })
   }),
+
+  updateTask: async (taskId: string, input: { title: string; description: string; points: number; completionRequirement: CompletionRequirement }): Promise<LovePointsState> =>
+    runAction('task.update', { taskId, ...input }, () => updateState((draft) => {
+      const task = currentTask(draft, taskId)
+      if (!task) throw new Error('待办不存在')
+      const title = input.title.trim()
+      const description = input.description.trim()
+      if (!title) throw new Error('请填写待办名称')
+      if (!Number.isInteger(input.points) || input.points <= 0 || input.points > 10000) throw new Error('待办积分必须是 1–10000 的整数')
+      const changed: string[] = []
+      if (task.title !== title) changed.push('名称')
+      if (task.description !== description) changed.push('说明')
+      if (task.points !== input.points) changed.push('积分')
+      if (task.completionRequirement !== input.completionRequirement) changed.push('完成方式')
+      draft.tasks.filter((item) => item.templateId === task.templateId).forEach((item) => {
+        item.title = title
+        item.description = description
+        item.points = input.points
+        if (item.kind !== 'project') item.completionRequirement = input.completionRequirement
+      })
+      addLocalTaskLog(task, 'updated', changed.length ? `修改了${changed.join('、')}` : '保存了待办信息')
+      syncSelectedTask(draft, task)
+    })),
+
+  addTaskPhotos: async (taskId: string, media: CommunityMedia[], stepId = ''): Promise<LovePointsState> =>
+    runAction('task.media.add', { taskId, media, stepId }, () => updateState((draft) => {
+      const task = currentTask(draft, taskId)
+      if (!task) throw new Error('待办不存在')
+      const images = media.filter((item) => item.type === 'image').slice(0, 9)
+      if (!images.length) throw new Error('请选择照片')
+      if (stepId) {
+        const step = task.projectSteps.find((item) => item.id === stepId)
+        if (!step) throw new Error('计划环节不存在')
+        step.media = [...step.media, ...images].slice(0, 9)
+        addLocalTaskLog(task, 'photo_added', `为环节“${step.title}”添加了 ${images.length} 张照片`)
+      } else {
+        task.media = [...task.media, ...images].slice(0, 9)
+        addLocalTaskLog(task, 'photo_added', `为待办添加了 ${images.length} 张照片`)
+      }
+      syncSelectedTask(draft, task)
+    })),
 
   selectReward: (id: string): LovePointsState => updateState((draft) => { draft.selectedRewardId = id }),
 
@@ -527,12 +627,12 @@ export const lovePointsService = {
   }): Promise<LovePointsState> =>
     runAction('reward.create', input, () => updateState((draft) => {
       if (!input.name.trim() || !Number.isFinite(input.cost) || input.cost <= 0) {
-        throw new Error('请填写有效的奖励名称和积分')
+        throw new Error('请填写有效的心愿名称和积分')
       }
       const reward: Reward = {
         id: uid('custom'),
         name: input.name.trim(),
-        description: input.description.trim() || '你们共同创建的奖励',
+        description: input.description.trim() || '你们共同创建的心愿',
         cost: input.cost,
         pointsType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
         expiry: input.expiry?.trim() || '创建后 365 天内',
@@ -550,10 +650,10 @@ export const lovePointsService = {
     const result = await runAction('reward.redeem', { rewardId, idempotencyKey: operation.key }, () => {
       return updateState((draft) => {
       const reward = draft.rewards.find((item) => item.id === rewardId && (!item.spaceType || item.spaceType === draft.activeSpaceType))
-      if (!reward) throw new Error('奖励不存在或已下架')
+      if (!reward) throw new Error('心愿不存在或已下架')
       if (draft.redeemedRewardId === reward.id && ['pending', 'active'].includes(draft.redemptionStatus)) return
       const balance = reward.pointsType === 'shared' ? draft.sharedPoints : draft.personalPoints
-      if (balance < reward.cost) throw new Error('当前积分不足，先一起完成任务吧')
+      if (balance < reward.cost) throw new Error('当前积分不足，先一起完成待办吧')
       if (reward.approvalRequired) {
         draft.selectedRewardId = reward.id
         draft.redeemedRewardId = reward.id
@@ -591,7 +691,7 @@ export const lovePointsService = {
         const redemption = draft.redemptions.find((item) => item.rewardId === targetRewardId)
         if (redemption && redemption.status !== 'pending') return
         const reward = draft.rewards.find((item) => item.id === targetRewardId)
-        if (!reward) throw new Error('奖励不存在或已下架')
+        if (!reward) throw new Error('心愿不存在或已下架')
         applyLocalRedemption(draft, reward)
       })
     }),
@@ -631,8 +731,8 @@ export const lovePointsService = {
       redemption.refundCanReview = false
       draft.ledger.unshift({
         id: uid('refund'),
-        title: `奖励退款「${reward.name}」`,
-        detail: '刚刚由对方审批通过',
+        title: `心愿退款「${reward.name}」`,
+        detail: '刚刚由对方确认通过',
         amount: reward.cost,
         balance: nextBalance,
         type: reward.pointsType,

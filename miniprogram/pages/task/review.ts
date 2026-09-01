@@ -13,7 +13,7 @@ Page({
       const state = await lovePointsService.getState()
       const taskId = this.data.taskId || state.selectedTaskId
       const task = state.tasks.find((item) => item.id === taskId)
-      if (!task) throw new Error('任务不存在或已经删除')
+      if (!task) throw new Error('待办不存在或已经删除')
       this.setData({ state, task, taskId: task.id, loading: false })
     } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
@@ -37,7 +37,7 @@ Page({
     this.setData({ busy: true })
     try {
       await lovePointsService.reviewTask(false, this.data.taskId, this.data.reason)
-      wx.showToast({ title: '已驳回，可重新提交', icon: 'none' })
+      wx.showToast({ title: '已请对方补充', icon: 'none' })
       wx.redirectTo({ url: `/pages/task/submit?id=${encodeURIComponent(this.data.taskId)}` })
     } catch (error) { showError(error) }
     finally { this.setData({ busy: false }) }

@@ -17,7 +17,7 @@ Page({
       const state = await lovePointsService.getState()
       const taskId = this.data.taskId || state.selectedTaskId
       const task = state.tasks.find((item) => item.id === taskId)
-      if (!task) throw new Error('任务不存在或已经删除')
+      if (!task) throw new Error('待办不存在或已经删除')
       this.setData({ state, task, taskId: task.id, note: task.latestNote || state.taskNote, loading: false })
     } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
@@ -44,8 +44,9 @@ Page({
     try {
       const evidence = await this.uploadImages()
       const state = await lovePointsService.submitTask(this.data.note, this.data.taskId, evidence)
-      showSuccess(state.activeSpaceType === 'personal' ? '任务完成，积分已发放' : '已提交审批')
-      if (state.activeSpaceType === 'personal') wx.redirectTo({ url: '/pages/points/index' })
+      showSuccess(this.data.task.bothRequired ? '今日完成，积分已发放' : state.activeSpaceType === 'personal' ? '待办完成，积分已发放' : '已提交确认')
+      if (this.data.task.bothRequired) wx.redirectTo({ url: `/pages/task/detail?id=${encodeURIComponent(this.data.taskId)}` })
+      else if (state.activeSpaceType === 'personal') wx.redirectTo({ url: '/pages/points/index' })
       else if (state.taskCanReview) wx.redirectTo({ url: `/pages/task/review?id=${encodeURIComponent(this.data.taskId)}` })
       else wx.switchTab({ url: '/pages/task/index' })
     } catch (error) { showError(error) }

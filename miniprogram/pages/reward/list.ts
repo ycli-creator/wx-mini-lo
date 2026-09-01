@@ -40,14 +40,14 @@ Page({
           enough,
           redeemed,
           pointsLabel: reward.pointsType === 'shared' ? '共同' : '个人',
-          statusLabel: redemption?.status === 'pending' ? '待审批' : redemption?.refundStatus === 'requested' ? '退款中' : redeemed ? '已兑换' : enough ? '可兑换' : '积分不足',
+          statusLabel: redemption?.status === 'pending' ? '待确认' : redemption?.refundStatus === 'requested' ? '退款中' : redeemed ? '已兑换' : enough ? '可兑换' : '积分不足',
           statusClass: redemption?.status === 'pending' || redemption?.refundStatus === 'requested' ? 'status-pending' : redeemed ? 'status-done' : enough ? 'status-todo' : 'status-warning',
         }
       })
       const rewards = allRewards.filter((reward) => {
         if (this.data.rewardFilter === 'available') return reward.enough && !reward.redeemed
         if (this.data.rewardFilter === 'purchased') return reward.redeemed
-        if (this.data.rewardFilter === 'pending') return reward.statusLabel === '待审批'
+        if (this.data.rewardFilter === 'pending') return reward.statusLabel === '待确认'
         if (this.data.rewardFilter === 'refund') return reward.statusLabel === '退款中'
         return true
       })
@@ -90,7 +90,7 @@ Page({
         beneficiaryType: this.data.beneficiaryType,
       })
       this.setData({ createOpen: false })
-      showSuccess('奖励已创建')
+      showSuccess('心愿已创建')
       await this.refresh()
     } catch (error) { showError(error) }
     finally { this.setData({ busy: false }) }

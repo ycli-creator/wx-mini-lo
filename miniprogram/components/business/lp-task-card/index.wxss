@@ -9,6 +9,7 @@
 .subtitle { color: #8a7c78; font-size: 24rpx; line-height: 38rpx; }
 .tag { min-height: 52rpx; padding: 6rpx 18rpx; display: flex; align-items: center; border-radius: 999rpx; font-size: 22rpx; }
 .tag--todo { color: #e84a57; background: #fff1f0; }
+.tag--partial { color: #4d84c6; background: #eaf2ff; }
 .tag--pending { color: #4d84c6; background: #eaf2ff; }
 .tag--done { color: #688f3b; background: #edf6df; }
 .tag--rejected { color: #e84a57; background: #fff1f0; }
@@ -17,3 +18,4 @@
 .progress-row { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 20rpx; color: #8a7c78; font-size: 24rpx; }
 .track { height: 8rpx; overflow: hidden; background: #f8efea; border-radius: 999rpx; }
 .bar { height: 100%; background: #f65f6b; border-radius: inherit; }
+.dual-track{display:grid;grid-template-columns:1fr 1fr;gap:4rpx;background:transparent}.dual-card-half{height:100%;background:#ece8e7}.dual-card-half.self.filled{background:#6aa6e8}.dual-card-half.partner.filled{background:#f18aa8}.dual-card-labels{margin-top:14rpx;display:flex;justify-content:space-between;color:#8a7c78;font-size:20rpx}

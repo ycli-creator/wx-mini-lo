@@ -1,24 +1,24 @@
 <view class="screen with-tabbar home-screen">
   <lp-header title="首页" />
-  <view wx:if="{{loading}}" class="empty-state section-gap"><text class="empty-title">正在整理你的空间</text><text class="empty-copy">任务、积分和记录马上就好。</text></view>
+  <view wx:if="{{loading}}" class="empty-state section-gap"><text class="empty-title">正在整理你的空间</text><text class="empty-copy">待办、积分和记录马上就好。</text></view>
   <view wx:elif="{{loadError}}" class="empty-state section-gap" bind:tap="refresh"><text class="empty-title">暂时无法同步</text><text class="empty-copy">点这里重新加载。</text></view>
   <block wx:else>
     <view class="memory-banner {{state.activeSpaceType === 'couple' ? 'couple' : 'personal'}}">
       <image wx:if="{{state.profile.backgroundUrl}}" class="banner-image" src="{{state.profile.backgroundUrl}}" mode="aspectFill" />
       <view class="banner-shade"></view>
-      <view class="banner-content"><text class="banner-space">{{state.activeSpaceType === 'couple' ? '我和 ' + state.partnerProfile.nickname : state.profile.nickname + ' 的个人空间'}}</text><text class="banner-title">{{state.activeSpaceType === 'couple' ? (relationshipDays ? '一起走过 ' + relationshipDays + ' 天' : '两个人的新空间') : '把今天认真留给自己'}}</text><text class="banner-copy">{{state.preferences.usageMode === 'record' ? '安静记录，不必向任何人展示。' : '先记录下来，再决定是否和更多人分享。'}}</text></view>
+      <view class="banner-content"><text class="banner-space">当前空间 · {{state.activeSpaceType === 'couple' ? '我和 ' + state.partnerProfile.nickname : state.profile.nickname + ' 的个人空间'}}</text><text class="banner-title">{{state.activeSpaceType === 'couple' ? (relationshipDays ? '一起走过 ' + relationshipDays + ' 天' : '两个人的新空间') : '把今天认真留给自己'}}</text><text class="banner-copy">{{state.preferences.usageMode === 'record' ? '安静记录，不必向任何人展示。' : '先记录下来，再决定是否和更多人分享。'}}</text></view>
       <view class="banner-stat"><text>{{state.activeSpaceType === 'couple' ? state.sharedPoints : state.personalPoints}}</text><text>当前积分</text></view>
     </view>
     <view class="home-tabs"><view class="home-tab {{homeTab === 'today' ? 'active' : ''}}" data-tab="today" bind:tap="switchHomeTab">今天</view><view class="home-tab {{homeTab === 'tools' ? 'active' : ''}}" data-tab="tools" bind:tap="switchHomeTab">常用功能</view></view>
     <view wx:if="{{homeTab === 'today'}}" class="home-panel">
       <view wx:if="{{state.activeSpaceType === 'couple'}}" class="heat-strip" bind:tap="openHeat"><view><text class="strip-title">今天一起升温</text><text class="strip-copy">{{state.heat.completedCount}} / 5 项完成</text></view><view class="heat-number">+{{state.heat.todayHeat}}</view><text class="chevron">›</text></view>
-      <lp-task-card wx:if="{{hasTask}}" status="{{task.status}}" title="{{task.title}}" subtitle="{{task.kind === 'project' ? task.progressPercent + '% · 共同大任务' : task.planType === 'daily' ? '每日 · 今天' : task.planType === 'weekly' ? '每周 · 本周' : '单次任务'}}" task-description="{{task.description}}" points="{{task.points}}" bind:tap="openTask" />
-      <view wx:else class="empty-state" bind:tap="openTask"><text class="empty-title">今天还没有安排</text><text class="empty-copy">创建一个任务，让想做的事更容易开始。</text></view>
-      <view wx:if="{{rewardNeedsAction}}" class="action-notice" bind:tap="openRewards"><t-icon name="notification" size="32rpx"/><view><text class="strip-title">奖励商店有待处理事项</text><text class="strip-copy">{{rewardHint}}</text></view><text class="chevron">›</text></view>
+      <lp-task-card wx:if="{{hasTask}}" status="{{task.status}}" title="{{task.title}}" subtitle="{{task.bothRequired ? '每日 · 双方各完成一次 · +' + task.points + '/人' : task.kind === 'project' ? task.progressPercent + '% · 共同大计划' : task.planType === 'daily' ? '每日 · 今天' : task.planType === 'weekly' ? '每周 · 本周' : '单次待办'}}" task-description="{{task.description}}" points="{{task.points}}" both-required="{{task.bothRequired}}" self-completed="{{task.selfCompletion.completed}}" partner-completed="{{task.partnerCompletion.completed}}" bind:tap="openTask" />
+      <view wx:else class="empty-state" bind:tap="openTask"><text class="empty-title">今天还没有待办</text><text class="empty-copy">从一个预设模板开始，让想做的事更容易发生。</text></view>
+      <view wx:if="{{rewardNeedsAction}}" class="action-notice" bind:tap="openRewards"><t-icon name="notification" size="32rpx"/><view><text class="strip-title">心愿商店有待处理事项</text><text class="strip-copy">{{rewardHint}}</text></view><text class="chevron">›</text></view>
     </view>
     <view wx:else class="home-panel tool-grid">
       <view class="tool-item" bind:tap="openPoints"><view class="tool-icon"><t-icon name="money" size="36rpx"/></view><text class="tool-title">积分中心</text><text class="tool-copy">查看余额与流水</text></view>
-      <view class="tool-item" bind:tap="openRewards"><view class="tool-icon"><t-icon name="gift" size="36rpx"/></view><text class="tool-title">奖励商店</text><text class="tool-copy">兑换约定的期待</text></view>
+      <view class="tool-item" bind:tap="openRewards"><view class="tool-icon"><t-icon name="gift" size="36rpx"/></view><text class="tool-title">心愿商店</text><text class="tool-copy">兑换约定的期待</text></view>
       <view class="tool-item" bind:tap="openDocuments"><view class="tool-icon"><t-icon name="book-open" size="36rpx"/></view><text class="tool-title">{{state.activeSpaceType === 'couple' ? '共享文档' : '我的文档'}}</text><text class="tool-copy">日记、清单与计划</text></view>
       <view class="tool-item" bind:tap="openCalendar"><view class="tool-icon"><t-icon name="calendar" size="36rpx"/></view><text class="tool-title">生活日历</text><text class="tool-copy">记录情绪与事件</text></view>
     </view>

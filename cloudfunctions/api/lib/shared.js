@@ -182,7 +182,7 @@ const ensureTaskCycles = async (taskDocuments, coupleId, at = now()) => {
   const cycles = [...existingResult.data]
   const cycleById = new Map(cycles.map((cycle) => [cycle._id, cycle]))
   for (const cycle of cycles) {
-    if (!cycle.periodEnd || new Date(cycle.periodEnd).getTime() > at.getTime() || !['todo', 'rejected'].includes(cycle.status)) continue
+    if (!cycle.periodEnd || new Date(cycle.periodEnd).getTime() > at.getTime() || !['todo', 'partial', 'rejected'].includes(cycle.status)) continue
     await db.collection(collections.taskCycles).doc(cycle._id).update({ data: { status: 'missed', settledAt: at, updatedAt: at } })
     cycle.status = 'missed'
     cycle.settledAt = at
@@ -206,6 +206,8 @@ const ensureTaskCycles = async (taskDocuments, coupleId, at = now()) => {
         latestSubmissionId: planType === 'long_term' ? task.latestSubmissionId || null : null,
         latestNote: planType === 'long_term' ? task.latestNote || '' : '',
         rejectionReason: planType === 'long_term' ? task.rejectionReason || '' : '',
+        participantCompletions: planType === 'long_term' && task.participantCompletions && typeof task.participantCompletions === 'object' ? task.participantCompletions : {},
+        evidence: [],
         settledAt: planType === 'long_term' && task.status === 'approved' ? task.updatedAt || at : null,
         createdAt: at,
         updatedAt: at,
@@ -271,7 +273,7 @@ const projectState = async (openid) => {
 
   const coupleId = space.coupleId
   const partnerId = space.spaceType === 'couple' ? couple.members.find((id) => id !== openid) || '' : ''
-  const [partner, account, taskResult, rewardResult, personalLedgerResult, sharedLedgerResult, groupResult, documentResult, latestDocument, redemptionResult, unbindResult] = await Promise.all([
+  const [partner, account, taskResult, rewardResult, personalLedgerResult, sharedLedgerResult, groupResult, documentResult, latestDocument, redemptionResult, unbindResult, operationLogResult] = await Promise.all([
     partnerId ? getDoc(collections.users, partnerId) : null,
     getDoc(collections.accounts, coupleId),
     db.collection(collections.tasks).where({ coupleId, deleted: command.neq(true) }).orderBy('createdAt', 'asc').limit(100).get(),
@@ -286,6 +288,7 @@ const projectState = async (openid) => {
     queryOne(collections.documents, { coupleId, deleted: command.neq(true) }, { field: 'updatedAt', direction: 'desc' }),
     db.collection(collections.redemptions).where({ coupleId, status: command.in(['pending_approval', 'active', 'refund_requested', 'refunded']) }).orderBy('updatedAt', 'desc').limit(50).get(),
     db.collection(collections.unbindRequests).where({ coupleId, status: 'pending' }).orderBy('createdAt', 'desc').limit(1).get(),
+    db.collection(collections.operationLogs).where({ coupleId }).orderBy('createdAt', 'desc').limit(200).get(),
   ])
 
   const taskDocuments = taskResult.data
@@ -320,6 +323,40 @@ const projectState = async (openid) => {
     approvalRequired: Boolean(reward.approvalRequired),
     beneficiaryType: ['self', 'partner', 'couple'].includes(reward.beneficiaryType) ? reward.beneficiaryType : reward.pointsType === 'shared' ? 'couple' : 'self',
   }))
+  const taskCyclesByTaskId = new Map()
+  taskCycles.forEach((cycle) => {
+    const values = taskCyclesByTaskId.get(cycle.taskId) || []
+    values.push(cycle)
+    taskCyclesByTaskId.set(cycle.taskId, values)
+  })
+  const activityType = (action) => action === 'task.create' ? 'created'
+    : action === 'task.update' ? 'updated'
+      : action === 'task.project.step.complete' ? 'step_completed'
+        : action === 'task.media.add' ? 'photo_added'
+          : action.startsWith('task.review') ? 'reviewed' : 'completed'
+  const activitySummary = (log) => log.detail || ({
+    'task.create': '创建了待办',
+    'task.submit': '提交了完成记录',
+    'task.review.approve': '确认待办完成并发放积分',
+    'task.review.reject': '要求补充完成记录',
+    'task.project.step.complete': '完成了大计划环节',
+    'task.project.complete': '完成了整个大计划',
+    'task.participant.complete': '完成了双方每日待办',
+    'task.update': '修改了待办',
+    'task.media.add': '添加了照片',
+  }[log.action] || '更新了待办')
+  const activityLogsForTask = (item) => {
+    const relatedCycles = taskCyclesByTaskId.get(item._id) || []
+    const targetIds = new Set([item._id, ...relatedCycles.map((cycle) => cycle._id), ...(Array.isArray(item.projectSteps) ? item.projectSteps.map((step) => step.id) : [])])
+    return operationLogResult.data.filter((log) => targetIds.has(log.targetId)).map((log) => ({
+      id: log._id,
+      type: activityType(String(log.action || '')),
+      actorIsSelf: log.actorOpenId === openid,
+      actorName: log.actorOpenId === openid ? '我' : String(partner?.nickname || 'TA'),
+      summary: activitySummary(log),
+      createdAt: log.createdAt ? new Date(log.createdAt).toISOString() : '',
+    }))
+  }
   const tasks = taskCycles
     .map((cycle) => ({ cycle, item: taskDocumentById.get(cycle.taskId) }))
     .filter(({ item, cycle }) => item && (
@@ -335,9 +372,13 @@ const projectState = async (openid) => {
       taskType: item.taskType === 'shared' ? 'shared' : 'personal',
       pointsType: item.pointsType === 'shared' ? 'shared' : 'personal',
       points: Number(item.points || 0),
-      status: cycle.status === 'approved' ? 'done' : cycle.status === 'pending' ? 'pending' : cycle.status === 'rejected' ? 'rejected' : cycle.status === 'missed' ? 'missed' : 'todo',
-      assigneeIsSelf: item.assigneeOpenId === openid,
-      reviewerIsSelf: item.reviewerOpenId === openid,
+      status: cycle.status === 'approved' ? 'done' : cycle.status === 'partial' ? 'partial' : cycle.status === 'pending' ? 'pending' : cycle.status === 'rejected' ? 'rejected' : cycle.status === 'missed' ? 'missed' : 'todo',
+      assigneeMode: item.bothRequired || item.assigneeMode === 'both' ? 'both' : item.assigneeOpenId === openid ? 'self' : 'partner',
+      bothRequired: Boolean(item.bothRequired || item.assigneeMode === 'both'),
+      assigneeIsSelf: item.bothRequired || item.assigneeMode === 'both' || item.assigneeOpenId === openid,
+      reviewerIsSelf: !(item.bothRequired || item.assigneeMode === 'both') && item.reviewerOpenId === openid,
+      selfCompletion: cycle.participantCompletions?.[openid] ? { completed: true, completedAt: new Date(cycle.participantCompletions[openid].completedAt).toISOString(), note: cycle.participantCompletions[openid].note || '', evidence: Array.isArray(cycle.participantCompletions[openid].evidence) ? cycle.participantCompletions[openid].evidence : [] } : { completed: false, completedAt: '', note: '', evidence: [] },
+      partnerCompletion: partnerId && cycle.participantCompletions?.[partnerId] ? { completed: true, completedAt: new Date(cycle.participantCompletions[partnerId].completedAt).toISOString(), note: cycle.participantCompletions[partnerId].note || '', evidence: Array.isArray(cycle.participantCompletions[partnerId].evidence) ? cycle.participantCompletions[partnerId].evidence : [] } : { completed: false, completedAt: '', note: '', evidence: [] },
       latestNote: cycle.latestNote || '',
       rejectionReason: cycle.rejectionReason || '',
       planType: normalizePlanType(item.planType),
@@ -349,6 +390,9 @@ const projectState = async (openid) => {
       kind: item.kind === 'project' ? 'project' : item.kind === 'recurring' || normalizePlanType(item.planType) !== 'long_term' ? 'recurring' : 'one_time',
       completionRequirement: ['direct', 'note', 'image'].includes(item.completionRequirement) ? item.completionRequirement : 'note',
       evidence: Array.isArray(cycle.evidence) ? cycle.evidence : [],
+      media: Array.isArray(item.media) ? item.media : [],
+      dailyHistory: (taskCyclesByTaskId.get(item._id) || []).filter((historyCycle) => normalizePlanType(item.planType) === 'daily').map((historyCycle) => ({ date: historyCycle.cycleKey, selfCompleted: Boolean(historyCycle.participantCompletions?.[openid]), partnerCompleted: Boolean(partnerId && historyCycle.participantCompletions?.[partnerId]) })).sort((left, right) => left.date.localeCompare(right.date)).slice(-62),
+      activityLogs: activityLogsForTask(item),
       projectSteps: (Array.isArray(item.projectSteps) ? item.projectSteps : []).map((step) => ({
         id: step.id,
         title: step.title,
@@ -361,12 +405,14 @@ const projectState = async (openid) => {
         completedAt: step.completedAt ? new Date(step.completedAt).toISOString() : '',
         note: step.note || '',
         evidence: Array.isArray(step.evidence) ? step.evidence : [],
+        media: Array.isArray(step.media) ? step.media : [],
         rewardPoints: Number(step.rewardPoints || Math.floor(Number(item.points || 0) * 0.1)),
       })),
       projectFinalized: Boolean(item.projectFinalized),
       progressPercent: item.kind === 'project'
         ? Math.min(100, (Array.isArray(item.projectSteps) ? item.projectSteps.filter((step) => step.status === 'done').length : 0) * 10 + (item.projectFinalized ? Math.max(0, 100 - (Array.isArray(item.projectSteps) ? item.projectSteps.filter((step) => step.status === 'done').length : 0) * 10) : 0))
-        : cycle.status === 'approved' ? 100 : cycle.status === 'pending' ? 80 : 0,
+        : item.bothRequired || item.assigneeMode === 'both' ? Math.min(100, Object.keys(cycle.participantCompletions || {}).length * 50)
+          : cycle.status === 'approved' ? 100 : cycle.status === 'pending' ? 80 : 0,
     }))
   const task = tasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
     || tasks.find((item) => item.planType === 'daily' && item.isCurrentCycle && ['todo', 'rejected', 'done'].includes(item.status) && item.assigneeIsSelf)
@@ -441,10 +487,10 @@ const projectState = async (openid) => {
   }
 }
 
-const writeOperationLog = async ({ coupleId = null, openid, action, targetId = null, result = 'success' }) => {
+const writeOperationLog = async ({ coupleId = null, openid, action, targetId = null, result = 'success', detail = '' }) => {
   try {
     await db.collection(collections.operationLogs).add({
-      data: { coupleId, actorOpenId: openid, action, targetId, result, createdAt: db.serverDate() },
+      data: { coupleId, actorOpenId: openid, action, targetId, result, detail, createdAt: db.serverDate() },
     })
   } catch (error) {
     // The business transaction is authoritative. A secondary audit write must

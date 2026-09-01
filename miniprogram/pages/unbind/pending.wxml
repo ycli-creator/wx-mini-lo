@@ -2,7 +2,7 @@
   <lp-header title="{{state.unbindCanReview ? '处理解绑申请' : '等待对方确认'}}" subtitle="解绑申请不会立即删除任何数据" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步解绑状态" error-text="解绑状态暂时无法同步，请重新加载。" bind:retry="refresh" />
   <block wx:else>
-  <view class="notice-card warning"><text class="notice-title">{{state.unbindCanReview ? '对方申请解除绑定' : '对方尚未处理'}}</text><text class="notice-copy">等待期间情侣空间仍可正常使用，任务、积分、奖励和文档都保持不变。</text></view>
+  <view class="notice-card warning"><text class="notice-title">{{state.unbindCanReview ? '对方申请解除绑定' : '对方尚未处理'}}</text><text class="notice-copy">等待期间情侣空间仍可正常使用，待办、积分、心愿和文档都保持不变。</text></view>
   <view class="list">
     <view class="confirmation-row"><view class="confirmation-copy"><text class="cell-title">{{state.unbindCanReview ? '对方的确认' : '你的确认'}}</text><text class="cell-subtitle">已发起解绑申请</text></view><text class="status-tag status-done">已确认</text></view>
     <view class="confirmation-row"><view class="confirmation-copy"><text class="cell-title">{{state.unbindCanReview ? '你的确认' : '对方的确认'}}</text><text class="cell-subtitle">需要另一方明确同意</text></view><text class="status-tag status-pending">等待中</text></view>

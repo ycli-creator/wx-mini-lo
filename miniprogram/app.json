@@ -46,7 +46,6 @@
     "lp-page-state": "/components/base/lp-page-state/index",
     "lp-task-card": "/components/business/lp-task-card/index",
     "lp-cue-button": "/components/business/lp-cue-button/index",
-    "lp-space-switch": "/components/business/lp-space-switch/index",
     "t-icon": "tdesign-miniprogram/icon/icon"
   },
   "tabBar": {
@@ -57,7 +56,7 @@
     "borderStyle": "white",
     "list": [
       { "pagePath": "pages/home/index", "text": "首页" },
-      { "pagePath": "pages/task/index", "text": "任务" },
+      { "pagePath": "pages/task/index", "text": "待办" },
       { "pagePath": "pages/community/index", "text": "社区" },
       { "pagePath": "pages/chat/index", "text": "消息" },
       { "pagePath": "pages/profile/index", "text": "我的" }

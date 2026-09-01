@@ -13,7 +13,7 @@
     </view>
     <view class="notification-list">
       <view class="notification-row" hover-class="pressed" bind:tap="openCommunity"><t-icon name="thumb-up" size="32rpx" /><view class="message-copy"><text class="message-title">互动消息</text><text class="message-preview">点赞、评论、关注和收藏会出现在这里</text></view><text class="chevron">›</text></view>
-      <view class="notification-row" hover-class="pressed" bind:tap="openTasks"><t-icon name="task" size="32rpx" /><view class="message-copy"><text class="message-title">任务与奖励</text><text class="message-preview">提交、审批、兑换和退款提醒</text></view><text class="chevron">›</text></view>
+      <view class="notification-row" hover-class="pressed" bind:tap="openTasks"><t-icon name="task" size="32rpx" /><view class="message-copy"><text class="message-title">待办与心愿</text><text class="message-preview">完成确认、兑换和退款提醒</text></view><text class="chevron">›</text></view>
       <view class="notification-row"><t-icon name="notification" size="32rpx" /><view class="message-copy"><text class="message-title">官方消息</text><text class="message-preview">功能更新和必要的服务通知</text></view><text class="status-tag status-todo">{{notificationUnread ? notificationUnread + ' 条' : '暂无'}}</text></view>
     </view>
     <view class="privacy-note"><text>情侣私聊与情侣空间内容仅双方可见；主动发布到社区的内容除外。</text></view>

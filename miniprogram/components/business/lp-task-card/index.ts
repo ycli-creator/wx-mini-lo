@@ -6,6 +6,9 @@ Component({
     subtitle: { type: String, value: '' },
     taskDescription: { type: String, value: '' },
     points: { type: Number, value: 120 },
+    bothRequired: { type: Boolean, value: false },
+    selfCompleted: { type: Boolean, value: false },
+    partnerCompleted: { type: Boolean, value: false },
   },
   data: {
     label: '待完成',
@@ -16,9 +19,10 @@ Component({
     status(status: string) {
       const values: Record<string, { label: string; progress: number; description: string }> = {
         todo: { label: '待完成', progress: 25, description: '准备两个人都喜欢的菜，完成后一起记录。' },
+        partial: { label: '完成 1/2', progress: 50, description: '已有一人完成，等待另一人接力。' },
         pending: { label: '待审核', progress: 75, description: '已完成晚餐并上传了一张照片。' },
-        done: { label: '已完成', progress: 100, description: '已完成并通过审批，积分已经到账。' },
-        rejected: { label: '已驳回', progress: 25, description: '对方已驳回，可以补充说明后重新提交。' },
+        done: { label: '已完成', progress: 100, description: '待办已完成，积分已经到账。' },
+        rejected: { label: '需补充', progress: 25, description: '对方希望补充信息，可以修改后重新提交。' },
         missed: { label: '未完成', progress: 0, description: '这个周期已经结束，新周期会自动更新。' },
       }
       this.setData(values[status] || values.todo)

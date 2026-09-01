@@ -1,13 +1,13 @@
 <view class="screen">
-  <lp-header title="审批任务" subtitle="提交说明和积分发放都记录在这项任务中" />
+  <lp-header title="确认待办" subtitle="完成说明和积分发放都会记录在这项待办中" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取审批信息" error-text="审批信息暂时无法读取，请重新加载。" bind:retry="refresh" />
   <block wx:else>
   <lp-task-card status="{{task.status}}" title="{{task.title}}" subtitle="{{task.planType === 'daily' ? '每日计划 · ' : task.planType === 'weekly' ? '每周计划 · ' : '长期计划 · '}}{{task.cycleLabel}}" task-description="{{task.latestNote || task.description}}" points="{{task.points}}" disabled />
   <view wx:if="{{task.evidence.length}}" class="form-card"><text class="field-label">完成凭证</text><view class="review-evidence"><image wx:for="{{task.evidence}}" wx:key="fileId" src="{{item.fileId}}" mode="aspectFill"/></view></view>
-  <view class="notice-card blue"><text class="notice-title">{{task.reviewerIsSelf ? '审批通过后' : '等待对方审批'}}</text><text class="notice-copy">{{task.reviewerIsSelf ? '将发放 ' + task.points + (task.pointsType === 'shared' ? ' 共同积分。' : ' 个人积分。') + '重复点击不会重复发放。' : '任务已提交，只有指定的另一方可以审批或驳回。'}}</text></view>
+  <view class="notice-card blue"><text class="notice-title">{{task.reviewerIsSelf ? '确认完成后' : '等待对方确认'}}</text><text class="notice-copy">{{task.reviewerIsSelf ? '将发放 ' + task.points + (task.pointsType === 'shared' ? ' 共同积分。' : ' 个人积分。') + '重复点击不会重复发放。' : '待办已提交，只有指定的另一方可以确认或要求补充。'}}</text></view>
   <view wx:if="{{task.reviewerIsSelf && task.status === 'pending'}}" class="form-card"><text class="field-label">驳回原因（可选）</text><textarea class="text-area" value="{{reason}}" maxlength="300" placeholder="例如：请补充完成说明" bind:input="handleReason" /></view>
   <lp-button wx:if="{{task.reviewerIsSelf && (task.status === 'pending' || task.status === 'done')}}" label="{{task.status === 'done' ? '已审批，查看积分' : '同意并发放积分'}}" loading="{{busy}}" bind:tap="approve" />
   <lp-button wx:if="{{task.reviewerIsSelf && task.status === 'pending'}}" label="驳回" variant="text" disabled="{{busy}}" bind:tap="reject" />
-  <lp-button wx:else label="返回任务列表" variant="text" bind:tap="goTasks" />
+  <lp-button wx:else label="返回待办列表" variant="text" bind:tap="goTasks" />
   </block>
 </view>

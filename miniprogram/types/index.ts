@@ -1,7 +1,8 @@
-export type TaskStatus = 'todo' | 'pending' | 'done' | 'rejected' | 'missed'
+export type TaskStatus = 'todo' | 'partial' | 'pending' | 'done' | 'rejected' | 'missed'
 export type TaskPlanType = 'daily' | 'weekly' | 'long_term'
 export type TaskKind = 'one_time' | 'recurring' | 'project'
 export type CompletionRequirement = 'direct' | 'note' | 'image'
+export type TaskAssigneeMode = 'self' | 'partner' | 'both'
 export type SpaceType = 'personal' | 'couple'
 export type UsageMode = 'record' | 'social'
 export type RefundStatus = 'none' | 'requested' | 'approved'
@@ -78,7 +79,30 @@ export interface ProjectStep {
   completedAt: string
   note: string
   evidence: CommunityMedia[]
+  media: CommunityMedia[]
   rewardPoints: number
+}
+
+export interface TaskCompletion {
+  completed: boolean
+  completedAt: string
+  note: string
+  evidence: CommunityMedia[]
+}
+
+export interface TaskDailyEntry {
+  date: string
+  selfCompleted: boolean
+  partnerCompleted: boolean
+}
+
+export interface TaskActivity {
+  id: string
+  type: 'created' | 'updated' | 'completed' | 'reviewed' | 'step_completed' | 'photo_added'
+  actorIsSelf: boolean
+  actorName: string
+  summary: string
+  createdAt: string
 }
 
 export interface DailyRecord {
@@ -106,8 +130,12 @@ export interface TaskItem {
   pointsType: PointsType
   points: number
   status: TaskStatus
+  assigneeMode: TaskAssigneeMode
+  bothRequired: boolean
   assigneeIsSelf: boolean
   reviewerIsSelf: boolean
+  selfCompletion: TaskCompletion
+  partnerCompletion: TaskCompletion
   latestNote: string
   rejectionReason: string
   planType: TaskPlanType
@@ -119,6 +147,9 @@ export interface TaskItem {
   kind: TaskKind
   completionRequirement: CompletionRequirement
   evidence: CommunityMedia[]
+  media: CommunityMedia[]
+  dailyHistory: TaskDailyEntry[]
+  activityLogs: TaskActivity[]
   progressPercent: number
   projectSteps: ProjectStep[]
   projectFinalized: boolean

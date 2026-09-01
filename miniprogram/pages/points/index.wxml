@@ -12,8 +12,8 @@
       <view class="ledger-amount {{item.amount >= 0 ? 'positive' : 'negative'}}"><text class="amount">{{item.amount >= 0 ? '+' : ''}}{{item.amount}} 积分</text><text class="balance">余额 {{item.balance}}</text></view>
     </view>
   </view>
-  <view wx:else class="empty-state section-gap"><text class="empty-title">还没有积分记录</text><text class="empty-copy">完成任务或兑换奖励后会显示在这里。</text></view>
-  <lp-button label="去奖励商店" bind:tap="goRewards" />
+  <view wx:else class="empty-state section-gap"><text class="empty-title">还没有积分记录</text><text class="empty-copy">完成待办或兑换心愿后会显示在这里。</text></view>
+  <lp-button label="去心愿商店" bind:tap="goRewards" />
   <lp-button label="返回首页" variant="text" bind:tap="goHome" />
   </block>
 </view>

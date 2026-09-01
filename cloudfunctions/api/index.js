@@ -62,6 +62,8 @@ const routes = {
 
   'task.list': task.list,
   'task.create': task.create,
+  'task.update': task.update,
+  'task.media.add': task.addMedia,
   'task.submit': task.submit,
   'task.review': task.review,
   'task.project.step.complete': task.completeProjectStep,

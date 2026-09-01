@@ -1,16 +1,59 @@
 <view class="screen task-detail-screen">
-  <lp-header title="{{task.kind === 'project' ? '大任务' : '任务详情'}}" subtitle="{{task.kind === 'project' ? '环节可以独立完成，不需要严格按顺序' : '查看要求、进度与完成记录'}}" />
-  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取任务详情" error-text="任务详情暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <lp-header title="{{task.kind === 'project' ? '大计划' : '待办详情'}}" subtitle="{{task.kind === 'project' ? '每个环节都能独立完成、留图和回看' : '查看完整信息、双方进度与历史记录'}}" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取待办详情" error-text="待办详情暂时无法读取，请重新加载。" bind:retry="refresh" />
   <block wx:else>
-    <view class="task-hero {{task.kind === 'project' ? 'project' : ''}}"><view class="task-hero-top"><text class="task-kind">{{task.kind === 'project' ? '共同大任务' : task.kind === 'recurring' ? '重复任务' : '单次任务'}}</text><text class="status-tag {{task.status === 'done' ? 'status-done' : task.status === 'pending' ? 'status-pending' : 'status-todo'}}">{{task.status === 'done' ? '已完成' : task.status === 'pending' ? '待审批' : '进行中'}}</text></view><text class="task-title">{{task.title}}</text><text class="task-description">{{task.description}}</text><view class="task-reward"><text>总奖励</text><text class="reward-number">{{task.points}} 积分</text></view><view class="detail-progress"><view class="detail-progress-bar" style="width: {{task.progressPercent}}%;"></view></view></view>
-    <lp-cue-button wx:if="{{!task.assigneeIsSelf || task.kind === 'project'}}" type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/detail?id={{task.id}}" action-text="查看进度" label="@TA 查看当前进度" />
+    <view class="task-hero {{task.kind === 'project' ? 'project' : ''}}">
+      <view class="task-hero-top"><text class="task-kind">{{task.bothRequired ? '双方每日待办' : task.kind === 'project' ? '共同大计划' : task.kind === 'recurring' ? '重复待办' : '单次待办'}}</text><view class="hero-actions"><text class="edit-entry" bind:tap="toggleEdit">{{editOpen ? '收起编辑' : '编辑'}}</text><text class="status-tag {{task.status === 'done' ? 'status-done' : task.status === 'pending' || task.status === 'partial' ? 'status-pending' : 'status-todo'}}">{{task.status === 'done' ? '已完成' : task.status === 'pending' ? '待确认' : task.status === 'partial' ? '完成 1/2' : '进行中'}}</text></view></view>
+      <text class="task-title">{{task.title}}</text><text class="task-description">{{task.description}}</text>
+      <view class="task-reward"><text>{{task.bothRequired ? '每人奖励' : '总奖励'}}</text><text class="reward-number">{{task.points}} 积分</text></view>
+      <view wx:if="{{task.bothRequired}}" class="dual-detail-progress"><view class="detail-half self {{task.selfCompletion.completed ? 'filled' : ''}}"></view><view class="detail-half partner {{task.partnerCompletion.completed ? 'filled' : ''}}"></view></view>
+      <view wx:if="{{task.bothRequired}}" class="dual-detail-labels"><text>蓝色 · 我{{task.selfCompletion.completed ? '已完成' : '待完成'}}</text><text>粉色 · TA{{task.partnerCompletion.completed ? '已完成' : '待完成'}}</text></view>
+      <view wx:else class="detail-progress"><view class="detail-progress-bar" style="width: {{task.progressPercent}}%;"></view></view>
+    </view>
+
+    <view wx:if="{{editOpen}}" class="edit-panel">
+      <view class="section-heading"><text class="section-title">编辑待办</text><text class="section-caption">双方都可以修改，保存后会留痕</text></view>
+      <text class="field-hint">待办名称</text><input class="text-input edit-input" maxlength="60" value="{{editTitle}}" bind:input="handleEditTitle" />
+      <text class="field-hint">说明</text><textarea class="text-area edit-area" maxlength="200" value="{{editDescription}}" bind:input="handleEditDescription" />
+      <text class="field-hint">{{task.bothRequired ? '每人积分' : '完成积分'}}</text><input class="text-input edit-input" type="number" value="{{editPoints}}" bind:input="handleEditPoints" />
+      <block wx:if="{{task.kind !== 'project'}}"><text class="field-hint">完成方式</text><view class="choice-wrap"><view class="choice-chip {{editRequirement === 'direct' ? 'active' : ''}}" data-requirement="direct" bind:tap="selectEditRequirement">直接完成</view><view class="choice-chip {{editRequirement === 'note' ? 'active' : ''}}" data-requirement="note" bind:tap="selectEditRequirement">填写说明</view><view class="choice-chip {{editRequirement === 'image' ? 'active' : ''}}" data-requirement="image" bind:tap="selectEditRequirement">上传图片</view></view></block>
+      <lp-button label="保存修改" disabled="{{!editTitle || !editPoints}}" loading="{{busy}}" bind:tap="saveEdit" />
+      <view class="section-heading log-heading"><text class="section-title">待办日志</text><text class="section-caption">完成与修改都会记录</text></view>
+      <view wx:if="{{logs.length}}" class="activity-list"><view wx:for="{{logs}}" wx:key="id" class="activity-item"><view class="activity-dot {{item.actorIsSelf ? 'self' : 'partner'}}"></view><view class="cell-copy"><text class="cell-title">{{item.actorName}} · {{item.summary}}</text><text class="cell-subtitle">{{item.timeLabel}}</text></view></view></view>
+      <view wx:else class="section-empty">还没有操作记录</view>
+    </view>
+
+    <view class="section-heading"><text class="section-title">待办照片</text><text class="section-caption">双方都可以补充</text></view>
+    <view wx:if="{{task.media.length}}" class="gallery-grid"><image wx:for="{{task.media}}" wx:key="fileId" src="{{item.fileId}}" mode="aspectFill" /></view>
+    <view class="add-gallery" bind:tap="addGalleryPhotos"><t-icon name="camera" size="30rpx"/><text>添加照片</text></view>
+
+    <lp-cue-button wx:if="{{!task.assigneeIsSelf || task.kind === 'project' || task.bothRequired && !task.partnerCompletion.completed}}" type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/detail?id={{task.id}}" action-text="查看进度" label="@TA 查看当前进度" />
+
     <block wx:if="{{task.kind === 'project'}}">
-      <view class="section-heading"><text class="section-title">任务环节</text><text class="section-caption">完成一个发放 10%</text></view>
-      <view class="project-step-list"><view wx:for="{{task.projectSteps}}" wx:key="id" class="project-step {{item.status === 'done' ? 'done' : ''}}" data-id="{{item.id}}" bind:tap="selectStep"><view class="step-status"><t-icon name="{{item.status === 'done' ? 'check-circle-filled' : 'circle'}}" size="34rpx" /></view><view class="cell-copy"><text class="cell-title">{{item.title}}</text><text class="cell-subtitle">{{item.assigneeIsSelf ? '由我完成' : '由 TA 完成'}} · {{item.completionRequirement === 'image' ? '需上传图片' : item.completionRequirement === 'note' ? '需填写说明' : '直接完成'}} · +{{item.rewardPoints}}</text></view><text wx:if="{{item.status !== 'done'}}" class="chevron">›</text></view></view>
+      <view class="section-heading"><text class="section-title">计划环节</text><text class="section-caption">完成一个发放 10%</text></view>
+      <view class="project-step-list">
+        <view wx:for="{{task.projectSteps}}" wx:key="id" class="project-step-card">
+          <view class="project-step {{item.status === 'done' ? 'done' : ''}}" data-id="{{item.id}}" bind:tap="selectStep"><view class="step-status"><t-icon name="{{item.status === 'done' ? 'check-circle-filled' : 'circle'}}" size="34rpx" /></view><view class="cell-copy"><text class="cell-title">{{item.title}}</text><text class="cell-subtitle">{{item.assigneeIsSelf ? '由我完成' : '由 TA 完成'}} · {{item.completionRequirement === 'image' ? '需上传图片' : item.completionRequirement === 'note' ? '需填写说明' : '直接完成'}} · +{{item.rewardPoints}}</text></view><text wx:if="{{item.status !== 'done'}}" class="chevron">›</text></view>
+          <view wx:if="{{item.note}}" class="step-note">{{item.note}}</view>
+          <view wx:if="{{item.evidence.length || item.media.length}}" class="step-media"><image wx:for="{{item.evidence}}" wx:for-item="photo" wx:key="fileId" src="{{photo.fileId}}" mode="aspectFill"/><image wx:for="{{item.media}}" wx:for-item="photo" wx:key="fileId" src="{{photo.fileId}}" mode="aspectFill"/></view>
+          <view class="step-photo-action" data-step-id="{{item.id}}" catch:tap="addGalleryPhotos"><t-icon name="camera" size="26rpx"/><text>为这个环节添加照片</text></view>
+        </view>
+      </view>
       <view wx:if="{{activeStepId}}" class="step-completion"><view class="section-heading"><text class="section-title">完成这个环节</text><text class="remove-step" bind:tap="closeStep">收起</text></view><textarea class="text-area" maxlength="300" placeholder="补充完成说明（按环节要求填写）" value="{{note}}" bind:input="handleNote"/><view wx:if="{{images.length}}" class="evidence-grid"><image wx:for="{{images}}" wx:key="localPath" src="{{item.localPath}}" mode="aspectFill"/></view><view class="add-evidence" bind:tap="chooseImage">添加完成图片（{{images.length}} / 3）</view><lp-button label="完成并领取 10% 奖励" loading="{{busy}}" bind:tap="completeStep" /></view>
-      <lp-button wx:if="{{allStepsDone && !task.projectFinalized}}" label="完成整个大任务并领取剩余积分" loading="{{busy}}" bind:tap="completeProject" />
+      <lp-button wx:if="{{allStepsDone && !task.projectFinalized}}" label="完成整个大计划并领取剩余积分" loading="{{busy}}" bind:tap="completeProject" />
       <view wx:if="{{task.projectFinalized}}" class="notice-card success"><text class="notice-title">共同计划已经完成</text><text class="notice-copy">所有节点与剩余积分都已结算。</text></view>
     </block>
-    <block wx:else><view class="info-card"><view class="data-row"><text>负责人</text><text>{{task.assigneeIsSelf ? '我' : 'TA'}}</text></view><view class="data-row"><text>完成条件</text><text>{{task.completionRequirement === 'image' ? '上传图片' : task.completionRequirement === 'note' ? '填写说明' : '直接完成'}}</text></view><view class="data-row"><text>计划周期</text><text>{{task.planType === 'daily' ? '每日' : task.planType === 'weekly' ? '每周' : '单次'}}</text></view></view><lp-button label="{{task.status === 'done' ? '查看完成结果' : task.status === 'pending' ? '查看审批进度' : task.assigneeIsSelf ? '去完成任务' : '等待 TA 完成'}}" variant="{{task.assigneeIsSelf || task.status === 'pending' || task.status === 'done' ? 'primary' : 'soft'}}" bind:tap="openTaskAction" /></block>
+
+    <block wx:else>
+      <view class="info-card"><view class="data-row"><text>负责人</text><text>{{task.bothRequired ? '双方每天各自完成' : task.assigneeIsSelf ? '我' : 'TA'}}</text></view><view class="data-row"><text>完成方式</text><text>{{task.completionRequirement === 'image' ? '上传图片' : task.completionRequirement === 'note' ? '填写说明' : '直接完成'}}</text></view><view class="data-row"><text>重复周期</text><text>{{task.planType === 'daily' ? '每日' : task.planType === 'weekly' ? '每周' : '不重复'}}</text></view><view class="data-row"><text>本期</text><text>{{task.cycleLabel}}</text></view></view>
+      <view wx:if="{{task.latestNote || task.evidence.length}}" class="completion-record"><text class="field-label">最近完成记录</text><text wx:if="{{task.latestNote}}" class="record-note">{{task.latestNote}}</text><view wx:if="{{task.evidence.length}}" class="gallery-grid compact"><image wx:for="{{task.evidence}}" wx:key="fileId" src="{{item.fileId}}" mode="aspectFill" /></view></view>
+      <lp-button label="{{task.bothRequired ? task.selfCompletion.completed ? task.partnerCompletion.completed ? '双方今天都已完成' : '我已完成，等待 TA' : '完成我的今日待办' : task.status === 'done' ? '查看完成结果' : task.status === 'pending' ? '查看确认进度' : task.assigneeIsSelf ? '去完成待办' : '等待 TA 完成'}}" variant="{{task.assigneeIsSelf || task.bothRequired || task.status === 'pending' || task.status === 'done' ? 'primary' : 'soft'}}" bind:tap="openTaskAction" />
+    </block>
+
+    <view wx:if="{{task.bothRequired && task.planType === 'daily'}}" class="daily-calendar-card">
+      <view class="section-heading calendar-heading"><view><text class="section-title">每日完成日历</text><text class="section-caption">仅展示双方每天都要完成的待办</text></view><view class="calendar-legend"><text class="legend self">我</text><text class="legend partner">TA</text></view></view>
+      <view class="weekday-row"><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text><text>日</text></view>
+      <view class="calendar-grid"><view wx:for="{{calendarCells}}" wx:key="date" class="calendar-cell {{item.isToday ? 'today' : ''}}"><text class="calendar-month">{{item.month}}</text><text class="calendar-day">{{item.day}}</text><view class="calendar-marks"><view class="mark self {{item.selfCompleted ? 'filled' : ''}}"></view><view class="mark partner {{item.partnerCompleted ? 'filled' : ''}}"></view></view></view></view>
+    </view>
   </block>
 </view>

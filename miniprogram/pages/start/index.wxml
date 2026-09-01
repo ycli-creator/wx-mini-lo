@@ -1,5 +1,5 @@
 <view class="screen">
-  <lp-header title="Love Points" subtitle="两个人的小任务、积分和共同记录" />
+  <lp-header title="Love Points" subtitle="两个人的待办、积分和共同记录" />
   <view class="notice-card brand">
     <text class="notice-title">先绑定你的另一半</text>
     <text class="notice-copy">通过微信小程序卡片和短码，建立一对一情侣空间。</text>

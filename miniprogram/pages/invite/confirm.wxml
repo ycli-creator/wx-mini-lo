@@ -8,7 +8,7 @@
   </view>
   <view wx:elif="{{hasApplication}}" class="notice-card brand">
     <text class="notice-title">一位用户申请与你绑定</text>
-    <text class="notice-copy">绑定后可共同管理任务、积分、奖励和文档。解绑必须由双方确认。</text>
+    <text class="notice-copy">绑定后可共同管理待办、积分、心愿和文档。解绑必须由双方确认。</text>
   </view>
   <view wx:else class="empty-state section-gap"><text class="empty-title">还没有新的申请</text><text class="empty-copy">对方输入短码后，再回到这里查看。</text></view>
   <lp-button wx:if="{{waiting}}" label="刷新绑定状态" bind:tap="refresh" />

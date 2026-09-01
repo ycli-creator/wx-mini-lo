@@ -22,9 +22,29 @@ Page({
     } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
   switchSection(event: WechatMiniprogram.TouchEvent) { this.setData({ activeTab: String(event.currentTarget.dataset.tab || 'posts') }) },
-  async switchSpace(event: WechatMiniprogram.CustomEvent<{ spaceType: 'personal' | 'couple' }>) {
-    try { await lovePointsService.switchSpace(event.detail.spaceType); await this.refresh() }
-    catch (error) { showError(error) }
+  async openSpacePicker() {
+    const state = this.data.state
+    if (!state.bound) {
+      const result = await wx.showModal({ title: '当前是个人空间', content: '绑定 TA 后会创建独立的情侣空间，待办、积分和心愿不会与个人空间混在一起。', confirmText: '邀请 TA', cancelText: '暂时不用', confirmColor: '#f65f6b' })
+      if (result.confirm) wx.navigateTo({ url: '/pages/invite/create' })
+      return
+    }
+    try {
+      const result = await wx.showActionSheet({
+        itemList: [
+          `${state.activeSpaceType === 'personal' ? '✓ ' : ''}个人空间 · 只属于我`,
+          `${state.activeSpaceType === 'couple' ? '✓ ' : ''}情侣空间 · 我和 ${state.partnerProfile.nickname || 'TA'}`,
+        ],
+      })
+      const next = result.tapIndex === 1 ? 'couple' : 'personal'
+      if (next === state.activeSpaceType) return
+      await lovePointsService.switchSpace(next)
+      await this.refresh()
+      wx.showToast({ title: next === 'couple' ? '已进入情侣空间' : '已进入个人空间', icon: 'success' })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : error && typeof error === 'object' && 'errMsg' in error ? String(error.errMsg) : String(error || '')
+      if (!message.includes('cancel')) showError(error)
+    }
   },
   editProfile() { wx.navigateTo({ url: '/pages/profile/edit' }) },
   openCalendar() { wx.navigateTo({ url: '/pages/records/index' }) },

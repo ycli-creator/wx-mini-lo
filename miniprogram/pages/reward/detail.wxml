@@ -7,6 +7,6 @@
   <view class="notice-card {{enough ? 'success' : 'warning'}}"><text class="notice-title">{{enough ? '当前积分充足' : '当前积分不足'}}</text><text class="notice-copy">兑换后会生成一条不可修改的积分流水。</text></view>
   <lp-cue-button type="reward" title="{{reward.name}}" description="{{reward.description}}" resource-type="reward" resource-id="{{reward.id}}" action-path="/pages/reward/detail?id={{reward.id}}" action-text="查看奖励" label="@TA 看看" />
   <lp-button label="{{redeemed ? '查看已兑换奖励' : '确认兑换'}}" disabled="{{!enough && !redeemed}}" loading="{{busy}}" bind:tap="redeem" />
-  <lp-button label="返回奖励商店" variant="text" bind:tap="goBack" />
+  <lp-button label="返回心愿商店" variant="text" bind:tap="goBack" />
   </block>
 </view>

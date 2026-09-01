@@ -1,16 +1,16 @@
 <view class="screen">
-  <lp-header title="提交任务" subtitle="{{state.activeSpaceType === 'personal' ? '确认完成后立即获得个人积分' : '完成后由对方审批，审批通过才会获得积分'}}" />
-  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取任务" error-text="任务暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <lp-header title="完成待办" subtitle="{{task.bothRequired ? '你和 TA 各自完成、各自获得情侣积分' : state.activeSpaceType === 'personal' ? '确认完成后立即获得个人积分' : '完成后由对方确认，确认通过才会获得积分'}}" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取待办" error-text="待办暂时无法读取，请重新加载。" bind:retry="refresh" />
   <block wx:else>
-  <lp-task-card status="{{task.status}}" title="{{task.title}}" subtitle="{{task.planType === 'daily' ? '每日计划 · ' : task.planType === 'weekly' ? '每周计划 · ' : '长期计划 · '}}{{task.cycleLabel}}" task-description="{{task.description}}" points="{{task.points}}" disabled />
-  <lp-cue-button type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/submit?id={{task.id}}" action-text="查看任务" label="@TA 看看这个任务" />
-  <view wx:if="{{task.status === 'rejected'}}" class="notice-card warning"><text class="notice-title">任务已被驳回</text><text class="notice-copy">{{task.rejectionReason || '请补充完成说明后重新提交。'}}</text></view>
+  <lp-task-card status="{{task.status}}" title="{{task.title}}" subtitle="{{task.planType === 'daily' ? '每日计划 · ' : task.planType === 'weekly' ? '每周计划 · ' : '长期计划 · '}}{{task.cycleLabel}}" task-description="{{task.description}}" points="{{task.points}}" both-required="{{task.bothRequired}}" self-completed="{{task.selfCompletion.completed}}" partner-completed="{{task.partnerCompletion.completed}}" disabled />
+  <lp-cue-button type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/submit?id={{task.id}}" action-text="查看待办" label="@TA 看看这个待办" />
+  <view wx:if="{{task.status === 'rejected'}}" class="notice-card warning"><text class="notice-title">待办需要补充</text><text class="notice-copy">{{task.rejectionReason || '请补充完成说明后重新提交。'}}</text></view>
   <view class="form-card">
     <text class="field-label">完成说明{{task.completionRequirement === 'note' ? '（必填）' : '（选填）'}}</text>
     <textarea class="text-area" value="{{note}}" maxlength="300" placeholder="写下完成过程或结果" bind:input="handleNote" />
   </view>
   <view wx:if="{{task.completionRequirement === 'image'}}" class="form-card"><text class="field-label">完成图片（必填）</text><view wx:if="{{images.length}}" class="submit-image-grid"><image wx:for="{{images}}" wx:key="localPath" src="{{item.localPath}}" mode="aspectFill"/></view><view class="add-submit-image" bind:tap="chooseImage">选择图片（{{images.length}} / 3）</view></view>
-  <lp-button label="{{state.activeSpaceType === 'personal' ? '确认完成并领取积分' : '提交给对方审批'}}" disabled="{{task.completionRequirement === 'note' && !note || task.completionRequirement === 'image' && !images.length}}" loading="{{busy}}" bind:tap="submit" />
+  <lp-button label="{{task.bothRequired ? '确认我已完成并领取积分' : state.activeSpaceType === 'personal' ? '确认完成并领取积分' : '提交给对方确认'}}" disabled="{{task.selfCompletion.completed || task.completionRequirement === 'note' && !note || task.completionRequirement === 'image' && !images.length}}" loading="{{busy}}" bind:tap="submit" />
   <lp-button label="返回首页" variant="text" bind:tap="goHome" />
   </block>
 </view>

@@ -165,6 +165,24 @@ const run = async () => {
   assertEqual(documentDetail.document.body, '测试正文', '按文档编号应读取完整正文')
 
   await lovePointsService.switchSpace('couple')
+  const beforeBothPoints = (await lovePointsService.getState()).sharedPoints
+  const bothCreated = await lovePointsService.createTask({
+    title: '每天一起喝水', description: '双方都要完成', points: 20,
+    taskType: 'shared', assignee: 'both', planType: 'daily', kind: 'recurring', completionRequirement: 'direct',
+  })
+  const bothTask = bothCreated.tasks.find((item) => item.title === '每天一起喝水' && item.isCurrentCycle)
+  assertEqual(bothTask?.bothRequired, true, '双方每日待办应记录双方完成模式')
+  const afterSelfBoth = await lovePointsService.submitTask('', bothTask?.id)
+  const partialBoth = afterSelfBoth.tasks.find((item) => item.id === bothTask?.id)
+  assertEqual(partialBoth?.status, 'partial', '一人完成后待办应显示完成一半')
+  assertEqual(partialBoth?.selfCompletion.completed, true, '应记录本人完成情况')
+  assertEqual(afterSelfBoth.sharedPoints, beforeBothPoints + 20, '本人完成双方待办后应立即发放积分')
+  const duplicateBoth = await lovePointsService.submitTask('', bothTask?.id)
+  assertEqual(duplicateBoth.sharedPoints, beforeBothPoints + 20, '重复完成双方待办不应重复发分')
+  const editedBoth = await lovePointsService.updateTask(bothTask?.id || '', { title: '每天一起喝水', description: '每天各自完成一次', points: 20, completionRequirement: 'direct' })
+  assertEqual(editedBoth.tasks.find((item) => item.id === bothTask?.id)?.activityLogs.some((item) => item.type === 'updated'), true, '编辑待办应写入修改日志')
+  const withTaskPhoto = await lovePointsService.addTaskPhotos(bothTask?.id || '', [{ type: 'image', fileId: 'local-task-photo.jpg' }])
+  assertEqual(withTaskPhoto.tasks.find((item) => item.id === bothTask?.id)?.media.length, 1, '双方都可为待办添加照片')
   const unbindRequested = await lovePointsService.requestUnbind()
   assertEqual(unbindRequested.unbindRequested, true, '发起解绑时不应立即清空数据')
   const cancelled = await lovePointsService.cancelUnbind()
