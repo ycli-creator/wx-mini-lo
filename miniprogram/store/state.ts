@@ -291,6 +291,8 @@ export const createInitialState = (): LovePointsState => ({
     usageMode: 'record',
     communityGuideSeen: false,
     taskGuideSeen: false,
+    communityPolicyVersion: '',
+    communityPolicyAcceptedAt: null,
   },
   inviteCode: '528913',
   joinCode: '',

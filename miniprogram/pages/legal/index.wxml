@@ -1,0 +1,32 @@
+<view class="screen legal-screen">
+  <lp-header title="协议与社区规范" subtitle="公开分享前，请了解双方的权利与边界" />
+
+  <view class="legal-meta"><text>当前版本：{{policyVersion}}</text><text>生效日期：2026 年 9 月 2 日</text></view>
+
+  <view class="legal-card">
+    <text class="legal-title">用户协议摘要</text>
+    <text class="legal-copy">爱心点数用于个人与情侣之间的任务、积分和生活记录。应用内积分不具有现金价值，不提供支付、交易或投资服务。请勿利用本服务发布违法违规内容、侵害他人权益或从事广告引流、欺诈和骚扰。</text>
+  </view>
+
+  <view class="legal-card">
+    <text class="legal-title">隐私说明</text>
+    <text class="legal-copy">帖子默认仅保存在情侣空间。只有发布人主动选择公开、另一方确认，并且双方均未开启“一键不展示”时，内容才会进入公开社区。公开内容可能包含发布人昵称、情侣关系描述和帖子正文；当前社区发布仅支持纯文字，不接收图片或视频。</text>
+    <text class="legal-copy">我们仅为提供功能、安全审核、举报处理和数据恢复所需而保存相关信息。用户可撤回公开内容；发布人可以删除自己的帖子。解除情侣绑定时，相关公开帖子会自动撤回。</text>
+  </view>
+
+  <view class="legal-card">
+    <text class="legal-title">社区内容规范</text>
+    <text class="legal-item">1. 不发布色情低俗、暴力恐怖、违法交易或危害公共安全的内容。</text>
+    <text class="legal-item">2. 不进行人身攻击、歧视、骚扰、诈骗、刷屏或广告引流。</text>
+    <text class="legal-item">3. 不泄露自己、伴侣或第三人的身份证件、住址、联系方式等敏感信息。</text>
+    <text class="legal-item">4. 只发布自己有权使用的文字和素材，尊重他人的著作权、肖像权与隐私权。</text>
+    <text class="legal-item">5. 平台可对违规内容采取限制公开、下架或限制发布等措施，并保留必要的处理记录。</text>
+  </view>
+
+  <view class="legal-card">
+    <text class="legal-title">举报、撤回与删除</text>
+    <text class="legal-copy">任何用户都可以举报公开帖子。举报提交后将进入处理队列；请勿恶意或重复举报。情侣双方任一方都可以撤回共同帖的公开展示，发布人可以删除帖子。违法违规内容可能由平台直接下架，并根据实际情况配合有关部门处理。</text>
+  </view>
+
+  <view class="legal-notice"><t-icon name="info-circle" size="28rpx" /><text>正式提审时仍需在微信公众平台配置完整的《小程序用户隐私保护指引》，本页用于应用内说明，不能替代平台配置。</text></view>
+</view>

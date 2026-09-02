@@ -55,9 +55,17 @@ const updatePrivacy = async ({ openid, payload }) => {
     showDocumentCount: privateMode ? false : Boolean(source.showDocumentCount),
     privateMode,
   }
+  const current = await db.collection(collections.users).doc(openid).get()
+  const coupleId = current.data?.coupleId || ''
   await db.collection(collections.users).doc(openid).update({ data: { privacy, updatedAt: db.serverDate() } })
+  if (coupleId && (!privacy.showPartner || privateMode)) {
+    await db.collection(collections.communityPosts).where({ coupleId, status: db.command.in(['published', 'pending_approval']) }).update({
+      data: { coupleSnapshot: { pairLabel: '两个人的日常' }, pairIdentityApproved: false, updatedAt: db.serverDate() },
+    })
+  }
   if (privateMode) {
-    await db.collection(collections.communityPosts).where({ authorOpenId: openid, status: db.command.in(['published', 'pending_approval']) }).update({
+    const scope = coupleId ? { coupleId, status: db.command.in(['published', 'pending_approval']) } : { authorOpenId: openid, status: db.command.in(['published', 'pending_approval']) }
+    await db.collection(collections.communityPosts).where(scope).update({
       data: { status: 'couple_only', visibility: 'couple', partnerApproved: false, publishedAt: null, updatedAt: db.serverDate() },
     })
   }
@@ -74,13 +82,21 @@ const updatePreferences = async ({ openid, payload }) => {
     usageMode,
     communityGuideSeen: Boolean(payload.communityGuideSeen ?? existing.preferences?.communityGuideSeen),
     taskGuideSeen: Boolean(payload.taskGuideSeen ?? existing.preferences?.taskGuideSeen),
+    communityPolicyVersion: String(existing.preferences?.communityPolicyVersion || ''),
+    communityPolicyAcceptedAt: existing.preferences?.communityPolicyAcceptedAt || null,
   }
   const privacy = usageMode === 'record'
     ? { searchableByCode: false, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: Boolean(existing.privacy?.privateMode) }
     : { ...existing.privacy, searchableByCode: true, privateMode: false }
   await db.collection(collections.users).doc(openid).update({ data: { preferences, privacy, updatedAt: db.serverDate() } })
+  if (usageMode === 'record' && existing.coupleId) {
+    await db.collection(collections.communityPosts).where({ coupleId: existing.coupleId, status: db.command.in(['published', 'pending_approval']) }).update({
+      data: { coupleSnapshot: { pairLabel: '两个人的日常' }, pairIdentityApproved: false, updatedAt: db.serverDate() },
+    })
+  }
   if (usageMode === 'record' && payload.hideExistingPublic === true) {
-    await db.collection(collections.communityPosts).where({ authorOpenId: openid, status: 'published' }).update({
+    const scope = existing.coupleId ? { coupleId: existing.coupleId, status: 'published' } : { authorOpenId: openid, status: 'published' }
+    await db.collection(collections.communityPosts).where(scope).update({
       data: { status: 'couple_only', visibility: 'couple', updatedAt: db.serverDate() },
     })
   }

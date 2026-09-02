@@ -1,4 +1,5 @@
 .community-screen { padding-left: 22rpx; padding-right: 22rpx; }
+.community-segment{grid-template-columns:repeat(3,1fr);margin-bottom:22rpx}.community-segment .segment-item{min-width:0;padding-left:8rpx;padding-right:8rpx;font-size:21rpx}
 .feed-grid { display: flex; align-items: flex-start; gap: 18rpx; }
 .feed-column { width: calc(50% - 9rpx); display: flex; flex-direction: column; gap: 18rpx; }
 .feed-card { overflow: hidden; background: #fff; border: 2rpx solid var(--lp-border); border-radius: 28rpx; box-shadow: 0 8rpx 28rpx rgba(78, 48, 39, 0.06); }
@@ -21,4 +22,4 @@
 .mini-action { min-height: 58rpx; display: flex; align-items: center; justify-content: center; color: #fff; background: var(--lp-brand); border-radius: 18rpx; font-size: 22rpx; font-weight: 600; }
 .mini-action.ghost { color: var(--lp-text-secondary); background: var(--lp-disabled); }
 .rejected-copy { display: block; margin-top: 12rpx; color: var(--lp-warning-text); font-size: 20rpx; line-height: 32rpx; }
-.post-edit-action{min-height:54rpx;margin-top:10rpx;display:flex;align-items:center;justify-content:center;color:var(--lp-brand-text);background:var(--lp-brand-soft);border-radius:16rpx;font-size:21rpx;font-weight:600}
+.post-actions{margin-top:10rpx;display:flex;align-items:center;flex-wrap:wrap;gap:8rpx}.post-text-action{min-height:64rpx;padding:0 16rpx;display:flex;align-items:center;justify-content:center;color:var(--lp-brand-text);background:var(--lp-brand-soft);border-radius:16rpx;font-size:20rpx;font-weight:600}.post-text-action.warning{color:var(--lp-warning-text);background:var(--lp-warning-bg)}.post-text-action.danger{color:var(--lp-danger);background:var(--lp-danger-bg)}

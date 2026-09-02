@@ -268,13 +268,30 @@ test('two users can complete the full cloud flow with idempotent point mutations
   const newDocument = await call(applicant, 'documents.save', { groupId: group.id, title: '分组文档', body: '独立新文档' })
   assert.ok(newDocument.data.documents.some((item) => item.groupId === group.id && item.title === '分组文档'))
 
+  await call(applicant, 'profile.privacy.update', {
+    searchableByCode: true, showPartner: true, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: false,
+  })
+  await call(creator, 'profile.privacy.update', {
+    searchableByCode: true, showPartner: true, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: false,
+  })
+
   const coupleOnlyCommunity = await call(applicant, 'community.create', { title: '只给我们', content: '一起散步看到晚霞', media: [] })
   const coupleOnlyPost = coupleOnlyCommunity.data.find((item) => item.title === '只给我们')
   assert.equal(coupleOnlyPost.status, 'couple_only')
   const editedCommunity = await call(applicant, 'community.update', { postId: coupleOnlyPost.id, title: '只给我们的晚霞', content: '标题和正文分别编辑', media: [], syncToCommunity: false })
   assert.equal(editedCommunity.data.find((item) => item.id === coupleOnlyPost.id).title, '只给我们的晚霞')
   assert.equal(editedCommunity.data.find((item) => item.id === coupleOnlyPost.id).content, '标题和正文分别编辑')
-  const pendingCommunity = await call(applicant, 'community.create', { title: '周末晚霞', content: '一起散步看到很漂亮的晚霞', media: [], syncToCommunity: true })
+  const missingPolicy = await call(applicant, 'community.create', { title: '尚未同意规范', content: '不能直接公开', media: [], syncToCommunity: true })
+  assert.equal(missingPolicy.code, 'COMMUNITY_POLICY_REQUIRED')
+  const publicMediaBlocked = await call(applicant, 'community.create', {
+    title: '媒体暂不公开', content: '图片需要先留在情侣空间', media: [{ type: 'image', fileId: 'cloud://test/image.jpg' }], syncToCommunity: true,
+    policyAccepted: true, policyVersion: '2026-09-02',
+  })
+  assert.equal(publicMediaBlocked.code, 'COMMUNITY_MEDIA_UNAVAILABLE')
+  const pendingCommunity = await call(applicant, 'community.create', {
+    title: '周末晚霞', content: '一起散步看到很漂亮的晚霞', media: [], syncToCommunity: true,
+    policyAccepted: true, policyVersion: '2026-09-02',
+  })
   const pendingPost = pendingCommunity.data.find((item) => item.title === '周末晚霞')
   assert.ok(pendingPost)
   assert.equal(pendingPost.status, 'pending')
@@ -282,15 +299,28 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(pendingPost.canReview, false)
   const creatorCommunity = await call(creator, 'community.list')
   assert.equal(creatorCommunity.data.find((item) => item.id === pendingPost.id).canReview, true)
+  const updatedPendingCommunity = await call(applicant, 'community.update', {
+    postId: pendingPost.id, title: '周末晚霞（已修改）', content: '修改后必须由伴侣重新确认', media: [], syncToCommunity: true,
+  })
+  const updatedPendingPost = updatedPendingCommunity.data.find((item) => item.id === pendingPost.id)
+  assert.equal(updatedPendingPost.contentVersion, pendingPost.contentVersion + 1)
   const outsiderBeforeApproval = await call(outsiderCreator, 'community.list')
   assert.equal(outsiderBeforeApproval.data.some((item) => item.id === pendingPost.id), false)
   const outsiderReview = await call(outsiderCreator, 'community.review', { postId: pendingPost.id, approved: true })
   assert.equal(outsiderReview.ok, false)
-  await call(creator, 'community.review', { postId: pendingPost.id, approved: true })
+  const staleReview = await call(creator, 'community.review', { postId: pendingPost.id, approved: true, contentVersion: pendingPost.contentVersion })
+  assert.equal(staleReview.code, 'COMMUNITY_VERSION_CHANGED')
+  await call(creator, 'community.review', { postId: pendingPost.id, approved: true, contentVersion: updatedPendingPost.contentVersion })
   const outsiderAfterApproval = await call(outsiderCreator, 'community.list')
   assert.equal(outsiderAfterApproval.data.some((item) => item.id === pendingPost.id && item.status === 'published'), true)
   assert.equal(outsiderAfterApproval.data.find((item) => item.id === pendingPost.id).pairLabel, '阿辰 × 林悦')
-  const privacyEnabled = await call(applicant, 'profile.privacy.update', {
+  const reported = await call(outsiderCreator, 'community.report', { postId: pendingPost.id, reason: '隐私泄露' })
+  assert.equal(reported.data.status, 'pending')
+  await call(outsiderCreator, 'community.report', { postId: pendingPost.id, reason: '隐私泄露' })
+  assert.equal(fakeCloud.dump('community_reports').filter((item) => item.postId === pendingPost.id).length, 1)
+  const selfReport = await call(applicant, 'community.report', { postId: pendingPost.id, reason: '其他' })
+  assert.equal(selfReport.code, 'COMMUNITY_REPORT_SELF')
+  const privacyEnabled = await call(creator, 'profile.privacy.update', {
     searchableByCode: true, showPartner: true, showRelationshipDays: true, showHeat: true, showDocumentCount: true, privateMode: true,
   })
   assert.equal(privacyEnabled.data.profile.privacy.showPartner, false)
@@ -298,6 +328,20 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(outsiderAfterPrivacy.data.some((item) => item.id === pendingPost.id), false)
   const coupleAfterPrivacy = await call(creator, 'community.list')
   assert.equal(coupleAfterPrivacy.data.find((item) => item.id === pendingPost.id).status, 'couple_only')
+  await call(creator, 'profile.privacy.update', {
+    searchableByCode: true, showPartner: true, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: false,
+  })
+  const secondPublic = await call(applicant, 'community.create', { title: '再次公开', content: '用于验证撤回与分享失效', media: [], syncToCommunity: true })
+  const secondPost = secondPublic.data.find((item) => item.title === '再次公开')
+  await call(creator, 'community.review', { postId: secondPost.id, approved: true, contentVersion: secondPost.contentVersion })
+  const postShare = await call(applicant, 'share.create', { type: 'community_post', resourceId: secondPost.id, targetPath: '/pages/community/index' })
+  await call(creator, 'community.withdraw', { postId: secondPost.id })
+  const withdrawnShare = await call(outsiderCreator, 'share.resolve', { token: postShare.data.token })
+  assert.equal(withdrawnShare.code, 'POST_NOT_PUBLIC')
+  const deletedPosts = await call(applicant, 'community.delete', { postId: coupleOnlyPost.id })
+  assert.equal(deletedPosts.data.some((item) => item.id === coupleOnlyPost.id), false)
+  const deleteByPartner = await call(creator, 'community.delete', { postId: secondPost.id })
+  assert.equal(deleteByPartner.code, 'FORBIDDEN')
 
   const selfRecordList = await call(applicant, 'records.save', {
     date: '2026-08-25', type: 'period', title: '', note: '第一天', mood: '', periodFlow: 'medium', visibility: 'self',
@@ -354,6 +398,11 @@ test('two users can complete the full cloud flow with idempotent point mutations
   const projectWithPhoto = await call(creator, 'task.media.add', { taskId: project.id, stepId: project.projectSteps[0].id, media: [{ type: 'image', fileId: 'cloud://step-photo.jpg' }] })
   assert.equal(projectWithPhoto.data.tasks.find((item) => item.id === project.id).projectSteps[0].media.length, 1)
 
+  const beforeUnbindPublic = await call(applicant, 'community.create', { title: '解绑前公开', content: '解绑后必须自动撤回', media: [], syncToCommunity: true })
+  const beforeUnbindPost = beforeUnbindPublic.data.find((item) => item.title === '解绑前公开')
+  await call(creator, 'community.review', { postId: beforeUnbindPost.id, approved: true, contentVersion: beforeUnbindPost.contentVersion })
+  assert.equal(fakeCloud.dump('community_posts').find((item) => item._id === beforeUnbindPost.id).status, 'published')
+
   const requestedUnbind = await call(applicant, 'unbind.request')
   assert.equal(requestedUnbind.data.bound, true)
   assert.equal(requestedUnbind.data.unbindRequested, true)
@@ -376,6 +425,7 @@ test('two users can complete the full cloud flow with idempotent point mutations
   assert.equal(fakeCloud.dump('point_ledgers').some((item) => item.coupleId === firstCoupleId), true)
   assert.equal(fakeCloud.dump('document_groups').some((item) => item.coupleId === firstCoupleId), true)
   assert.equal(fakeCloud.dump('community_posts').some((item) => item.coupleId === firstCoupleId), true)
+  assert.equal(fakeCloud.dump('community_posts').some((item) => item.coupleId === firstCoupleId && item.status === 'published'), false)
   assert.equal(fakeCloud.dump('daily_records').some((item) => item.coupleId === firstCoupleId), true)
   assert.equal(fakeCloud.dump('task_cycles').some((item) => item.coupleId === firstCoupleId), true)
   assert.equal(fakeCloud.dump('unbind_requests').some((item) => item.coupleId === firstCoupleId && item.status === 'approved'), true)
@@ -430,4 +480,21 @@ test('personal spaces stay private and couple heat, chat, share are isolated and
   assert.equal((await call(b, 'share.resolve', { token: share.data.token })).ok, true)
   const denied = await call(outsider, 'share.resolve', { token: share.data.token })
   assert.equal(denied.code, 'SHARE_FORBIDDEN')
+})
+
+test('community publishing is rate limited on the server', async () => {
+  fakeCloud.reset()
+  const author = 'rate-author'
+  const partner = 'rate-partner'
+  await call(author, 'profile.update', { nickname: '甲', gender: 'private', region: '', hobbies: [], avatarUrl: '' })
+  await call(partner, 'profile.update', { nickname: '乙', gender: 'private', region: '', hobbies: [], avatarUrl: '' })
+  const invite = await call(author, 'invite.create')
+  await call(partner, 'invite.apply', { code: invite.data.inviteCode })
+  await call(author, 'invite.review', { approved: true })
+  for (let index = 0; index < 5; index += 1) {
+    const created = await call(author, 'community.create', { title: `记录 ${index + 1}`, content: '限流测试', media: [] })
+    assert.equal(created.ok, true)
+  }
+  const limited = await call(author, 'community.create', { title: '记录 6', content: '应该被限流', media: [] })
+  assert.equal(limited.code, 'COMMUNITY_RATE_LIMITED')
 })

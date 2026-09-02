@@ -87,6 +87,9 @@ const cleanupCoupleData = async (coupleId, members, pendingRequestId) => {
   // The archived couple remains inaccessible through requireCouple and is never
   // attached to a future relationship. Export/deletion can be added as a
   // separate dual-consent workflow without risking accidental loss here.
+  await db.collection(collections.communityPosts).where({ coupleId, status: db.command.in(['published', 'pending_approval']) }).update({
+    data: { status: 'couple_only', visibility: 'couple', partnerApproved: false, publishedAt: null, withdrawnAt: db.serverDate(), updatedAt: db.serverDate() },
+  })
   await db.runTransaction(async (transaction) => {
     const couple = (await transaction.collection(collections.couples).doc(coupleId).get()).data
     if (!couple) return

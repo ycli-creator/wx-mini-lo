@@ -4,6 +4,8 @@ export const API_FUNCTION_NAME = 'api'
 
 export const APP_VERSION = '0.3.0'
 
+export const COMMUNITY_POLICY_VERSION = '2026-09-02'
+
 type LovePointsTestRuntime = typeof globalThis & {
   __LOVE_POINTS_FORCE_LOCAL__?: boolean
 }

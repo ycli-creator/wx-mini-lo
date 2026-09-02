@@ -30,6 +30,9 @@ const routes = {
   'community.create': community.create,
   'community.update': community.update,
   'community.review': community.review,
+  'community.withdraw': community.withdraw,
+  'community.delete': community.remove,
+  'community.report': community.report,
 
   'records.list': records.list,
   'records.save': records.save,

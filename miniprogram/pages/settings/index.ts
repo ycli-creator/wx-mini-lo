@@ -20,6 +20,7 @@ Page({
   },
   openRelationship() { wx.navigateTo({ url: '/pages/settings/relationship' }) },
   openFriends() { wx.navigateTo({ url: '/pages/friends/index' }) },
+  openPolicies() { wx.navigateTo({ url: '/pages/legal/index' }) },
   async changePrivacy(event: WechatMiniprogram.SwitchChange) {
     const key = String(event.currentTarget.dataset.key || '') as keyof typeof this.data.state.profile.privacy
     if (!key) return

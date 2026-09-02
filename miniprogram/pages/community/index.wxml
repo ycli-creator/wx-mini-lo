@@ -2,6 +2,11 @@
   <lp-header title="情侣社区" subtitle="经过两个人确认，分享你们的日常" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步社区" error-text="社区暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
+    <view class="segment community-segment">
+      <view class="segment-item {{activeFilter === 'public' ? 'active' : ''}}" data-filter="public" bind:tap="changeFilter">公开社区</view>
+      <view class="segment-item {{activeFilter === 'ours' ? 'active' : ''}}" data-filter="ours" bind:tap="changeFilter">我们的帖子</view>
+      <view class="segment-item {{activeFilter === 'pending' ? 'active' : ''}}" data-filter="pending" bind:tap="changeFilter">待确认{{pendingCount ? ' · ' + pendingCount : ''}}</view>
+    </view>
     <view wx:if="{{pendingCount}}" class="notice-card blue"><text class="notice-title">{{pendingCount}} 条帖子等待情侣确认</text><text class="notice-copy">只有发布人和伴侣都同意，内容才会对社区公开。</text></view>
     <view wx:if="{{posts.length}}" class="feed-grid">
       <view class="feed-column">
@@ -17,7 +22,12 @@
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
             <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
-            <view wx:if="{{item.authorIsSelf}}" class="post-edit-action" data-id="{{item.id}}" bind:tap="editPost">编辑帖子</view>
+            <view wx:if="{{item.authorIsSelf || item.canWithdraw || item.status === 'published'}}" class="post-actions">
+              <view wx:if="{{item.authorIsSelf}}" class="post-text-action" data-id="{{item.id}}" bind:tap="editPost">编辑</view>
+              <view wx:if="{{item.canWithdraw}}" class="post-text-action warning" data-id="{{item.id}}" bind:tap="withdrawPost">撤回公开</view>
+              <view wx:if="{{item.canDelete}}" class="post-text-action danger" data-id="{{item.id}}" bind:tap="deletePost">删除</view>
+              <view wx:if="{{item.status === 'published' && !item.authorIsSelf && !item.canWithdraw}}" class="post-text-action" data-id="{{item.id}}" bind:tap="reportPost">举报</view>
+            </view>
             <view wx:if="{{item.canReview}}" class="review-actions"><view class="mini-action ghost" data-id="{{item.id}}" data-approved="false" bind:tap="review">暂不</view><view class="mini-action" data-id="{{item.id}}" data-approved="true" bind:tap="review">同意</view></view>
             <text wx:if="{{item.status === 'rejected' && item.authorIsSelf}}" class="rejected-copy">这条内容没有公开，可以修改后重新发布。</text>
           </view>
@@ -33,14 +43,19 @@
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
             <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
-            <view wx:if="{{item.authorIsSelf}}" class="post-edit-action" data-id="{{item.id}}" bind:tap="editPost">编辑帖子</view>
+            <view wx:if="{{item.authorIsSelf || item.canWithdraw || item.status === 'published'}}" class="post-actions">
+              <view wx:if="{{item.authorIsSelf}}" class="post-text-action" data-id="{{item.id}}" bind:tap="editPost">编辑</view>
+              <view wx:if="{{item.canWithdraw}}" class="post-text-action warning" data-id="{{item.id}}" bind:tap="withdrawPost">撤回公开</view>
+              <view wx:if="{{item.canDelete}}" class="post-text-action danger" data-id="{{item.id}}" bind:tap="deletePost">删除</view>
+              <view wx:if="{{item.status === 'published' && !item.authorIsSelf && !item.canWithdraw}}" class="post-text-action" data-id="{{item.id}}" bind:tap="reportPost">举报</view>
+            </view>
             <view wx:if="{{item.canReview}}" class="review-actions"><view class="mini-action ghost" data-id="{{item.id}}" data-approved="false" bind:tap="review">暂不</view><view class="mini-action" data-id="{{item.id}}" data-approved="true" bind:tap="review">同意</view></view>
             <text wx:if="{{item.status === 'rejected' && item.authorIsSelf}}" class="rejected-copy">这条内容没有公开，可以修改后重新发布。</text>
           </view>
         </view>
       </view>
     </view>
-    <view wx:else class="empty-state"><text class="empty-title">还没有共同日常</text><text class="empty-copy">先保存到情侣空间，需要时再同步给社区。</text></view>
+    <view wx:else class="empty-state"><text class="empty-title">{{activeFilter === 'public' ? '公开社区还没有内容' : activeFilter === 'pending' ? '没有待确认的帖子' : '还没有共同日常'}}</text><text class="empty-copy">{{activeFilter === 'public' ? '双方确认后的纯文字帖子会显示在这里。' : activeFilter === 'pending' ? '需要双方确认的公开申请会显示在这里。' : '先保存到情侣空间，需要时再同步给社区。'}}</text></view>
     <view class="floating-create-action" hover-class="floating-create-action--pressed" bind:tap="createPost"><text class="floating-create-icon">＋</text><text>{{bound ? '发布日常' : '绑定后发布'}}</text></view>
   </block>
 </view>

@@ -4,9 +4,9 @@
 
 ## 工程内容
 
-- `miniprogram/`：微信原生 TypeScript 小程序，共 31 个页面和 5 项自定义 Tab。
+- `miniprogram/`：微信原生 TypeScript 小程序，共 32 个页面和 5 项自定义 Tab。
 - `cloudfunctions/api/`：统一 CloudBase 云函数，负责身份、情侣空间隔离、事务与幂等。
-- `cloudfunctions/database-schema.json`：27 个集合及复合索引定义；包括周期计划、情侣热力、聊天消息、好友、成就和关系许可。
+- `cloudfunctions/database-schema.json`：28 个集合及复合索引定义；包括周期计划、情侣热力、聊天消息、社区举报、好友、成就和关系许可。
 - `web-prototype/`：与设计稿对应的 React/Vite 可交互原型。
 - `docs/DEVELOPMENT_PLAN.md`：产品规则、技术方案和实施状态。
 - `docs/DEPLOYMENT_CHECKLIST.md`：微信开发者工具、云环境与双人真机验收步骤。
@@ -38,6 +38,8 @@ npm run verify:deployment-config
 
 ## 当前外部配置
 
-代码、自动化测试、个人小程序 AppID、微信开发者工具和免费 CloudBase 环境均已完成。线上数据库已与 `cloudfunctions/database-schema.json` 对齐为 27 个集合、49 个自定义索引；新版 `api` 云函数状态为 Active、超时 20 秒。真实 `home.summary`、`community.list`、`records.list` 和 `task.list` 调用均已通过，`task.update` 与 `community.update` 新路由已确认上线。
+代码、自动化测试、个人小程序 AppID、微信开发者工具和免费 CloudBase 环境均已完成。线上数据库当前仍为上一版 27 个集合、49 个自定义索引；本地社区治理版已扩展为 28 个集合、52 个自定义索引，尚未部署。已上线云函数状态为 Active、超时 20 秒，上一版真实 `home.summary`、`community.list`、`records.list` 和 `task.list` 调用均已通过。
 
-当前体验版为 `0.3.0`，包含双方每日待办、操作留痕、任务与步骤照片、帖子编辑及界面间距优化。本项目未提交审核，也未正式发布；下一步是两名微信用户真机验收和正式提审前的内容安全、隐私与举报能力补齐。
+当前体验版为 `0.3.0`，包含双方每日待办、操作留痕、任务与步骤照片、帖子编辑及界面间距优化。本地版本已补齐社区纯文字安全发布、协议确认、举报、共同撤回、作者删除、双方隐私联动和解绑撤回；这些治理改动尚未部署。本项目未提交审核，也未正式发布，恢复社区图片/视频前仍需接通媒体内容审核。
+
+社区举报上线后的人工处理步骤见 `docs/COMMUNITY_MODERATION_RUNBOOK.md`。

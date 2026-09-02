@@ -22,14 +22,14 @@ const formatDate = (value: string) => {
 
 const displayPost = (post: CommunityPost): DisplayPost => {
   const firstMedia = post.media[0]
-  const statusLabel = post.status === 'couple_only' ? '仅我们可见' : post.status === 'pending' ? (post.canReview ? '等你确认' : '等待 TA 确认') : post.status === 'rejected' ? '未通过' : ''
+  const statusLabel = post.status === 'couple_only' ? '仅我们可见' : post.status === 'pending' ? (post.canReview ? '等你确认' : '等待 TA 确认') : post.status === 'rejected' ? '未通过' : '已公开'
   return {
     ...post,
     coverUrl: firstMedia?.type === 'video' ? firstMedia.posterFileId || '' : firstMedia?.fileId || '',
     coverType: firstMedia?.type || 'text',
     mediaCount: post.media.length,
     statusLabel,
-    statusClass: post.status === 'rejected' ? 'status-warning' : post.status === 'couple_only' ? 'status-done' : 'status-pending',
+    statusClass: post.status === 'rejected' ? 'status-warning' : ['couple_only', 'published'].includes(post.status) ? 'status-done' : 'status-pending',
     dateLabel: formatDate(post.publishedAt || post.createdAt),
   }
 }
@@ -37,6 +37,7 @@ const displayPost = (post: CommunityPost): DisplayPost => {
 Page({
   data: {
     posts: [] as DisplayPost[],
+    allPosts: [] as DisplayPost[],
     leftPosts: [] as DisplayPost[],
     rightPosts: [] as DisplayPost[],
     pendingCount: 0,
@@ -44,6 +45,7 @@ Page({
     loadError: false,
     busyPostId: '',
     bound: false,
+    activeFilter: 'public' as 'public' | 'ours' | 'pending',
   },
   async onShow() {
     setActiveTab(this, 2)
@@ -57,12 +59,14 @@ Page({
     if (showLoading) this.setData({ loading: true, loadError: false })
     try {
       const [state, sourcePosts] = await Promise.all([lovePointsService.getState(), lovePointsService.listCommunityPosts()])
-      const posts = sourcePosts.map(displayPost)
+      const allPosts = sourcePosts.map(displayPost)
+      const posts = this.filterPosts(allPosts, this.data.activeFilter)
       this.setData({
         posts,
+        allPosts,
         leftPosts: posts.filter((_, index) => index % 2 === 0),
         rightPosts: posts.filter((_, index) => index % 2 === 1),
-        pendingCount: posts.filter((item) => item.status === 'pending').length,
+        pendingCount: allPosts.filter((item) => item.status === 'pending' && item.belongsToCurrentCouple).length,
         bound: state.bound,
         loading: false,
         loadError: false,
@@ -71,6 +75,21 @@ Page({
       this.setData({ loading: false, loadError: true })
       showError(error)
     }
+  },
+  filterPosts(posts: DisplayPost[], filter: 'public' | 'ours' | 'pending') {
+    if (filter === 'pending') return posts.filter((item) => item.belongsToCurrentCouple && item.status === 'pending')
+    if (filter === 'ours') return posts.filter((item) => item.belongsToCurrentCouple)
+    return posts.filter((item) => item.status === 'published')
+  },
+  changeFilter(event: WechatMiniprogram.TouchEvent) {
+    const activeFilter = String(event.currentTarget.dataset.filter || 'public') as 'public' | 'ours' | 'pending'
+    const posts = this.filterPosts(this.data.allPosts, activeFilter)
+    this.setData({
+      activeFilter,
+      posts,
+      leftPosts: posts.filter((_, index) => index % 2 === 0),
+      rightPosts: posts.filter((_, index) => index % 2 === 1),
+    })
   },
   createPost() {
     if (!this.data.bound) return wx.showModal({ title: '创建情侣空间后发布', content: '公开帖子来自情侣空间，并默认先保存在两个人之间。你仍然可以浏览社区内容。', showCancel: false, confirmText: '我知道了' })
@@ -100,10 +119,46 @@ Page({
     if (!result.confirm) return
     this.setData({ busyPostId: postId })
     try {
-      await lovePointsService.reviewCommunityPost(postId, approved)
+      const post = this.data.posts.find((item) => item.id === postId)
+      if (!post) throw new Error('帖子已经更新，请刷新后重试')
+      await lovePointsService.reviewCommunityPost(postId, approved, post.contentVersion)
       showSuccess(approved ? '已共同确认发布' : '已退回帖子')
       await this.refresh(false)
     } catch (error) { showError(error) }
     finally { this.setData({ busyPostId: '' }) }
+  },
+  async withdrawPost(event: WechatMiniprogram.TouchEvent) {
+    const postId = String(event.currentTarget.dataset.id)
+    if (this.data.busyPostId) return
+    const result = await wx.showModal({ title: '撤回公开帖子？', content: '撤回后帖子只在情侣空间可见，之前的分享入口也会失效。', confirmText: '确认撤回', confirmColor: '#f65f6b' })
+    if (!result.confirm) return
+    this.setData({ busyPostId: postId })
+    try { await lovePointsService.withdrawCommunityPost(postId); showSuccess('帖子已撤回'); await this.refresh(false) }
+    catch (error) { showError(error) }
+    finally { this.setData({ busyPostId: '' }) }
+  },
+  async deletePost(event: WechatMiniprogram.TouchEvent) {
+    const postId = String(event.currentTarget.dataset.id)
+    if (this.data.busyPostId) return
+    const result = await wx.showModal({ title: '删除这条帖子？', content: '删除后将从情侣空间和公开社区中移除，无法在小程序中恢复。', confirmText: '删除', confirmColor: '#d84b56' })
+    if (!result.confirm) return
+    this.setData({ busyPostId: postId })
+    try { await lovePointsService.deleteCommunityPost(postId); showSuccess('帖子已删除'); await this.refresh(false) }
+    catch (error) { showError(error) }
+    finally { this.setData({ busyPostId: '' }) }
+  },
+  async reportPost(event: WechatMiniprogram.TouchEvent) {
+    const postId = String(event.currentTarget.dataset.id)
+    if (this.data.busyPostId) return
+    const reasons = ['色情低俗', '违法违规', '人身攻击', '广告引流', '隐私泄露', '其他']
+    try {
+      const choice = await wx.showActionSheet({ itemList: reasons })
+      this.setData({ busyPostId: postId })
+      await lovePointsService.reportCommunityPost(postId, reasons[choice.tapIndex])
+      showSuccess('举报已提交')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (!message.includes('cancel')) showError(error)
+    } finally { this.setData({ busyPostId: '' }) }
   },
 })

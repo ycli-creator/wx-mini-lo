@@ -24,6 +24,10 @@ const resolve = async ({ openid, payload }) => {
   const result = await db.collection(collections.shareIntents).where({ tokenHash }).limit(1).get()
   const intent = result.data[0]
   assert(intent && new Date(intent.expiresAt).getTime() > Date.now(), 'SHARE_EXPIRED', '分享已失效')
+  if (intent.type === 'community_post') {
+    const post = await getDoc(collections.communityPosts, intent.resourceId)
+    assert(post && post.status === 'published' && !post.deleted, 'POST_NOT_PUBLIC', '帖子已撤回或删除')
+  }
   if (intent.type !== 'community_post' && intent.type !== 'couple_bind') {
     const user = await getDoc(collections.users, openid)
     assert(user && user.coupleId === intent.coupleId, 'SHARE_FORBIDDEN', '这个内容只对情侣双方开放')

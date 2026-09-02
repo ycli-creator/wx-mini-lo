@@ -6,8 +6,8 @@ const root = process.cwd()
 const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'))
 const errors = []
 
-if (appConfig.pages.length !== 31) {
-  errors.push(`应有 31 个页面，当前为 ${appConfig.pages.length} 个`)
+if (appConfig.pages.length !== 32) {
+  errors.push(`应有 32 个页面，当前为 ${appConfig.pages.length} 个`)
 }
 
 for (const page of appConfig.pages) {
@@ -46,7 +46,7 @@ const requiredActions = [
   'documents.lock', 'documents.unlock',
   'unbind.request', 'unbind.cancel', 'unbind.review',
   'profile.update', 'profile.privacy.update', 'profile.preferences.update', 'space.switch',
-  'community.list', 'community.create', 'community.review',
+  'community.list', 'community.create', 'community.update', 'community.review', 'community.withdraw', 'community.delete', 'community.report',
   'records.list', 'records.save', 'records.delete',
   'heat.summary', 'heat.checkin',
   'chat.list', 'chat.unread', 'chat.send', 'chat.cue', 'chat.open',

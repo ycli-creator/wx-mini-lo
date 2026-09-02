@@ -25,7 +25,7 @@ Every person always has an independent personal space. Binding with a partner cr
 - The product is a native WeChat Mini Program using CloudBase for identity, storage, cloud functions, and media.
 - Users switch globally between their personal space and their active couple space from the personal profile. Tasks, points, rewards, records, and documents follow that selection without repeating the switch on every page.
 - A couple space always has two members and is separate from both members' personal spaces.
-- Community posts support a title, body, and media. In a couple space, a new post defaults to couple-only visibility; the author must explicitly choose to synchronize it to the public community.
+- Community posts are designed for a title, body, and media. Until platform-appropriate media review is connected, the launch build deliberately accepts text-only community posts. New posts default to couple-only visibility; the author must explicitly choose to synchronize them to the public community.
 - Public couple content continues to require the product's relationship and privacy safeguards.
 
 ## Capabilities and Constraints

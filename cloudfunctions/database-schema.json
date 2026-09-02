@@ -49,6 +49,11 @@
       { "name": "couple_status_deleted_created", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
       { "name": "reviewer_status_created", "fields": [{ "field": "reviewerOpenId", "direction": "asc" }, { "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
     ] },
+    { "name": "community_reports", "indexes": [
+      { "name": "status_created", "fields": [{ "field": "status", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "post_created", "fields": [{ "field": "postId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] },
+      { "name": "reporter_created", "fields": [{ "field": "reporterOpenId", "direction": "asc" }, { "field": "createdAt", "direction": "desc" }] }
+    ] },
     { "name": "daily_records", "indexes": [
       { "name": "couple_visibility_deleted_date", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "visibility", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "date", "direction": "desc" }] },
       { "name": "couple_owner_deleted_date", "fields": [{ "field": "coupleId", "direction": "asc" }, { "field": "ownerOpenId", "direction": "asc" }, { "field": "deleted", "direction": "asc" }, { "field": "date", "direction": "desc" }] }

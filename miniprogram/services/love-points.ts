@@ -73,7 +73,13 @@ const normalizeState = (value: LovePointsState): LovePointsState => {
   state.partnerProfile = { ...initial.partnerProfile, ...(value?.partnerProfile || {}) }
   state.profileComplete = Boolean(value?.profileComplete || state.profile.completed || state.profile.nickname.trim())
   state.profile.completed = state.profileComplete
-  state.communityPosts = Array.isArray(value?.communityPosts) ? value.communityPosts : []
+  state.communityPosts = Array.isArray(value?.communityPosts) ? value.communityPosts.map((post) => ({
+    ...post,
+    canWithdraw: Boolean(post.canWithdraw),
+    canDelete: post.canDelete !== false && post.authorIsSelf,
+    contentVersion: Math.max(1, Number(post.contentVersion || 1)),
+    belongsToCurrentCouple: Boolean(post.belongsToCurrentCouple || post.authorIsSelf || post.canReview || post.canWithdraw),
+  })) : []
   state.dailyRecords = Array.isArray(value?.dailyRecords) ? value.dailyRecords : []
   const receivedTasks = Array.isArray(value?.tasks) ? value.tasks : initial.tasks
   state.tasks = isCloudEnabled()
@@ -230,13 +236,19 @@ export const lovePointsService = {
 
   listCommunityPosts: async (): Promise<CommunityPost[]> => runAction('community.list', {}, () => readState().communityPosts),
 
-  createCommunityPost: async (input: { title?: string; content: string; media: CommunityMedia[]; syncToCommunity?: boolean }): Promise<CommunityPost[]> =>
+  createCommunityPost: async (input: { title?: string; content: string; media: CommunityMedia[]; syncToCommunity?: boolean; policyAccepted?: boolean; policyVersion?: string }): Promise<CommunityPost[]> =>
     runAction('community.create', input, () => updateState((draft) => {
       const title = String(input.title || '').trim()
       const content = input.content.trim()
       if (!title) throw new Error('请填写帖子标题')
-      if (!content && !input.media.length) throw new Error('写点正文，或选择照片和视频')
+      if (!content) throw new Error('请填写帖子正文')
       const syncToCommunity = Boolean(input.syncToCommunity) && !draft.profile.privacy.privateMode
+      if (input.media.length) throw new Error('社区暂仅支持纯文字帖子；图片和视频将在内容审核能力接通后开放')
+      if (syncToCommunity && !draft.preferences.communityPolicyVersion) {
+        if (!input.policyAccepted || !input.policyVersion) throw new Error('请先阅读并同意社区规范与用户协议')
+        draft.preferences.communityPolicyVersion = input.policyVersion
+        draft.preferences.communityPolicyAcceptedAt = new Date().toISOString()
+      }
       const post: CommunityPost = {
         id: uid('post'),
         title: title.slice(0, 60),
@@ -250,6 +262,10 @@ export const lovePointsService = {
         pairLabel: `${draft.profile.nickname || '我'} × ${draft.partnerProfile.nickname || 'TA'}`,
         authorIsSelf: true,
         canReview: syncToCommunity,
+        canWithdraw: syncToCommunity,
+        canDelete: true,
+        contentVersion: 1,
+        belongsToCurrentCouple: true,
         createdAt: new Date().toISOString(),
         publishedAt: '',
         rejectionReason: '',
@@ -258,15 +274,21 @@ export const lovePointsService = {
       draft.communityPosts.unshift(post)
     }).communityPosts),
 
-  updateCommunityPost: async (postId: string, input: { title: string; content: string; media: CommunityMedia[]; syncToCommunity?: boolean }): Promise<CommunityPost[]> =>
+  updateCommunityPost: async (postId: string, input: { title: string; content: string; media: CommunityMedia[]; syncToCommunity?: boolean; policyAccepted?: boolean; policyVersion?: string }): Promise<CommunityPost[]> =>
     runAction('community.update', { postId, ...input }, () => updateState((draft) => {
       const post = draft.communityPosts.find((item) => item.id === postId && item.authorIsSelf)
       if (!post) throw new Error('只能编辑自己发布的帖子')
       const title = input.title.trim()
       const content = input.content.trim()
       if (!title) throw new Error('请填写帖子标题')
-      if (!content && !input.media.length) throw new Error('写点正文，或选择照片和视频')
+      if (!content) throw new Error('请填写帖子正文')
       const syncToCommunity = Boolean(input.syncToCommunity) && !draft.profile.privacy.privateMode
+      if (input.media.length) throw new Error('社区暂仅支持纯文字帖子；图片和视频将在内容审核能力接通后开放')
+      if (syncToCommunity && !draft.preferences.communityPolicyVersion) {
+        if (!input.policyAccepted || !input.policyVersion) throw new Error('请先阅读并同意社区规范与用户协议')
+        draft.preferences.communityPolicyVersion = input.policyVersion
+        draft.preferences.communityPolicyAcceptedAt = new Date().toISOString()
+      }
       post.title = title.slice(0, 60)
       post.content = content.slice(0, 1000)
       post.media = input.media.slice(0, 9)
@@ -274,19 +296,44 @@ export const lovePointsService = {
       post.syncToCommunity = syncToCommunity
       post.status = syncToCommunity ? 'pending' : 'couple_only'
       post.canReview = false
+      post.canWithdraw = syncToCommunity
+      post.contentVersion = Math.max(1, Number(post.contentVersion || 1)) + 1
       post.publishedAt = ''
       post.rejectionReason = ''
     }).communityPosts),
 
-  reviewCommunityPost: async (postId: string, approved: boolean, reason = ''): Promise<CommunityPost[]> =>
-    runAction('community.review', { postId, approved, reason }, () => updateState((draft) => {
+  reviewCommunityPost: async (postId: string, approved: boolean, contentVersion: number, reason = ''): Promise<CommunityPost[]> =>
+    runAction('community.review', { postId, approved, reason, contentVersion }, () => updateState((draft) => {
       const post = draft.communityPosts.find((item) => item.id === postId)
       if (!post || post.status !== 'pending') throw new Error('这条发布申请已经处理')
       post.status = approved ? 'published' : 'rejected'
       post.canReview = false
+      post.canWithdraw = approved
       post.publishedAt = approved ? new Date().toISOString() : ''
       post.rejectionReason = approved ? '' : reason.trim()
     }).communityPosts),
+
+  withdrawCommunityPost: async (postId: string): Promise<CommunityPost[]> =>
+    runAction('community.withdraw', { postId }, () => updateState((draft) => {
+      const post = draft.communityPosts.find((item) => item.id === postId)
+      if (!post) throw new Error('帖子不存在或已经删除')
+      post.status = 'couple_only'
+      post.visibility = 'couple'
+      post.syncToCommunity = false
+      post.canReview = false
+      post.canWithdraw = false
+      post.publishedAt = ''
+    }).communityPosts),
+
+  deleteCommunityPost: async (postId: string): Promise<CommunityPost[]> =>
+    runAction('community.delete', { postId }, () => updateState((draft) => {
+      const index = draft.communityPosts.findIndex((item) => item.id === postId && item.authorIsSelf)
+      if (index < 0) throw new Error('只能删除自己发布的帖子')
+      draft.communityPosts.splice(index, 1)
+    }).communityPosts),
+
+  reportCommunityPost: async (postId: string, reason: string, detail = ''): Promise<{ submitted: boolean; status: string }> =>
+    runAction('community.report', { postId, reason, detail }, () => ({ submitted: true, status: 'pending' })),
 
   listDailyRecords: async (month: string): Promise<DailyRecord[]> => runAction('records.list', { month }, () => {
     return readState().dailyRecords.filter((item) => item.date.startsWith(month))

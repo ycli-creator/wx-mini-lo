@@ -129,10 +129,10 @@ const run = async () => {
   const editedPost = await lovePointsService.updateCommunityPost(coupleOnlyPosts[0]?.id || '', { title: '晚霞散步', content: '正文已经与标题分开修改', media: [], syncToCommunity: false })
   assertEqual(editedPost[0]?.title, '晚霞散步', '本人可以分别修改帖子标题和正文')
   assertEqual(editedPost[0]?.content, '正文已经与标题分开修改', '帖子正文修改应被保存')
-  const publicPosts = await lovePointsService.createCommunityPost({ title: '周末散步', content: '想把这一刻分享出去', media: [], syncToCommunity: true })
+  const publicPosts = await lovePointsService.createCommunityPost({ title: '周末散步', content: '想把这一刻分享出去', media: [], syncToCommunity: true, policyAccepted: true, policyVersion: '2026-09-02' })
   const communityPostId = publicPosts[0]?.id || ''
   assertEqual(publicPosts[0]?.status, 'pending', '显式同步社区后应等待伴侣确认')
-  const publishedPosts = await lovePointsService.reviewCommunityPost(communityPostId, true)
+  const publishedPosts = await lovePointsService.reviewCommunityPost(communityPostId, true, publicPosts[0]?.contentVersion || 1)
   assertEqual(publishedPosts[0]?.status, 'published', '伴侣同意后帖子才应发布')
 
   const privateMode = await lovePointsService.updateProfilePrivacy({

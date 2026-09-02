@@ -28,6 +28,7 @@
     "pages/share-entry/index",
     "pages/settings/index",
     "pages/settings/relationship",
+    "pages/legal/index",
     "pages/friends/index",
     "pages/unbind/pending",
     "pages/unbind/confirm"

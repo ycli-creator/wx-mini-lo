@@ -24,6 +24,7 @@ const collections = {
   unbindRequests: 'unbind_requests',
   operationLogs: 'operation_logs',
   communityPosts: 'community_posts',
+  communityReports: 'community_reports',
   dailyRecords: 'daily_records',
   heatAccounts: 'heat_accounts',
   dailyHeatTasks: 'daily_heat_tasks',
@@ -43,7 +44,14 @@ const hashCode = (code) => crypto.createHash('sha256').update(String(code)).dige
 const randomCode = () => String(crypto.randomInt(100000, 1000000))
 const randomIdentityCode = () => `LP-${crypto.randomBytes(4).toString('hex').toUpperCase().match(/.{1,4}/g).join('-')}`
 const defaultPrivacy = () => ({ searchableByCode: false, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: false })
-const defaultPreferences = () => ({ onboardingCompleted: false, usageMode: 'record', communityGuideSeen: false, taskGuideSeen: false })
+const defaultPreferences = () => ({
+  onboardingCompleted: false,
+  usageMode: 'record',
+  communityGuideSeen: false,
+  taskGuideSeen: false,
+  communityPolicyVersion: '',
+  communityPolicyAcceptedAt: null,
+})
 
 const createNotification = async ({ recipientOpenId, coupleId = null, type, title, body, actionPath = '', sourceId = '' }) => {
   const id = makeId('notification')

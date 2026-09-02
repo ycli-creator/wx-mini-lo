@@ -7,7 +7,7 @@ const functionConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../co
 const required = [
   'users', 'couples', 'invites', 'tasks', 'task_cycles', 'task_submissions', 'point_accounts',
   'point_ledgers', 'rewards', 'redemptions', 'document_groups', 'documents',
-  'notifications', 'unbind_requests', 'operation_logs', 'community_posts', 'daily_records',
+  'notifications', 'unbind_requests', 'operation_logs', 'community_posts', 'community_reports', 'daily_records',
   'friend_requests', 'friendships', 'relationship_requests', 'achievements',
 ]
 const names = new Set(schema.collections.map((collection) => collection.name))

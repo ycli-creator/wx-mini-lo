@@ -61,6 +61,10 @@ export interface CommunityPost {
   pairLabel: string
   authorIsSelf: boolean
   canReview: boolean
+  canWithdraw: boolean
+  canDelete: boolean
+  contentVersion: number
+  belongsToCurrentCouple: boolean
   createdAt: string
   publishedAt: string
   rejectionReason: string
@@ -290,6 +294,8 @@ export interface LovePointsState {
     usageMode: UsageMode
     communityGuideSeen: boolean
     taskGuideSeen: boolean
+    communityPolicyVersion: string
+    communityPolicyAcceptedAt: string | null
   }
   inviteCode: string
   joinCode: string

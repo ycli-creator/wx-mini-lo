@@ -22,9 +22,9 @@
 
 | 路径 | 职责 |
 |---|---|
-| `miniprogram/` | 微信原生小程序：31 个页面、6 个项目内组件、TDesign 依赖、本机体验数据与客户端服务层 |
+| `miniprogram/` | 微信原生小程序：32 个页面、6 个项目内组件、TDesign 依赖、本机体验数据与客户端服务层 |
 | `cloudfunctions/api/` | 单入口 CloudBase 云函数，按邀请、任务、奖励、文档、解绑、资料、社区、生活记录 8 个领域拆分 |
-| `cloudfunctions/database-schema.json` | 27 个集合和索引的声明式定义；包含周期任务、热力、聊天、好友、成就和关系许可集合 |
+| `cloudfunctions/database-schema.json` | 28 个集合和索引的声明式定义；包含周期任务、热力、聊天、社区举报、好友、成就和关系许可集合 |
 | `web-prototype/` | React/Vite 原型，用于设计和交互对照 |
 | `scripts/` | 部署配置校验、数据库结构校验、部署计划和索引部署脚本 |
 | `docs/` | 产品规则、增量规格、部署清单和安全说明 |
@@ -37,7 +37,7 @@
 
 - `miniprogram/app.ts`：只在启用云端模式时初始化 `wx.cloud`。
 - `miniprogram/config/env.ts`：CloudBase 环境 ID、云函数名和应用版本；当前环境 ID 非空，因此默认走真实云端。
-- `miniprogram/app.json`：注册 31 个页面、全局组件和 5 项自定义 Tab：首页、任务、社区、消息、我的。
+- `miniprogram/app.json`：注册 32 个页面、全局组件和 5 项自定义 Tab：首页、任务、社区、消息、我的。
 - `miniprogram/styles/tokens.wxss`：设计令牌；全局样式在 `app.wxss`。
 
 ### 3.2 页面分区
