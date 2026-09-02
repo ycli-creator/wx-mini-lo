@@ -2,7 +2,7 @@ export const CLOUD_ENV_ID = 'cloud1-d8grmd06k6e68e512'
 
 export const API_FUNCTION_NAME = 'api'
 
-export const APP_VERSION = '0.2.0'
+export const APP_VERSION = '0.3.0'
 
 type LovePointsTestRuntime = typeof globalThis & {
   __LOVE_POINTS_FORCE_LOCAL__?: boolean

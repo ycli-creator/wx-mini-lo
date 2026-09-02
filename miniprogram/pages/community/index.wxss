@@ -21,3 +21,4 @@
 .mini-action { min-height: 58rpx; display: flex; align-items: center; justify-content: center; color: #fff; background: var(--lp-brand); border-radius: 18rpx; font-size: 22rpx; font-weight: 600; }
 .mini-action.ghost { color: var(--lp-text-secondary); background: var(--lp-disabled); }
 .rejected-copy { display: block; margin-top: 12rpx; color: var(--lp-warning-text); font-size: 20rpx; line-height: 32rpx; }
+.post-edit-action{min-height:54rpx;margin-top:10rpx;display:flex;align-items:center;justify-content:center;color:var(--lp-brand-text);background:var(--lp-brand-soft);border-radius:16rpx;font-size:21rpx;font-weight:600}

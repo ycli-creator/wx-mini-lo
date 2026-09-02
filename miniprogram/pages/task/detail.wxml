@@ -27,7 +27,7 @@
     <view wx:if="{{task.media.length}}" class="gallery-grid"><image wx:for="{{task.media}}" wx:key="fileId" src="{{item.fileId}}" mode="aspectFill" /></view>
     <view class="add-gallery" bind:tap="addGalleryPhotos"><t-icon name="camera" size="30rpx"/><text>添加照片</text></view>
 
-    <lp-cue-button wx:if="{{!task.assigneeIsSelf || task.kind === 'project' || task.bothRequired && !task.partnerCompletion.completed}}" type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/detail?id={{task.id}}" action-text="查看进度" label="@TA 查看当前进度" />
+    <view wx:if="{{!task.assigneeIsSelf || task.kind === 'project' || task.bothRequired && !task.partnerCompletion.completed}}" class="cue-block"><lp-cue-button type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/detail?id={{task.id}}" action-text="查看进度" label="@TA 查看当前进度" /></view>
 
     <block wx:if="{{task.kind === 'project'}}">
       <view class="section-heading"><text class="section-title">计划环节</text><text class="section-caption">完成一个发放 10%</text></view>

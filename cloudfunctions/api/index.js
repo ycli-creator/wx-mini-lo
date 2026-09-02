@@ -28,6 +28,7 @@ const routes = {
 
   'community.list': community.list,
   'community.create': community.create,
+  'community.update': community.update,
   'community.review': community.review,
 
   'records.list': records.list,

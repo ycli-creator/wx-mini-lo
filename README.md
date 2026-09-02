@@ -38,6 +38,6 @@ npm run verify:deployment-config
 
 ## 当前外部配置
 
-代码、自动化测试、个人小程序 AppID、微信开发者工具预览和免费 CloudBase 环境均已完成。线上 V2 的 16 个集合、32 个自定义索引与 `api` 云函数已部署，云函数状态为 Active、超时 20 秒。真实 `home.summary`、`community.list` 和 `records.list` 调用均已通过。V2 新增的 `community_posts` 与 `daily_records` 已改为 `ADMINONLY`；权限回读成功，小程序客户端直写均以 `DATABASE_PERMISSION_DENIED` 被拒绝。当前本地结构已扩展为 27 个集合，新增周期计划、热力、聊天、分享、好友、关系许可和成就数据；发布前需部署新增集合、索引和新版云函数。
+代码、自动化测试、个人小程序 AppID、微信开发者工具和免费 CloudBase 环境均已完成。线上数据库已与 `cloudfunctions/database-schema.json` 对齐为 27 个集合、49 个自定义索引；新版 `api` 云函数状态为 Active、超时 20 秒。真实 `home.summary`、`community.list`、`records.list` 和 `task.list` 调用均已通过，`task.update` 与 `community.update` 新路由已确认上线。
 
-当前线上体验版为 `0.2.0`。本地代码已继续增加个人空间、情侣热力、@TA、统一消息中心、身份码好友、双方关系许可、成就、私密媒体记录与安全分享入口；这些新增集合、索引和云函数尚未部署，因此线上体验版暂不包含本次功能。本项目未提交审核，也未正式发布。
+当前体验版为 `0.3.0`，包含双方每日待办、操作留痕、任务与步骤照片、帖子编辑及界面间距优化。本项目未提交审核，也未正式发布；下一步是两名微信用户真机验收和正式提审前的内容安全、隐私与举报能力补齐。

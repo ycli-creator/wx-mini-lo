@@ -76,6 +76,11 @@ Page({
     if (!this.data.bound) return wx.showModal({ title: '创建情侣空间后发布', content: '公开帖子来自情侣空间，并默认先保存在两个人之间。你仍然可以浏览社区内容。', showCancel: false, confirmText: '我知道了' })
     wx.navigateTo({ url: '/pages/community/create' })
   },
+  editPost(event: WechatMiniprogram.TouchEvent) {
+    const id = String(event.currentTarget.dataset.id)
+    if (!this.data.posts.some((item) => item.id === id && item.authorIsSelf)) return
+    wx.navigateTo({ url: `/pages/community/create?id=${encodeURIComponent(id)}` })
+  },
   previewImage(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id)
     const post = this.data.posts.find((item) => item.id === id)

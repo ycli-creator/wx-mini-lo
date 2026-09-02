@@ -20,6 +20,8 @@ const cloudPath = (scope: string, localPath: string) => {
 
 Page({
   data: {
+    postId: '',
+    editing: false,
     title: '',
     content: '',
     media: [] as DraftMedia[],
@@ -28,10 +30,22 @@ Page({
     syncToCommunity: false,
     privateMode: false,
   },
+  onLoad(query: Record<string, string | undefined>) { this.setData({ postId: query.id || '', editing: Boolean(query.id) }) },
   async onShow() {
     try {
       const state = await lovePointsService.getState()
-      this.setData({ privateMode: state.profile.privacy.privateMode, syncToCommunity: false })
+      if (this.data.postId) {
+        const posts = await lovePointsService.listCommunityPosts()
+        const post = posts.find((item) => item.id === this.data.postId && item.authorIsSelf)
+        if (!post) throw new Error('只能编辑自己发布的帖子')
+        this.setData({
+          privateMode: state.profile.privacy.privateMode,
+          title: post.title,
+          content: post.content,
+          syncToCommunity: post.syncToCommunity && !state.profile.privacy.privateMode,
+          media: post.media.map((item) => ({ type: item.type, localPath: item.fileId, posterPath: item.posterFileId || '', width: Number(item.width || 0), height: Number(item.height || 0), duration: Number(item.duration || 0), size: 0 })),
+        })
+      } else this.setData({ privateMode: state.profile.privacy.privateMode, syncToCommunity: false })
       if (!state.preferences.communityGuideSeen) {
         await wx.showModal({ title: '先记录，再决定是否公开', content: '帖子默认只保存在情侣空间。只有主动开启“同步到社区”，并经过 TA 确认后，其他人才会看到。', showCancel: false, confirmText: '我知道了', confirmColor: '#f65f6b' })
         await lovePointsService.markGuideSeen('community')
@@ -71,7 +85,7 @@ Page({
     this.setData({ media: this.data.media.filter((_, itemIndex) => itemIndex !== index) })
   },
   async uploadFile(filePath: string, scope: string) {
-    if (!isCloudEnabled()) return filePath
+    if (!isCloudEnabled() || filePath.startsWith('cloud://')) return filePath
     const result = await wx.cloud.uploadFile({ cloudPath: cloudPath(scope, filePath), filePath })
     return result.fileID
   },
@@ -101,8 +115,10 @@ Page({
         uploaded.push({ type: item.type, fileId, posterFileId, width: item.width, height: item.height, duration: item.duration })
         this.setData({ uploadProgress: `正在上传 ${Math.round(((index + 1) / this.data.media.length) * 100)}%` })
       }
-      await lovePointsService.createCommunityPost({ title: this.data.title, content: this.data.content, media: uploaded, syncToCommunity: this.data.syncToCommunity })
-      showSuccess(this.data.syncToCommunity ? '已发送给 TA 确认' : '已保存到情侣空间')
+      const input = { title: this.data.title, content: this.data.content, media: uploaded, syncToCommunity: this.data.syncToCommunity }
+      if (this.data.editing) await lovePointsService.updateCommunityPost(this.data.postId, input)
+      else await lovePointsService.createCommunityPost(input)
+      showSuccess(this.data.syncToCommunity ? '已发送给 TA 确认' : this.data.editing ? '帖子修改已保存' : '已保存到情侣空间')
       wx.navigateBack()
     } catch (error) {
       if (uploadedIds.length && isCloudEnabled()) wx.cloud.deleteFile({ fileList: uploadedIds }).catch(() => undefined)

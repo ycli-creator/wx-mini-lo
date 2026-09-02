@@ -17,6 +17,7 @@
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
             <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
+            <view wx:if="{{item.authorIsSelf}}" class="post-edit-action" data-id="{{item.id}}" bind:tap="editPost">编辑帖子</view>
             <view wx:if="{{item.canReview}}" class="review-actions"><view class="mini-action ghost" data-id="{{item.id}}" data-approved="false" bind:tap="review">暂不</view><view class="mini-action" data-id="{{item.id}}" data-approved="true" bind:tap="review">同意</view></view>
             <text wx:if="{{item.status === 'rejected' && item.authorIsSelf}}" class="rejected-copy">这条内容没有公开，可以修改后重新发布。</text>
           </view>
@@ -32,6 +33,7 @@
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
             <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
+            <view wx:if="{{item.authorIsSelf}}" class="post-edit-action" data-id="{{item.id}}" bind:tap="editPost">编辑帖子</view>
             <view wx:if="{{item.canReview}}" class="review-actions"><view class="mini-action ghost" data-id="{{item.id}}" data-approved="false" bind:tap="review">暂不</view><view class="mini-action" data-id="{{item.id}}" data-approved="true" bind:tap="review">同意</view></view>
             <text wx:if="{{item.status === 'rejected' && item.authorIsSelf}}" class="rejected-copy">这条内容没有公开，可以修改后重新发布。</text>
           </view>

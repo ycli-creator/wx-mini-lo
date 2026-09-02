@@ -115,6 +115,40 @@ const create = async ({ openid, payload }) => {
   return list({ openid })
 }
 
+const update = async ({ openid, payload }) => {
+  const { coupleId, partnerId } = await requireCouple(openid)
+  const postId = cleanText(payload.postId, 100)
+  const [post, author] = await Promise.all([
+    getDoc(collections.communityPosts, postId),
+    getDoc(collections.users, openid),
+  ])
+  assert(post && post.coupleId === coupleId && post.deleted !== true, 'COMMUNITY_POST_NOT_FOUND', '帖子不存在或已经删除')
+  assert(post.authorOpenId === openid, 'FORBIDDEN', '只能编辑自己发布的帖子')
+  const title = cleanText(payload.title, 60)
+  const content = cleanText(payload.content, 1000)
+  const media = validateMedia(payload.media || [])
+  assert(title, 'COMMUNITY_TITLE_REQUIRED', '请填写帖子标题')
+  assert(content || media.length, 'COMMUNITY_EMPTY', '写点正文，或选择照片和视频')
+  await checkTextSafety(openid, `${title} ${content}`.trim())
+  const syncToCommunity = Boolean(payload.syncToCommunity) && !author?.privacy?.privateMode
+  await db.collection(collections.communityPosts).doc(postId).update({ data: {
+    title,
+    content,
+    media,
+    visibility: syncToCommunity ? 'community' : 'couple',
+    status: syncToCommunity ? 'pending_approval' : 'couple_only',
+    reviewerOpenId: partnerId,
+    authorApproved: true,
+    partnerApproved: false,
+    rejectionReason: '',
+    publishedAt: null,
+    updatedAt: now(),
+  } })
+  await writeOperationLog({ coupleId, openid, action: 'community.update', targetId: postId })
+  if (syncToCommunity) await createNotification({ recipientOpenId: partnerId, coupleId, type: 'community', title: '编辑后的帖子待确认', body: `“${title}”修改后希望重新同步到社区`, actionPath: '/pages/community/index', sourceId: postId })
+  return list({ openid })
+}
+
 const review = async ({ openid, payload }) => {
   const { coupleId } = await requireCouple(openid)
   const postId = cleanText(payload.postId, 100)
@@ -135,4 +169,4 @@ const review = async ({ openid, payload }) => {
   return list({ openid })
 }
 
-module.exports = { list, create, review }
+module.exports = { list, create, update, review }

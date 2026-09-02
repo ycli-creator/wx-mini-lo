@@ -258,6 +258,26 @@ export const lovePointsService = {
       draft.communityPosts.unshift(post)
     }).communityPosts),
 
+  updateCommunityPost: async (postId: string, input: { title: string; content: string; media: CommunityMedia[]; syncToCommunity?: boolean }): Promise<CommunityPost[]> =>
+    runAction('community.update', { postId, ...input }, () => updateState((draft) => {
+      const post = draft.communityPosts.find((item) => item.id === postId && item.authorIsSelf)
+      if (!post) throw new Error('只能编辑自己发布的帖子')
+      const title = input.title.trim()
+      const content = input.content.trim()
+      if (!title) throw new Error('请填写帖子标题')
+      if (!content && !input.media.length) throw new Error('写点正文，或选择照片和视频')
+      const syncToCommunity = Boolean(input.syncToCommunity) && !draft.profile.privacy.privateMode
+      post.title = title.slice(0, 60)
+      post.content = content.slice(0, 1000)
+      post.media = input.media.slice(0, 9)
+      post.visibility = syncToCommunity ? 'community' : 'couple'
+      post.syncToCommunity = syncToCommunity
+      post.status = syncToCommunity ? 'pending' : 'couple_only'
+      post.canReview = false
+      post.publishedAt = ''
+      post.rejectionReason = ''
+    }).communityPosts),
+
   reviewCommunityPost: async (postId: string, approved: boolean, reason = ''): Promise<CommunityPost[]> =>
     runAction('community.review', { postId, approved, reason }, () => updateState((draft) => {
       const post = draft.communityPosts.find((item) => item.id === postId)
