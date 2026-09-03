@@ -1,6 +1,6 @@
 {
   "name": "love-points",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "verify": "npm --prefix web-prototype run build && npm --prefix miniprogram run verify && npm --prefix cloudfunctions/api run verify",

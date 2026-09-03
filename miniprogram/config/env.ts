@@ -2,7 +2,7 @@ export const CLOUD_ENV_ID = 'cloud1-d8grmd06k6e68e512'
 
 export const API_FUNCTION_NAME = 'api'
 
-export const APP_VERSION = '0.3.0'
+export const APP_VERSION = '0.4.0'
 
 export const COMMUNITY_POLICY_VERSION = '2026-09-02'
 
