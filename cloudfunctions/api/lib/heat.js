@@ -18,7 +18,7 @@ const TASK_DEFINITIONS = [
     ctaLabel: '去做任务', targetPath: '/pages/task/index', canRemind: true,
   },
   {
-    taskId: 'H301', title: '今日发帖一次', description: '共同确认并发布一条有效社区帖子', category: 'community',
+    taskId: 'H301', title: '今日发帖一次', description: '在情侣空间发布一条有效帖子', category: 'community',
     triggerEvent: 'community.post_created', maxParticipants: 1, individualReward: 4, pairBonus: 0,
     ctaLabel: '去发布', targetPath: '/pages/community/create', canRemind: false,
   },

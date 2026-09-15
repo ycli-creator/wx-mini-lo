@@ -18,15 +18,15 @@ Love Points is a WeChat Mini Program for turning personal progress and a couple'
 
 ## Positioning
 
-Every person always has an independent personal space. Binding with a partner creates a new, separately owned couple space instead of merging two personal accounts. Public community sharing is an optional layer above private personal and couple records, never the default storage destination.
+Every person always has an independent personal space. Binding with a partner creates a new, separately owned couple space instead of merging two personal accounts. Couple posts are private by design: they live only inside the couple space and are never visible to anyone outside it.
 
 ## Operating Context
 
 - The product is a native WeChat Mini Program using CloudBase for identity, storage, cloud functions, and media.
 - Users switch globally between their personal space and their active couple space from the personal profile. Tasks, points, rewards, records, and documents follow that selection without repeating the switch on every page.
 - A couple space always has two members and is separate from both members' personal spaces.
-- Community posts are designed for a title, body, and media. Until platform-appropriate media review is connected, the launch build deliberately accepts text-only community posts. New posts default to couple-only visibility; the author must explicitly choose to synchronize them to the public community.
-- Public couple content continues to require the product's relationship and privacy safeguards.
+- Couple posts are designed for a title, body, and media. Until platform-appropriate media review is connected, the launch build deliberately accepts text-only posts. Visibility is always couple-only; there is no public synchronization path, and no review or reporting flow.
+- Couple posts remain subject to text content safety checks and can only be deleted by their author.
 
 ## Capabilities and Constraints
 
@@ -34,10 +34,10 @@ Every person always has an independent personal space. Binding with a partner cr
 
 - First-run onboarding asks the user to choose between “专注记录” and “分享生活”. The choice is a preset that can be changed later from the profile.
 - “专注记录” defaults to private visibility, disables identity-code discovery and most public profile details, prioritizes records, tasks, and calendar, and de-emphasizes community and messages without deleting access to them.
-- “分享生活” still keeps new content private by default, but gives greater prominence to community synchronization, messages, interactions, and identity-code discovery.
-- Switching into the record-first preset offers a choice between hiding all existing public content and applying the preference only to future content.
+- “分享生活” still keeps new content private by default, but gives greater prominence to posts, messages, interactions, and identity-code discovery.
+- Switching into the record-first preset applies the privacy preference to the profile and to future content.
 - A privacy master setting can make all posts couple-only, hide identities and relationship details, and keep only a minimal indication to visitors that the user is currently bound.
-- First-use notices explain that personal-space and couple-space points do not transfer, how community sharing works, and where the privacy master setting can be changed.
+- First-use notices explain that personal-space and couple-space points do not transfer, how couple posts stay private, and where the privacy master setting can be changed.
 
 ### Tasks
 
@@ -68,7 +68,7 @@ Every person always has an independent personal space. Binding with a partner cr
 ### Delivery boundaries
 
 - This phase changes the WeChat Mini Program and its CloudBase data/API model; it does not add payments, logistics, cash value, WebSocket chat, or additional clients.
-- Community text and media require platform-appropriate content safety, reporting, privacy, and deletion handling before public release.
+- Post text requires platform-appropriate content safety checks; media stays disabled until review is connected, and deletion is author-only and immediate.
 
 ## Brand Commitments
 
@@ -86,7 +86,7 @@ Every person always has an independent personal space. Binding with a partner cr
 
 ## Product Principles
 
-1. Private by default, public only through an explicit and understandable action.
+1. Private by default, with no public path for couple content.
 2. Personal identity and couple collaboration coexist without merging ownership or balances.
 3. Every item visibly belongs to one space, and switching spaces must never create ambiguity.
 4. Shared progress should feel cooperative rather than supervisory; reminders and notifications must not create control pressure.

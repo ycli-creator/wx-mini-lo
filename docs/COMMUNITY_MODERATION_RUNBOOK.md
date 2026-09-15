@@ -1,45 +1,26 @@
-# 社区举报处理手册
+# 情侣帖子运营说明
 
-## 上线边界
+> 2026-09-15 更新：已取消全部对外公开能力，帖子只属于情侣双方。原「公开同步 / 伴侣确认 / 举报审核」流程已下线，本文件替换原《社区举报处理手册》。
 
-- 当前社区只允许纯文字帖子。客户端入口和服务端接口都会拒绝图片、视频。
-- 帖子必须通过文字安全检查、发布人主动选择公开、当前版社区规范确认和伴侣指定版本确认后，才可公开。
-- 微信公众平台隐私保护指引未配置完成前，不提交正式审核。
+## 当前边界
 
-## 每日处理
+- 帖子只写入发帖人所属的情侣空间，服务端查询恒按 `coupleId` 过滤，非本情侣成员无法读取。
+- 不再存在 `pending_approval` / `published` / `rejected` / `moderated` 状态，所有帖子恒为 `couple_only`。
+- 保留 `community.list / create / update / delete`；`community.review / withdraw / report` 已从路由移除，调用返回 `ACTION_NOT_FOUND`。
+- 微信分享白名单已移除 `community_post`，`share.resolve` 不再对该类型豁免 `coupleId` 校验，帖子无法生成对外链接。
+- 帖子仍必须通过 `security.msgSecCheck` 文字安全检查；图片与视频在内容审核能力接通前继续拒绝。
 
-1. 在 CloudBase 数据库查看 `community_reports`，按 `status = pending`、`createdAt` 升序处理。
-2. 对照 `postId` 查看 `community_posts` 当前内容，并参考举报时保存的 `postSnapshot`，避免帖子修改导致证据丢失。
-3. 明显涉及违法、色情、暴力威胁、隐私泄露或诈骗的内容应先下架，再复核；其他争议内容先人工判断。
-4. 建议普通举报 24 小时内处理，高风险举报尽快处理。
+## 历史数据
 
-## 处理字段
-
-处理后更新对应 `community_reports`：
-
-- `status`: `resolved`（举报成立）或 `dismissed`（举报不成立）
-- `resolution`: 简短处理说明
-- `handledAt`: 处理时间
-- `handler`: 处理人员标识，不填写姓名、手机号等敏感信息
-
-举报成立时，将对应 `community_posts` 更新为：
-
-- `deleted: true`
-- `status: moderated`
-- `visibility: couple`
-- `publishedAt: null`
-- `moderatedAt`: 处理时间
-- `moderationReason`: 不超过 200 字的内部原因
-
-同时在 `operation_logs` 留下 `community.moderate.remove` 记录。恢复误下架内容时只恢复为 `couple_only`，不得自动重新公开，必须重新经过双方确认。
+- 改造前已处于 `published` 的帖子不会再出现在任何列表中（列表只查 `couple_only`）。
+- 如需保留这些记录，可在 CloudBase 控制台将 `status` 批量改为 `couple_only`、`visibility` 改为 `couple`；不处理则等同于自动收回。
+- `community_reports` 集合不再有新写入，历史举报记录按原保存期限处理。
 
 ## 数据与权限
 
-- `community_reports`、`community_posts` 和 `operation_logs` 均保持仅管理端可读写。
-- 不向举报人展示作者 OpenID、情侣空间 ID 或内部处理备注。
-- 举报记录按运营和合规所需期限保存；到期删除前先确认不存在未完成的申诉、投诉或法定义务。
-- 严禁从 CloudBase 导出与当前举报无关的用户数据。
+- `community_posts`、`operation_logs` 保持仅管理端可读写，小程序客户端直写会被拒绝。
+- 严禁从 CloudBase 导出与当前排查无关的用户数据。
 
 ## 恢复媒体发布前
 
-必须先完成图片、视频封面、视频画面和音频内容审核，并验证审核失败、超时、回调乱序及重复回调都不会让媒体帖子进入公开 Feed。完成前不得移除当前的服务端媒体拒绝逻辑。
+必须先完成图片、视频封面、视频画面和音频内容审核，并验证审核失败、超时、回调乱序及重复回调都不会让媒体帖子进入列表。完成前不得移除当前的服务端媒体拒绝逻辑。

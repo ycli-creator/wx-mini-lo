@@ -124,24 +124,19 @@ const run = async () => {
   catch (error) { insufficientRejected = error instanceof Error && error.message.includes('积分不足') }
   assertEqual(insufficientRejected, true, '需要审批的奖励也应在申请前校验积分余额')
 
-  const coupleOnlyPosts = await lovePointsService.createCommunityPost({ title: '晚霞', content: '一起散步看到晚霞', media: [] })
-  assertEqual(coupleOnlyPosts[0]?.status, 'couple_only', '帖子默认只发布到情侣空间')
-  const editedPost = await lovePointsService.updateCommunityPost(coupleOnlyPosts[0]?.id || '', { title: '晚霞散步', content: '正文已经与标题分开修改', media: [], syncToCommunity: false })
+  const coupleOnlyPosts = await lovePointsService.createCommunityPost({ title: '晚霞', content: '一起散步看到晚霞', media: [], policyAccepted: true, policyVersion: '2026-09-02' })
+  assertEqual(coupleOnlyPosts[0]?.status, 'couple_only', '帖子只发布到情侣空间')
+  const editedPost = await lovePointsService.updateCommunityPost(coupleOnlyPosts[0]?.id || '', { title: '晚霞散步', content: '正文已经与标题分开修改', media: [] })
   assertEqual(editedPost[0]?.title, '晚霞散步', '本人可以分别修改帖子标题和正文')
   assertEqual(editedPost[0]?.content, '正文已经与标题分开修改', '帖子正文修改应被保存')
-  const publicPosts = await lovePointsService.createCommunityPost({ title: '周末散步', content: '想把这一刻分享出去', media: [], syncToCommunity: true, policyAccepted: true, policyVersion: '2026-09-02' })
-  const communityPostId = publicPosts[0]?.id || ''
-  assertEqual(publicPosts[0]?.status, 'pending', '显式同步社区后应等待伴侣确认')
-  const publishedPosts = await lovePointsService.reviewCommunityPost(communityPostId, true, publicPosts[0]?.contentVersion || 1)
-  assertEqual(publishedPosts[0]?.status, 'published', '伴侣同意后帖子才应发布')
 
   const privateMode = await lovePointsService.updateProfilePrivacy({
     searchableByCode: true, showPartner: true, showRelationshipDays: true, showHeat: true, showDocumentCount: true, privateMode: true,
   })
   assertEqual(privateMode.profile.privacy.showPartner, false, '一键不展示应关闭身份与关系详情')
-  assertEqual(privateMode.communityPosts.some((item) => item.status === 'published'), false, '一键不展示应撤回已经公开的帖子')
-  const forcedPrivate = await lovePointsService.createCommunityPost({ title: '仅记录', content: '即使勾选公开也保持私密', media: [], syncToCommunity: true })
-  assertEqual(forcedPrivate[0]?.status, 'couple_only', '一键不展示时不能同步到社区')
+  assertEqual(privateMode.communityPosts.every((item) => item.status === 'couple_only'), true, '所有帖子都应只保存在情侣空间')
+  const forcedPrivate = await lovePointsService.createCommunityPost({ title: '仅记录', content: '任何时候都保持私密', media: [] })
+  assertEqual(forcedPrivate[0]?.status, 'couple_only', '新帖子同样只保存在情侣空间')
 
   const privateRecords = await lovePointsService.saveDailyRecord({
     date: '2026-08-25', type: 'period', title: '', note: '第一天', mood: '', periodFlow: 'medium', visibility: 'self',
@@ -197,7 +192,7 @@ const run = async () => {
   assertEqual(unbound.personalPoints, 70, '解绑后应保留个人空间积分')
   assertEqual(unbound.profile.nickname, '林悦', '解绑后应保留个人资料')
 
-  console.log('核心流程测试通过：引导、空间隔离、任务、项目任务、奖励、社区隐私、记录、文档与解绑。')
+  console.log('核心流程测试通过：引导、空间隔离、任务、项目任务、奖励、情侣私密记录、文档与解绑。')
 }
 
 void run()

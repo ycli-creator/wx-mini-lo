@@ -46,7 +46,7 @@ const requiredActions = [
   'documents.lock', 'documents.unlock',
   'unbind.request', 'unbind.cancel', 'unbind.review',
   'profile.update', 'profile.privacy.update', 'profile.preferences.update', 'space.switch',
-  'community.list', 'community.create', 'community.update', 'community.review', 'community.withdraw', 'community.delete', 'community.report',
+  'community.list', 'community.create', 'community.update', 'community.delete',
   'records.list', 'records.save', 'records.delete',
   'heat.summary', 'heat.checkin',
   'chat.list', 'chat.unread', 'chat.send', 'chat.cue', 'chat.open',

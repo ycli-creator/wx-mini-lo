@@ -8,7 +8,7 @@ export type UsageMode = 'record' | 'social'
 export type RefundStatus = 'none' | 'requested' | 'approved'
 export type PointsType = 'personal' | 'shared'
 export type ProfileGender = 'female' | 'male' | 'other' | 'private'
-export type CommunityPostStatus = 'couple_only' | 'pending' | 'published' | 'rejected'
+export type CommunityPostStatus = 'couple_only'
 export type DailyRecordType = 'mood' | 'event' | 'period'
 export type HeatTaskStatus = 'todo' | 'partial' | 'done'
 export type ChatMessageType = 'text' | 'heat_task' | 'custom_task' | 'calendar' | 'community_post' | 'shared_doc' | 'reward' | 'system'
@@ -53,21 +53,16 @@ export interface CommunityPost {
   title: string
   content: string
   media: CommunityMedia[]
-  visibility: 'couple' | 'community'
-  syncToCommunity: boolean
+  visibility: 'couple'
   status: CommunityPostStatus
   authorName: string
   authorAvatarUrl: string
   pairLabel: string
   authorIsSelf: boolean
-  canReview: boolean
-  canWithdraw: boolean
   canDelete: boolean
   contentVersion: number
   belongsToCurrentCouple: boolean
   createdAt: string
-  publishedAt: string
-  rejectionReason: string
   spaceType?: SpaceType
 }
 

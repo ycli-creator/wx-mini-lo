@@ -17,7 +17,7 @@ const randomPool = [
   { code: 'HR02', title: '一起完善共享文档', description: '双方今天分别完善一次共同文档。', rewardText: '+2/人 · 双方额外 +1', maxParticipants: 2, individualReward: 2, pairBonus: 1, actionPath: '/pages/documents/index', actionText: '去写一点' },
   { code: 'HR03', title: '记录今天的一件事', description: '双方分别记下一件今天发生的事。', rewardText: '+2/人 · 双方额外 +1', maxParticipants: 2, individualReward: 2, pairBonus: 1, actionPath: '/pages/records/edit?type=event', actionText: '记一件事' },
   { code: 'HR04', title: '兑换一个共同奖励', description: '使用共同积分兑换一项约定奖励。', rewardText: '共同 +4', maxParticipants: 1, individualReward: 4, pairBonus: 0, actionPath: '/pages/reward/list', actionText: '看奖励' },
-  { code: 'HR05', title: '发布一条共同帖子', description: '共同确认并公开一条社区帖子。', rewardText: '共同 +5', maxParticipants: 1, individualReward: 5, pairBonus: 0, actionPath: '/pages/community/create', actionText: '去发布' },
+  { code: 'HR05', title: '发布一条共同帖子', description: '在情侣空间发布一条帖子，和 TA 一起记录。', rewardText: '共同 +5', maxParticipants: 1, individualReward: 5, pairBonus: 0, actionPath: '/pages/community/create', actionText: '去发布' },
 ]
 const definitionByCode = (code) => [...fixed, ...randomPool].find((item) => item.code === code)
 const dailyId = (coupleId, date) => `heat_day_${hashCode(`${coupleId}:${date}`).slice(0, 40)}`
