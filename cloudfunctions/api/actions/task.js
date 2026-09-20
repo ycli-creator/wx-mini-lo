@@ -46,7 +46,7 @@ const create = async ({ openid, payload }) => {
   assert(Number.isInteger(points) && points > 0 && points <= 10000, 'INVALID_POINTS', '待办积分必须是 1–10000 的整数')
   assert(spaceType !== 'personal' || (taskType === 'personal' && payload.assignee !== 'partner'), 'COUPLE_REQUIRED', '绑定 TA 后才能创建共同待办或指定伴侣完成')
   assert(kind !== 'project' || spaceType === 'couple', 'COUPLE_REQUIRED', '大计划只能创建在情侣空间')
-  assert(!bothRequired || (spaceType === 'couple' && kind === 'recurring' && planType === 'daily'), 'BOTH_DAILY_ONLY', '双方完成模式仅用于情侣空间的每日待办')
+  assert(!bothRequired || (spaceType === 'couple' && kind !== 'project'), 'BOTH_COUPLE_ONLY', '双方完成只能用于情侣空间的普通待办')
   const rawSteps = Array.isArray(payload.projectSteps) ? payload.projectSteps : []
   assert(kind !== 'project' || (rawSteps.length >= 2 && rawSteps.length <= 8), 'PROJECT_STEP_COUNT', '大计划需要设置 2–8 个环节')
   const taskId = makeId('task')
@@ -126,7 +126,7 @@ const submit = async ({ openid, payload }) => {
   assert(planType === 'long_term' || cycle.cycleKey === taskCycleWindow(planType).cycleKey, 'TASK_CYCLE_ENDED', '这个周期已经结束，不能补交')
 
   if (task.bothRequired || task.assigneeMode === 'both') {
-    assert(spaceType === 'couple' && planType === 'daily', 'BOTH_DAILY_ONLY', '双方完成模式仅用于情侣空间的每日待办')
+    assert(spaceType === 'couple' && task.kind !== 'project', 'BOTH_COUPLE_ONLY', '双方完成只能用于情侣空间的普通待办')
     let finalStatus = cycle.status
     let newlyCompleted = false
     await db.runTransaction(async (transaction) => {

@@ -234,7 +234,7 @@ Page({
   toggleApproval(event: WechatMiniprogram.TouchEvent) { this.setData({ approvalRequired: event.currentTarget.dataset.approval === 'true' }) },
   selectPlanType(event: WechatMiniprogram.TouchEvent) {
     const planType = event.currentTarget.dataset.plan as TaskPlanType
-    this.setData({ planType, assignee: planType === 'daily' ? this.data.assignee : this.data.assignee === 'both' ? 'self' : this.data.assignee })
+    this.setData({ planType })
   },
   selectTaskKind(event: WechatMiniprogram.TouchEvent) {
     const taskKind = event.currentTarget.dataset.kind as TaskKind
@@ -242,7 +242,7 @@ Page({
       wx.showToast({ title: '大计划只能创建在情侣空间', icon: 'none' })
       return
     }
-    this.setData({ taskKind, planType: taskKind === 'recurring' ? (this.data.planType === 'weekly' ? 'weekly' : 'daily') : 'long_term', assignee: taskKind === 'recurring' ? this.data.assignee : this.data.assignee === 'both' ? 'self' : this.data.assignee })
+    this.setData({ taskKind, planType: taskKind === 'recurring' ? (this.data.planType === 'weekly' ? 'weekly' : 'daily') : 'long_term' })
   },
   selectCompletionRequirement(event: WechatMiniprogram.TouchEvent) { this.setData({ completionRequirement: event.currentTarget.dataset.requirement as CompletionRequirement }) },
   handleProjectStepTitle(event: WechatMiniprogram.CustomEvent<{ value: string }>) {

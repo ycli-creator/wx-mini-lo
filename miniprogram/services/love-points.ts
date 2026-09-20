@@ -396,7 +396,7 @@ export const lovePointsService = {
     const planType = kind === 'project' || kind === 'one_time' ? 'long_term' : input.planType === 'weekly' ? 'weekly' : 'daily'
     const bothRequired = input.assignee === 'both'
     const approvalRequired = input.approvalRequired !== false
-    if (bothRequired && (draft.activeSpaceType !== 'couple' || kind !== 'recurring' || planType !== 'daily')) throw new Error('双方完成模式仅用于情侣空间的每日待办')
+    if (bothRequired && draft.activeSpaceType !== 'couple') throw new Error('双方完成需要在情侣空间中创建')
     const rawSteps = input.projectSteps || []
     if (kind === 'project' && (rawSteps.length < 2 || rawSteps.length > 8)) throw new Error('大计划需要设置 2–8 个环节')
     const templateId = uid('task-template')
