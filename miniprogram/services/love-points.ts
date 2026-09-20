@@ -40,6 +40,7 @@ const normalizeClientTask = (task: TaskItem): TaskItem => {
   const partnerCompletion = { ...emptyCompletion, ...(task.partnerCompletion || {}) }
   return {
     ...task,
+    approvalRequired: task.approvalRequired !== false,
     assigneeMode: bothRequired ? 'both' : task.assigneeMode || (task.assigneeIsSelf ? 'self' : 'partner'),
     bothRequired,
     selfCompletion,
@@ -380,6 +381,7 @@ export const lovePointsService = {
     points: number
     taskType: 'personal' | 'shared'
     assignee: TaskAssigneeMode
+    approvalRequired?: boolean
     planType: TaskPlanType
     kind?: TaskKind
     completionRequirement?: CompletionRequirement
@@ -393,6 +395,7 @@ export const lovePointsService = {
     if (kind === 'project' && (!draft.bound || draft.activeSpaceType !== 'couple')) throw new Error('大计划只能创建在情侣空间')
     const planType = kind === 'project' || kind === 'one_time' ? 'long_term' : input.planType === 'weekly' ? 'weekly' : 'daily'
     const bothRequired = input.assignee === 'both'
+    const approvalRequired = input.approvalRequired !== false
     if (bothRequired && (draft.activeSpaceType !== 'couple' || kind !== 'recurring' || planType !== 'daily')) throw new Error('双方完成模式仅用于情侣空间的每日待办')
     const rawSteps = input.projectSteps || []
     if (kind === 'project' && (rawSteps.length < 2 || rawSteps.length > 8)) throw new Error('大计划需要设置 2–8 个环节')
@@ -418,14 +421,15 @@ export const lovePointsService = {
       templateId,
       title: input.title.trim(),
       description: input.description.trim() || '你们共同创建的新待办',
-      taskType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
-      pointsType: draft.activeSpaceType === 'couple' ? 'shared' : 'personal',
+      taskType: 'personal',
+      pointsType: 'personal',
       points: input.points,
       status: 'todo',
       assigneeMode: bothRequired ? 'both' : input.assignee,
       bothRequired,
       assigneeIsSelf: input.assignee !== 'partner',
       reviewerIsSelf: !bothRequired && input.assignee === 'partner',
+      approvalRequired,
       selfCompletion: { completed: false, completedAt: '', note: '', evidence: [] },
       partnerCompletion: { completed: false, completedAt: '', note: '', evidence: [] },
       latestNote: '',
@@ -467,13 +471,13 @@ export const lovePointsService = {
         task.progressPercent = task.partnerCompletion.completed ? 100 : 50
         const ledgerId = `${task.id}-participant-self-completed`
         if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
-          draft.sharedPoints += task.points
-          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '我完成了双方每日待办', amount: task.points, balance: draft.sharedPoints, type: 'shared' })
+          draft.personalPoints += task.points
+          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '我完成了双方待办', amount: task.points, balance: draft.personalPoints, type: 'personal' })
         }
         const historyEntry = task.dailyHistory.find((item) => item.date === task.cycleKey)
         if (historyEntry) historyEntry.selfCompleted = true
         else task.dailyHistory.unshift({ date: task.cycleKey, selfCompleted: true, partnerCompleted: task.partnerCompletion.completed })
-        addLocalTaskLog(task, 'completed', `完成了今日待办，情侣积分 +${task.points}`)
+        addLocalTaskLog(task, 'completed', `完成了今日待办，个人积分 +${task.points}`)
         syncSelectedTask(draft, task)
         return
       }
@@ -482,9 +486,9 @@ export const lovePointsService = {
       if (!task.isCurrentCycle && task.planType !== 'long_term') throw new Error('这个周期已经结束，不能补交')
       task.latestNote = note.trim()
       task.evidence = evidence.slice(0, 9)
-      task.status = draft.activeSpaceType === 'personal' ? 'done' : 'pending'
+      task.status = task.approvalRequired && draft.activeSpaceType === 'couple' ? 'pending' : 'done'
       task.rejectionReason = ''
-      if (draft.activeSpaceType === 'personal') {
+      if (!task.approvalRequired || draft.activeSpaceType === 'personal') {
         const ledgerId = `${task.id}-self-completed`
         if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
           draft.personalPoints += task.points
@@ -493,8 +497,8 @@ export const lovePointsService = {
         task.progressPercent = 100
       }
       // 本机体验模式用同一台设备模拟双方，提交后切换为审批视角；云端模式由 OpenID 权限决定。
-      task.reviewerIsSelf = true
-      addLocalTaskLog(task, 'completed', draft.activeSpaceType === 'personal' ? `完成待办，个人积分 +${task.points}` : '提交了完成记录，等待对方确认')
+      task.reviewerIsSelf = Boolean(task.approvalRequired && draft.activeSpaceType === 'couple')
+      addLocalTaskLog(task, 'completed', task.status === 'done' ? `完成待办，个人积分 +${task.points}` : '提交了完成记录，等待对方确认')
       syncSelectedTask(draft, task)
     })
   }),

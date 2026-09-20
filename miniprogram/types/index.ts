@@ -133,6 +133,7 @@ export interface TaskItem {
   bothRequired: boolean
   assigneeIsSelf: boolean
   reviewerIsSelf: boolean
+  approvalRequired?: boolean
   selfCompletion: TaskCompletion
   partnerCompletion: TaskCompletion
   latestNote: string

@@ -75,6 +75,7 @@ Page({
     points: '80',
     taskType: 'shared' as 'personal' | 'shared',
     assignee: 'self' as TaskAssigneeMode,
+    approvalRequired: false,
     planType: 'daily' as TaskPlanType,
     taskKind: 'one_time' as TaskKind,
     completionRequirement: 'note' as CompletionRequirement,
@@ -85,7 +86,7 @@ Page({
     rewardName: '一起看日落',
     rewardDescription: '找一个天气好的傍晚散步',
     rewardCost: '150',
-    rewardPointsType: 'shared' as PointsType,
+    rewardPointsType: 'personal' as PointsType,
     rewardExpiry: '创建后 365 天内',
     rewardCondition: '由双方共同商量使用时间',
     rewardApprovalRequired: false,
@@ -163,7 +164,7 @@ Page({
         state,
         taskType: state.bound ? this.data.taskType : 'personal',
         assignee: state.bound ? this.data.assignee : 'self',
-        rewardPointsType: state.bound ? this.data.rewardPointsType : 'personal',
+        rewardPointsType: 'personal',
         rewardApprovalRequired: state.bound ? this.data.rewardApprovalRequired : false,
         taskKind: state.activeSpaceType === 'personal' && this.data.taskKind === 'project' ? 'one_time' : this.data.taskKind,
         rewardBeneficiaryType: state.activeSpaceType === 'personal' ? 'self' : this.data.rewardBeneficiaryType,
@@ -229,7 +230,8 @@ Page({
   handleDescription(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ description: event.detail.value }) },
   handlePoints(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ points: event.detail.value.replace(/\D/g, '') }) },
   selectTaskType(event: WechatMiniprogram.TouchEvent) { this.setData({ taskType: event.currentTarget.dataset.type as 'personal' | 'shared' }) },
-  selectAssignee(event: WechatMiniprogram.TouchEvent) { this.setData({ assignee: event.currentTarget.dataset.assignee as TaskAssigneeMode }) },
+  selectAssignee(event: WechatMiniprogram.TouchEvent) { this.setData({ assignee: event.currentTarget.dataset.assignee as TaskAssigneeMode, approvalRequired: false }) },
+  toggleApproval(event: WechatMiniprogram.TouchEvent) { this.setData({ approvalRequired: event.currentTarget.dataset.approval === 'true' }) },
   selectPlanType(event: WechatMiniprogram.TouchEvent) {
     const planType = event.currentTarget.dataset.plan as TaskPlanType
     this.setData({ planType, assignee: planType === 'daily' ? this.data.assignee : this.data.assignee === 'both' ? 'self' : this.data.assignee })
@@ -285,6 +287,7 @@ Page({
         points: Number(this.data.points),
         taskType: this.data.taskType,
         assignee: this.data.assignee,
+        approvalRequired: this.data.approvalRequired,
         planType: this.data.planType,
         kind: this.data.taskKind,
         completionRequirement: this.data.completionRequirement,

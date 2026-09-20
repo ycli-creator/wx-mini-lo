@@ -30,6 +30,14 @@ Every person always has an independent personal space. Binding with a partner cr
 
 ## Capabilities and Constraints
 
+### Current experience direction (2026-09-20)
+
+- The first-run home experience is a “today workspace”: today's tasks, pending confirmations, points earned, today's records, and quick publish.
+- New tasks use personal points only. The creator chooses whether the assignee is self, partner, or both; when both are selected, each member completes independently and receives the same points.
+- Approval is optional per task. Direct-completion tasks award points immediately; approval tasks create an in-app notification and may additionally use an authorized WeChat subscription message.
+- Couple space is the first implementation of the broader workspace concept. `coupleId` remains the compatible storage key until a later workspace migration.
+- Explanatory copy belongs in secondary help surfaces. Primary flows use short, factual status copy.
+
 ### Privacy and onboarding
 
 - First-run onboarding asks the user to choose between “专注记录” and “分享生活”. The choice is a preset that can be changed later from the profile.

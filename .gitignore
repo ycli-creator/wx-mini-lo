@@ -5,3 +5,5 @@ project.private.config.json
 preview-info.json
 preview-qrcode.png
 .DS_Store
+.workbuddy/
+cloudfunctions/nm_bak/
