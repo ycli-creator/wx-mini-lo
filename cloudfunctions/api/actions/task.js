@@ -36,10 +36,10 @@ const create = async ({ openid, payload }) => {
   const description = String(payload.description || '').trim()
   const points = Number(payload.points)
   const kind = payload.kind === 'project' ? 'project' : payload.kind === 'recurring' || ['daily', 'weekly'].includes(payload.planType) ? 'recurring' : 'one_time'
-  const taskType = 'personal'
+  const taskType = spaceType === 'couple' ? 'shared' : 'personal'
   const planType = kind === 'project' || kind === 'one_time' ? 'long_term' : payload.planType === 'weekly' ? 'weekly' : 'daily'
   const completionRequirement = ['direct', 'note', 'image'].includes(payload.completionRequirement) ? payload.completionRequirement : 'note'
-  const approvalRequired = payload.approvalRequired === true
+  const approvalRequired = payload.approvalRequired !== false
   const bothRequired = payload.assignee === 'both'
   assert(title, 'INVALID_TITLE', '请填写待办名称')
   assert(title.length <= 60 && description.length <= 200, 'TASK_TOO_LONG', '待办名称或说明超过长度限制')
@@ -76,7 +76,7 @@ const create = async ({ openid, payload }) => {
     title,
     description,
     taskType,
-    pointsType: 'personal',
+    pointsType: taskType,
     approvalRequired,
     points,
     assigneeMode: bothRequired ? 'both' : partnerAssigned ? 'partner' : 'self',
@@ -140,13 +140,11 @@ const submit = async ({ openid, payload }) => {
       finalStatus = bothDone ? 'approved' : 'partial'
       const account = (await transaction.collection(collections.accounts).doc(coupleId).get()).data
       assert(account, 'ACCOUNT_NOT_FOUND', '积分账户不存在')
-      const personalBalances = { ...(account.personalBalances || {}) }
-      const balanceAfter = Number(personalBalances[openid] || 0) + Number(task.points || 0)
-      personalBalances[openid] = balanceAfter
+      const balanceAfter = Number(account.sharedBalance || 0) + Number(task.points || 0)
       const ledgerId = `ledger_task_participant_${cycle._id}_${openid}`
-      await transaction.collection(collections.accounts).doc(coupleId).update({ data: { personalBalances, updatedAt: now() } })
+      await transaction.collection(collections.accounts).doc(coupleId).update({ data: { sharedBalance: balanceAfter, updatedAt: now() } })
       await transaction.collection(collections.ledgers).doc(ledgerId).set({ data: {
-        coupleId, accountOwnerOpenId: openid, pointsType: 'personal', direction: 'credit', amount: Number(task.points || 0), balanceAfter,
+        coupleId, accountOwnerOpenId: null, pointsType: 'shared', direction: 'credit', amount: Number(task.points || 0), balanceAfter,
         sourceType: 'task_participant_completion', sourceId: cycle._id, actorOpenId: openid, title: task.title,
         detail: `${cycle.cycleLabel || cycle.cycleKey}双方待办个人完成`, idempotencyKey: ledgerId, createdAt: now(),
       } })
@@ -187,7 +185,8 @@ const submit = async ({ openid, payload }) => {
   })
   await writeOperationLog({ coupleId, openid, action: 'task.submit', targetId: cycle._id, detail: '提交了完成记录，等待对方确认' })
   if (task.reviewerOpenId !== openid) await createNotification({ recipientOpenId: task.reviewerOpenId, coupleId, type: 'task', title: '待办待确认', body: `“${task.title}”已经提交完成`, actionPath: '/pages/task/index', sourceId: cycle._id })
-  if (!task.approvalRequired || (spaceType === 'personal' && task.reviewerOpenId === openid)) return review({ openid, payload: { taskId: cycle._id, approved: true } })
+  const approvalRequired = task.approvalRequired !== false
+  if (!approvalRequired || (spaceType === 'personal' && task.reviewerOpenId === openid)) return review({ openid, payload: { taskId: cycle._id, approved: true } })
   return projectState(openid)
 }
 

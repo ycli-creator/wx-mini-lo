@@ -47,7 +47,7 @@
     "lp-page-state": "/components/base/lp-page-state/index",
     "lp-task-card": "/components/business/lp-task-card/index",
     "lp-cue-button": "/components/business/lp-cue-button/index",
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "lp-icon": "/components/base/lp-icon/index"
   },
   "tabBar": {
     "custom": true,

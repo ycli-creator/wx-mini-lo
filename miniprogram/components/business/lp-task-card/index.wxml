@@ -1,6 +1,6 @@
 <view class="card" hover-class="card--pressed" bind:tap="handleTap">
   <view class="heading">
-    <view class="icon"><t-icon name="task-checked" size="36rpx" /></view>
+    <view class="icon"><lp-icon name="task-checked" size="36rpx" /></view>
     <view class="copy">
       <text class="title">{{title}}</text>
       <text class="subtitle">{{subtitle || ('完成待办可得 ' + points + ' 积分')}}</text>

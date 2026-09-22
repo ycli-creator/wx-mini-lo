@@ -15,7 +15,7 @@ const create = async ({ openid, payload }) => {
   const { coupleId, spaceType } = await requireSpace(openid)
   const name = String(payload.name || '').trim()
   const cost = Number(payload.cost)
-  const pointsType = 'personal'
+  const pointsType = spaceType === 'couple' ? 'shared' : 'personal'
   const beneficiaryType = spaceType === 'personal'
     ? 'self'
     : ['self', 'partner', 'couple'].includes(payload.beneficiaryType) ? payload.beneficiaryType : 'couple'

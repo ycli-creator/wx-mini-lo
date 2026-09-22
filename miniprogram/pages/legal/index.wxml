@@ -28,5 +28,5 @@
     <text class="legal-copy">任何用户都可以举报公开帖子。举报提交后将进入处理队列；请勿恶意或重复举报。情侣双方任一方都可以撤回共同帖的公开展示，发布人可以删除帖子。违法违规内容可能由平台直接下架，并根据实际情况配合有关部门处理。</text>
   </view>
 
-  <view class="legal-notice"><t-icon name="info-circle" size="28rpx" /><text>正式提审时仍需在微信公众平台配置完整的《小程序用户隐私保护指引》，本页用于应用内说明，不能替代平台配置。</text></view>
+  <view class="legal-notice"><lp-icon name="info-circle" size="28rpx" /><text>正式提审时仍需在微信公众平台配置完整的《小程序用户隐私保护指引》，本页用于应用内说明，不能替代平台配置。</text></view>
 </view>

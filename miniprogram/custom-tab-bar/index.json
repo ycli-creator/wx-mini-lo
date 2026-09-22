@@ -1,6 +1,6 @@
 {
   "component": true,
   "usingComponents": {
-    "t-icon": "tdesign-miniprogram/icon/icon"
+    "lp-icon": "/components/base/lp-icon/index"
   }
 }

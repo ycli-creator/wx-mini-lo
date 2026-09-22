@@ -16,11 +16,11 @@
       <view class="remove-media" data-index="{{index}}" bind:tap="removeMedia">×</view>
     </view>
   </view>
-  <view class="media-picker is-disabled"><view class="cell-icon"><t-icon name="info-circle" size="32rpx" /></view><view class="cell-copy"><text class="cell-title">图片与视频暂未开放</text><text class="cell-subtitle">内容审核能力接通前，发布仅支持纯文字</text></view></view>
+  <view class="media-picker is-disabled"><view class="cell-icon"><lp-icon name="info-circle" size="32rpx" /></view><view class="cell-copy"><text class="cell-title">图片与视频暂未开放</text><text class="cell-subtitle">内容审核能力接通前，发布仅支持纯文字</text></view></view>
   <view wx:if="{{!policyAccepted}}" class="policy-consent">
-    <view class="policy-check {{policyAccepted ? 'checked' : ''}}" bind:tap="togglePolicy"><t-icon name="check" size="24rpx" /></view>
+    <view class="policy-check {{policyAccepted ? 'checked' : ''}}" bind:tap="togglePolicy"><lp-icon name="check" size="24rpx" /></view>
     <text bind:tap="togglePolicy">我已阅读并同意</text><text class="policy-link" bind:tap="openPolicies">《用户协议与隐私说明》</text>
   </view>
-  <view class="visibility-result"><t-icon name="lock-on" size="30rpx"/><text>当前：仅情侣空间可见</text></view>
+  <view class="visibility-result"><lp-icon name="lock-on" size="30rpx"/><text>当前：仅情侣空间可见</text></view>
   <lp-button label="{{uploadProgress || (editing ? '保存帖子修改' : '保存到情侣空间')}}" disabled="{{!title || !content || media.length}}" loading="{{busy}}" bind:tap="publish" />
 </view>

@@ -14,7 +14,7 @@
           <view class="feed-body">
             <text class="feed-title">{{item.title}}</text>
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
-            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
+            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><lp-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
             <view wx:if="{{item.authorIsSelf || item.canDelete}}" class="post-actions">
               <view wx:if="{{item.authorIsSelf}}" class="post-text-action" data-id="{{item.id}}" bind:tap="editPost">编辑</view>
@@ -31,7 +31,7 @@
           <view class="feed-body">
             <text class="feed-title">{{item.title}}</text>
             <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
-            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><t-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
+            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><lp-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
             <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
             <view wx:if="{{item.authorIsSelf || item.canDelete}}" class="post-actions">
               <view wx:if="{{item.authorIsSelf}}" class="post-text-action" data-id="{{item.id}}" bind:tap="editPost">编辑</view>

@@ -14,13 +14,13 @@
       <view wx:if="{{state.activeSpaceType === 'couple'}}" class="heat-strip" bind:tap="openHeat"><view><text class="strip-title">今天一起升温</text><text class="strip-copy">{{state.heat.completedCount}} / 5 项完成</text></view><view class="heat-number">+{{state.heat.todayHeat}}</view><text class="chevron">›</text></view>
       <lp-task-card wx:if="{{hasTask}}" status="{{task.status}}" title="{{task.title}}" subtitle="{{task.bothRequired ? '每日 · 双方各完成一次 · +' + task.points + '/人' : task.kind === 'project' ? task.progressPercent + '% · 共同大计划' : task.planType === 'daily' ? '每日 · 今天' : task.planType === 'weekly' ? '每周 · 本周' : '单次待办'}}" task-description="{{task.description}}" points="{{task.points}}" both-required="{{task.bothRequired}}" self-completed="{{task.selfCompletion.completed}}" partner-completed="{{task.partnerCompletion.completed}}" bind:tap="openTask" />
       <view wx:else class="empty-state" bind:tap="openTask"><text class="empty-title">今天还没有待办</text><text class="empty-copy">从一个预设模板开始，让想做的事更容易发生。</text></view>
-      <view wx:if="{{rewardNeedsAction}}" class="action-notice" bind:tap="openRewards"><t-icon name="notification" size="32rpx"/><view><text class="strip-title">心愿商店有待处理事项</text><text class="strip-copy">{{rewardHint}}</text></view><text class="chevron">›</text></view>
+      <view wx:if="{{rewardNeedsAction}}" class="action-notice" bind:tap="openRewards"><lp-icon name="notification" size="32rpx"/><view><text class="strip-title">心愿商店有待处理事项</text><text class="strip-copy">{{rewardHint}}</text></view><text class="chevron">›</text></view>
     </view>
     <view wx:else class="home-panel tool-grid">
-      <view class="tool-item" bind:tap="openPoints"><view class="tool-icon"><t-icon name="money" size="36rpx"/></view><text class="tool-title">积分中心</text><text class="tool-copy">查看余额与流水</text></view>
-      <view class="tool-item" bind:tap="openRewards"><view class="tool-icon"><t-icon name="gift" size="36rpx"/></view><text class="tool-title">心愿商店</text><text class="tool-copy">兑换约定的期待</text></view>
-      <view class="tool-item" bind:tap="openDocuments"><view class="tool-icon"><t-icon name="book-open" size="36rpx"/></view><text class="tool-title">{{state.activeSpaceType === 'couple' ? '共享文档' : '我的文档'}}</text><text class="tool-copy">日记、清单与计划</text></view>
-      <view class="tool-item" bind:tap="openCalendar"><view class="tool-icon"><t-icon name="calendar" size="36rpx"/></view><text class="tool-title">生活日历</text><text class="tool-copy">记录情绪与事件</text></view>
+      <view class="tool-item" bind:tap="openPoints"><view class="tool-icon"><lp-icon name="money" size="36rpx"/></view><text class="tool-title">积分中心</text><text class="tool-copy">查看余额与流水</text></view>
+      <view class="tool-item" bind:tap="openRewards"><view class="tool-icon"><lp-icon name="gift" size="36rpx"/></view><text class="tool-title">心愿商店</text><text class="tool-copy">兑换约定的期待</text></view>
+      <view class="tool-item" bind:tap="openDocuments"><view class="tool-icon"><lp-icon name="book-open" size="36rpx"/></view><text class="tool-title">{{state.activeSpaceType === 'couple' ? '共享文档' : '我的文档'}}</text><text class="tool-copy">日记、清单与计划</text></view>
+      <view class="tool-item" bind:tap="openCalendar"><view class="tool-icon"><lp-icon name="calendar" size="36rpx"/></view><text class="tool-title">生活日历</text><text class="tool-copy">记录情绪与事件</text></view>
     </view>
   </block>
 </view>

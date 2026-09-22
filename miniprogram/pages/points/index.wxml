@@ -7,7 +7,7 @@
   </view>
   <view wx:if="{{entries.length}}" class="list">
     <view wx:for="{{entries}}" wx:key="id" class="ledger-row">
-      <view class="cell-icon"><t-icon name="money" size="30rpx" /></view>
+      <view class="cell-icon"><lp-icon name="money" size="30rpx" /></view>
       <view class="cell-copy"><text class="cell-title">{{item.title}}</text><text class="cell-subtitle">{{item.detail}}</text></view>
       <view class="ledger-amount {{item.amount >= 0 ? 'positive' : 'negative'}}"><text class="amount">{{item.amount >= 0 ? '+' : ''}}{{item.amount}} 积分</text><text class="balance">余额 {{item.balance}}</text></view>
     </view>

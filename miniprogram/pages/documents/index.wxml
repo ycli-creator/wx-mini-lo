@@ -20,7 +20,7 @@
       <view class="section-heading"><text class="section-title">{{group.name}}</text><text class="section-caption" data-id="{{group.id}}" bind:tap="startGroupDocument">＋ 新文档</text></view>
       <view wx:if="{{group.documents.length}}" class="list">
         <view wx:for="{{group.documents}}" wx:for-item="document" wx:key="id" class="list-cell" data-id="{{document.id}}" hover-class="pressed" bind:tap="openDocument">
-          <view class="cell-icon"><t-icon name="file" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">{{document.title}}</text><text class="cell-subtitle">{{document.lockedByOther ? '对方正在编辑 · 点击只读查看' : '点击查看或继续编辑'}}</text></view><text class="chevron">›</text>
+          <view class="cell-icon"><lp-icon name="file" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">{{document.title}}</text><text class="cell-subtitle">{{document.lockedByOther ? '对方正在编辑 · 点击只读查看' : '点击查看或继续编辑'}}</text></view><text class="chevron">›</text>
         </view>
       </view>
       <view wx:else class="empty-state section-gap" data-id="{{group.id}}" bind:tap="startGroupDocument"><text class="empty-copy">还没有文档，点此开始记录。</text></view>

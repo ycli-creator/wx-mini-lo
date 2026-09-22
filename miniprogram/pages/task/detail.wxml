@@ -25,7 +25,7 @@
 
     <view class="section-heading"><text class="section-title">待办照片</text><text class="section-caption">双方都可以补充</text></view>
     <view wx:if="{{task.media.length}}" class="gallery-grid"><image wx:for="{{task.media}}" wx:key="fileId" src="{{item.fileId}}" mode="aspectFill" /></view>
-    <view class="add-gallery" bind:tap="addGalleryPhotos"><t-icon name="camera" size="30rpx"/><text>添加照片</text></view>
+    <view class="add-gallery" bind:tap="addGalleryPhotos"><lp-icon name="camera" size="30rpx"/><text>添加照片</text></view>
 
     <view wx:if="{{!task.assigneeIsSelf || task.kind === 'project' || task.bothRequired && !task.partnerCompletion.completed}}" class="cue-block"><lp-cue-button type="custom_task" title="{{task.title}}" description="{{task.description}}" resource-type="task" resource-id="{{task.id}}" action-path="/pages/task/detail?id={{task.id}}" action-text="查看进度" label="@TA 查看当前进度" /></view>
 
@@ -33,10 +33,10 @@
       <view class="section-heading"><text class="section-title">计划环节</text><text class="section-caption">完成一个发放 10%</text></view>
       <view class="project-step-list">
         <view wx:for="{{task.projectSteps}}" wx:key="id" class="project-step-card">
-          <view class="project-step {{item.status === 'done' ? 'done' : ''}}" data-id="{{item.id}}" bind:tap="selectStep"><view class="step-status"><t-icon name="{{item.status === 'done' ? 'check-circle-filled' : 'circle'}}" size="34rpx" /></view><view class="cell-copy"><text class="cell-title">{{item.title}}</text><text class="cell-subtitle">{{item.assigneeIsSelf ? '由我完成' : '由 TA 完成'}} · {{item.completionRequirement === 'image' ? '需上传图片' : item.completionRequirement === 'note' ? '需填写说明' : '直接完成'}} · +{{item.rewardPoints}}</text></view><text wx:if="{{item.status !== 'done'}}" class="chevron">›</text></view>
+          <view class="project-step {{item.status === 'done' ? 'done' : ''}}" data-id="{{item.id}}" bind:tap="selectStep"><view class="step-status"><lp-icon name="{{item.status === 'done' ? 'check-circle-filled' : 'circle'}}" size="34rpx" /></view><view class="cell-copy"><text class="cell-title">{{item.title}}</text><text class="cell-subtitle">{{item.assigneeIsSelf ? '由我完成' : '由 TA 完成'}} · {{item.completionRequirement === 'image' ? '需上传图片' : item.completionRequirement === 'note' ? '需填写说明' : '直接完成'}} · +{{item.rewardPoints}}</text></view><text wx:if="{{item.status !== 'done'}}" class="chevron">›</text></view>
           <view wx:if="{{item.note}}" class="step-note">{{item.note}}</view>
           <view wx:if="{{item.evidence.length || item.media.length}}" class="step-media"><image wx:for="{{item.evidence}}" wx:for-item="photo" wx:key="fileId" src="{{photo.fileId}}" mode="aspectFill"/><image wx:for="{{item.media}}" wx:for-item="photo" wx:key="fileId" src="{{photo.fileId}}" mode="aspectFill"/></view>
-          <view class="step-photo-action" data-step-id="{{item.id}}" catch:tap="addGalleryPhotos"><t-icon name="camera" size="26rpx"/><text>为这个环节添加照片</text></view>
+          <view class="step-photo-action" data-step-id="{{item.id}}" catch:tap="addGalleryPhotos"><lp-icon name="camera" size="26rpx"/><text>为这个环节添加照片</text></view>
         </view>
       </view>
       <view wx:if="{{activeStepId}}" class="step-completion"><view class="section-heading"><text class="section-title">完成这个环节</text><text class="remove-step" bind:tap="closeStep">收起</text></view><textarea class="text-area" maxlength="300" placeholder="补充完成说明（按环节要求填写）" value="{{note}}" bind:input="handleNote"/><view wx:if="{{images.length}}" class="evidence-grid"><image wx:for="{{images}}" wx:key="localPath" src="{{item.localPath}}" mode="aspectFill"/></view><view class="add-evidence" bind:tap="chooseImage">添加完成图片（{{images.length}} / 3）</view><lp-button label="完成并领取 10% 奖励" loading="{{busy}}" bind:tap="completeStep" /></view>

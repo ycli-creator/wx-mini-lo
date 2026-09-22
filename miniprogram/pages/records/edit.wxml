@@ -13,7 +13,7 @@
     </view>
   </block>
   <block wx:else>
-    <picker mode="date" value="{{date}}" bind:change="handleDate"><view class="date-picker"><view class="cell-icon"><t-icon name="calendar" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">记录日期</text><text class="cell-subtitle">{{date}}</text></view><text class="chevron">›</text></view></picker>
+    <picker mode="date" value="{{date}}" bind:change="handleDate"><view class="date-picker"><view class="cell-icon"><lp-icon name="calendar" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">记录日期</text><text class="cell-subtitle">{{date}}</text></view><text class="chevron">›</text></view></picker>
     <view class="segment record-type-segment"><view wx:for="{{typeOptions}}" wx:key="value" class="segment-item {{type === item.value ? 'active' : ''}}" data-value="{{item.value}}" bind:tap="selectType">{{item.label}}</view></view>
     <view wx:if="{{type === 'mood'}}" class="form-card">
       <text class="field-label">今天感觉怎么样？</text>

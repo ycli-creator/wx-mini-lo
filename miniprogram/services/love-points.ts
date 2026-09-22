@@ -401,6 +401,7 @@ export const lovePointsService = {
     if (kind === 'project' && (rawSteps.length < 2 || rawSteps.length > 8)) throw new Error('大计划需要设置 2–8 个环节')
     const templateId = uid('task-template')
     const meta = getTaskCycleMeta(planType)
+    const pointsType = draft.activeSpaceType === 'couple' ? 'shared' : 'personal'
     const projectSteps: ProjectStep[] = rawSteps.map((step, index) => ({
       id: `${templateId}-step-${index + 1}`,
       title: step.title.trim(),
@@ -421,8 +422,8 @@ export const lovePointsService = {
       templateId,
       title: input.title.trim(),
       description: input.description.trim() || '你们共同创建的新待办',
-      taskType: 'personal',
-      pointsType: 'personal',
+      taskType: pointsType,
+      pointsType,
       points: input.points,
       status: 'todo',
       assigneeMode: bothRequired ? 'both' : input.assignee,
@@ -471,13 +472,13 @@ export const lovePointsService = {
         task.progressPercent = task.partnerCompletion.completed ? 100 : 50
         const ledgerId = `${task.id}-participant-self-completed`
         if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
-          draft.personalPoints += task.points
-          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '我完成了双方待办', amount: task.points, balance: draft.personalPoints, type: 'personal' })
+          draft.sharedPoints += task.points
+          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '我完成了双方待办', amount: task.points, balance: draft.sharedPoints, type: 'shared' })
         }
         const historyEntry = task.dailyHistory.find((item) => item.date === task.cycleKey)
         if (historyEntry) historyEntry.selfCompleted = true
         else task.dailyHistory.unshift({ date: task.cycleKey, selfCompleted: true, partnerCompleted: task.partnerCompletion.completed })
-        addLocalTaskLog(task, 'completed', `完成了今日待办，个人积分 +${task.points}`)
+        addLocalTaskLog(task, 'completed', `完成了今日待办，情侣积分 +${task.points}`)
         syncSelectedTask(draft, task)
         return
       }
@@ -550,6 +551,7 @@ export const lovePointsService = {
     return updateState((draft) => {
       const task = currentTask(draft, taskId)
       if (!task) throw new Error('待办不存在')
+      if (task.status === 'done') return
       if (!task.reviewerIsSelf) throw new Error('只有指定确认人可以处理待办')
       if (!approved) {
         task.status = 'rejected'
@@ -558,7 +560,6 @@ export const lovePointsService = {
         syncSelectedTask(draft, task)
         return
       }
-      if (task.status === 'done') return
       if (task.status !== 'pending') throw new Error('待办当前不在待确认状态')
       task.status = 'done'
       const nextBalance = (task.pointsType === 'shared' ? draft.sharedPoints : draft.personalPoints) + task.points
