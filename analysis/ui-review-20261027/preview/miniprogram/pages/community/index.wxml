@@ -1,0 +1,47 @@
+<view class="screen with-tabbar has-floating-action community-screen">
+  <lp-header title="我们的日常" subtitle="只有你和 TA 能看到的记录" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在加载记录" error-text="记录暂时没有加载成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view wx:if="{{posts.length}}" class="feed-grid">
+      <view class="feed-column">
+        <view wx:for="{{leftPosts}}" wx:key="id" class="feed-card">
+          <view wx:if="{{item.coverType === 'image'}}" class="feed-cover-wrap" data-id="{{item.id}}" bind:tap="previewImage"><image class="feed-cover" src="{{item.coverUrl}}" mode="widthFix" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
+          <view wx:elif="{{item.coverType === 'video'}}" class="feed-video-wrap">
+            <video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" />
+            <text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text>
+          </view>
+          <view wx:else class="text-cover"><text>{{item.title || '两个人的小日常'}}</text></view>
+          <view class="feed-body">
+            <text class="feed-title">{{item.title}}</text>
+            <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
+            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><lp-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
+            <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
+            <view wx:if="{{item.authorIsSelf || item.canDelete}}" class="post-actions">
+              <view wx:if="{{item.authorIsSelf}}" class="post-text-action" data-id="{{item.id}}" bind:tap="editPost">编辑</view>
+              <view wx:if="{{item.canDelete}}" class="post-text-action danger" data-id="{{item.id}}" bind:tap="deletePost">删除</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="feed-column">
+        <view wx:for="{{rightPosts}}" wx:key="id" class="feed-card">
+          <view wx:if="{{item.coverType === 'image'}}" class="feed-cover-wrap" data-id="{{item.id}}" bind:tap="previewImage"><image class="feed-cover" src="{{item.coverUrl}}" mode="widthFix" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
+          <view wx:elif="{{item.coverType === 'video'}}" class="feed-video-wrap"><video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}}</text></view>
+          <view wx:else class="text-cover"><text>{{item.title || '两个人的小日常'}}</text></view>
+          <view class="feed-body">
+            <text class="feed-title">{{item.title}}</text>
+            <text wx:if="{{item.coverType !== 'text' && item.content}}" class="feed-content">{{item.content}}</text>
+            <view class="couple-row"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><lp-icon wx:else name="user-circle" size="24rpx" /></view><text class="couple-name">{{item.pairLabel}}</text></view>
+            <view class="feed-meta"><text>{{item.dateLabel}}</text><text wx:if="{{item.statusLabel}}" class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text></view>
+            <view wx:if="{{item.authorIsSelf || item.canDelete}}" class="post-actions">
+              <view wx:if="{{item.authorIsSelf}}" class="post-text-action" data-id="{{item.id}}" bind:tap="editPost">编辑</view>
+              <view wx:if="{{item.canDelete}}" class="post-text-action danger" data-id="{{item.id}}" bind:tap="deletePost">删除</view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view wx:else class="empty-state"><text class="empty-title">还没有共同日常</text><text class="empty-copy">记录下来的小事只会保存在你们两个人的空间里。</text></view>
+    <view class="floating-create-action" hover-class="floating-create-action--pressed" bind:tap="createPost"><text class="floating-create-icon">＋</text><text>{{bound ? '发布日常' : '绑定后发布'}}</text></view>
+  </block>
+</view>

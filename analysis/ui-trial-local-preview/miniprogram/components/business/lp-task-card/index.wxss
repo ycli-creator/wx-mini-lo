@@ -1,0 +1,21 @@
+:host { display: block; margin-bottom: 28rpx; }
+.card { width: 100%; padding: 28rpx 4rpx; color: #2f2928; border-bottom: 1rpx solid #eedfd8; transition: transform 160ms ease; }
+.card--pressed { transform: scale(0.985); }
+.heading { display: flex; align-items: center; gap: 24rpx; }
+.icon { width: 52rpx; height: 64rpx; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #e84a57; font-size: 36rpx; }
+.copy { min-width: 0; flex: 1; }
+.title, .subtitle { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.title { font-size: 32rpx; font-weight: 500; line-height: 50rpx; }
+.subtitle { color: #8a7c78; font-size: 24rpx; line-height: 38rpx; }
+.tag { min-height: 52rpx; flex-shrink: 0; padding: 6rpx 12rpx; display: flex; align-items: center; border-radius: 8rpx; font-size: 22rpx; }
+.tag--todo { color: #e84a57; background: #fff1f0; }
+.tag--partial { color: #4d84c6; background: #eaf2ff; }
+.tag--pending { color: #4d84c6; background: #eaf2ff; }
+.tag--done { color: #688f3b; background: #edf6df; }
+.tag--rejected { color: #e84a57; background: #fff1f0; }
+.tag--missed { color: #e7942f; background: #fff1d6; }
+.description { display: block; margin: 18rpx 0; color: #8a7c78; font-size: 28rpx; line-height: 44rpx; }
+.progress-row { margin-top: 20rpx; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 20rpx; color: #8a7c78; font-size: 24rpx; }
+.track { height: 8rpx; overflow: hidden; background: #f8efea; border-radius: 999rpx; }
+.bar { height: 100%; background: #f65f6b; border-radius: inherit; }
+.dual-track{display:grid;grid-template-columns:1fr 1fr;gap:4rpx;background:transparent}.dual-card-half{height:100%;background:#ece8e7}.dual-card-half.self.filled{background:#6aa6e8}.dual-card-half.partner.filled{background:#f18aa8}.dual-card-labels{margin-top:14rpx;display:flex;justify-content:space-between;color:#8a7c78;font-size:20rpx}

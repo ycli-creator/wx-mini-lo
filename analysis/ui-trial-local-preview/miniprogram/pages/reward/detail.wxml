@@ -1,0 +1,13 @@
+<page-meta root-font-size="system" />
+<view class="screen reward-detail-screen">
+  <lp-header title="心愿详情" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取奖励" error-text="奖励暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="reward-card section-gap"><view class="reward-icon"><lp-icon name="gift" size="42rpx" /></view><view class="cell-copy"><text class="cell-title">{{reward.name}}</text><text class="cell-subtitle">{{reward.description}}</text></view><view class="reward-cost"><lp-icon name="money" size="30rpx" /><text>{{reward.cost}} {{pointsLabel}}积分 · {{reward.beneficiaryType === 'couple' ? '两人共同' : reward.beneficiaryType === 'partner' ? '给 TA' : '给我'}}</text></view></view>
+  <view class="details-grid"><view class="detail-row"><text class="detail-label">有效期</text><text class="detail-value">{{reward.expiry}}</text></view><view class="detail-row"><text class="detail-label">使用约定</text><text class="detail-value">{{reward.condition || '无'}}</text></view><view class="detail-row"><text class="detail-label">兑换确认</text><text class="detail-value">{{reward.approvalRequired ? '需 TA 同意后扣分' : '兑换时扣分'}}</text></view><view class="detail-row"><text class="detail-label">可用积分</text><text class="detail-value">{{balance}} {{pointsLabel}}积分</text></view></view>
+  <view wx:if="{{!enough && !redeemed}}" class="notice-card warning"><text class="notice-copy">还差 {{shortfall}} 积分</text></view>
+  <lp-cue-button type="reward" title="{{reward.name}}" description="{{reward.description}}" resource-type="reward" resource-id="{{reward.id}}" action-path="/pages/reward/detail?id={{reward.id}}" action-text="查看奖励" label="@TA 看看" />
+  <lp-button label="{{redeemed ? '查看兑换记录' : reward.approvalRequired ? '申请兑换' : '兑换心愿'}}" disabled="{{!enough && !redeemed}}" loading="{{busy}}" bind:tap="redeem" />
+  <lp-button label="返回心愿商店" variant="text" bind:tap="goBack" />
+  </block>
+</view>

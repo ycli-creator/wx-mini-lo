@@ -1,0 +1,24 @@
+<page-meta root-font-size="system" />
+<view class="screen with-tabbar profile-screen"><lp-header title="我的" />
+  <button class="profile-settings" bindtap="openSettings" aria-label="设置"><lp-icon name="settings-3" size="38rpx" color="#403631" /></button>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步个人资料" error-text="个人资料暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view class="profile-cover"><image wx:if="{{state.profile.backgroundUrl}}" class="cover-image" src="{{state.profile.backgroundUrl}}" mode="aspectFill"/><view class="cover-actions" bind:tap="editProfile">编辑资料</view></view>
+    <view class="identity-row"><image wx:if="{{state.profile.avatarUrl}}" class="profile-avatar" src="{{state.profile.avatarUrl}}" mode="aspectFill"/><view wx:else class="profile-avatar empty"><lp-icon name="user-avatar" size="56rpx"/></view><view class="identity-copy"><text class="profile-name">{{state.profile.nickname}}</text><text class="profile-region">{{state.profile.region || ''}}</text></view></view>
+    <view class="identity-code" bind:tap="copyIdentityCode"><text>身份码 {{state.profile.identityCode || '正在生成'}}</text><text class="copy-label">复制</text></view>
+    <view class="workspace-button" hover-class="pressed" bind:tap="openSpacePicker" aria-role="button" aria-label="切换空间"><view class="workspace-icon"><lp-icon name="{{state.activeSpaceType === 'couple' ? 'heart' : 'profile'}}" size="42rpx" color="#eb6077" /></view><view class="workspace-copy"><text class="workspace-name">{{state.activeSpaceType === 'couple' ? '情侣空间 · 我和 ' + state.partnerProfile.nickname : '个人空间'}}</text></view><text class="workspace-action">{{state.bound ? '切换' : '绑定 TA'}}</text><lp-icon name="line-right" size="32rpx" color="#81716a" /></view>
+    <view wx:if="{{state.bound}}" class="partner-row"><text class="partner-label">情侣空间</text><text class="partner-name">{{state.relationshipPublicApproved && state.profile.privacy.showPartner ? state.partnerProfile.nickname : '已绑定 · 未公开'}}</text></view>
+    <view class="stat-row">
+      <button class="stat-item" bind:tap="openPosts"><view class="stat-icon rose"><lp-icon name="chat" size="40rpx" color="#eb6077"/></view><text class="stat-value">{{state.communityPosts.length}}</text><text class="stat-label">帖子</text></button>
+      <button class="stat-item" bind:tap="openFriends"><view class="stat-icon violet"><lp-icon name="3-user" size="40rpx" color="#8688db"/></view><text class="stat-value">{{friendCount}}</text><text class="stat-label">好友</text></button>
+      <button class="stat-item" bind:tap="openDocuments"><view class="stat-icon gold"><lp-icon name="document" size="40rpx" color="#cf8c1e"/></view><text class="stat-value">{{state.documents.length}}</text><text class="stat-label">文档</text></button>
+    </view>
+    <scroll-view scroll-x class="profile-tabs"><view class="tabs-inner"><view class="tab {{activeTab === 'posts' ? 'active' : ''}}" data-tab="posts" bind:tap="switchSection">动态</view><view class="tab {{activeTab === 'achievements' ? 'active' : ''}}" data-tab="achievements" bind:tap="switchSection">成就 {{unlockedCount}}</view><view class="tab {{activeTab === 'data' ? 'active' : ''}}" data-tab="data" bind:tap="switchSection">数据</view></view></scroll-view>
+    <view wx:if="{{activeTab === 'posts'}}" class="profile-posts">
+      <view wx:if="{{state.communityPosts.length}}" class="profile-post-list"><view wx:for="{{state.communityPosts}}" wx:key="id" class="profile-post" bind:tap="openPosts"><text class="post-title">{{item.title}}</text><text class="post-content">{{item.content}}</text></view></view>
+      <view wx:else class="profile-empty"><view class="empty-visual"><lp-icon name="chat" size="72rpx" color="#ef8c9a"/></view><text class="empty-title">暂无动态</text><button class="empty-action" bind:tap="createPost">{{state.bound ? '发布日常' : '绑定 TA'}}</button></view>
+    </view>
+    <view wx:elif="{{activeTab === 'achievements'}}" class="achievement-grid"><view wx:for="{{achievements}}" wx:key="id" class="achievement {{item.unlocked ? 'unlocked' : ''}}"><view class="badge">{{item.badge}}</view><text class="achievement-title">{{item.title}}</text><text class="achievement-copy">{{item.progress}} / {{item.target}}</text></view></view>
+    <view wx:else class="data-list"><view class="data-row"><text>个人积分</text><text>{{state.personalPoints}}</text></view><view class="data-row"><text>共同积分</text><text>{{state.sharedPoints}}</text></view><view class="data-row"><text>情侣热力</text><text>{{state.heat.totalHeat}}</text></view><view class="data-row"><text>相伴天数</text><text>{{relationshipDays}}</text></view><view class="data-row" bind:tap="openSettings"><text>隐私与关系设置</text><lp-icon name="line-right" size="32rpx" color="#81716a" /></view></view>
+  </block>
+</view>

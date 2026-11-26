@@ -1,0 +1,105 @@
+<page-meta root-font-size="system" />
+<view class="journal-page ui-trial" style="padding-top: {{navBottom}}px;">
+  <view class="feed-head" style="padding-top: {{navTop}}px;">
+    <view class="journal-nav">
+      <button class="ui-control ui-icon-button" bindtap="back" hover-class="ui-press" hover-start-time="20" aria-label="返回首页"><lp-icon name="line-back" size="48rpx" color="#403631" /></button>
+      <view class="journal-tools">
+        <button class="ui-control ui-icon-button" bindtap="toggleDrawer" hover-class="ui-press" hover-start-time="20" aria-expanded="{{drawerOpen}}" aria-label="日记分类与视图"><lp-icon name="line-menu" size="46rpx" color="#403631" /></button>
+        <button class="ui-control ui-icon-button {{searchOpen ? 'tool-selected' : ''}}" bindtap="toggleSearch" hover-class="ui-press" hover-start-time="20" aria-expanded="{{searchOpen}}" aria-label="{{searchOpen ? '关闭搜索' : '搜索日记'}}"><lp-icon name="line-search" size="46rpx" color="{{searchOpen ? '#b72f46' : '#403631'}}" /></button>
+        <button class="ui-control ui-icon-button {{filtersOpen ? 'tool-selected' : ''}}" bindtap="toggleMore" hover-class="ui-press" hover-start-time="20" aria-expanded="{{moreOpen}}" aria-label="更多日记功能"><lp-icon name="line-more" size="46rpx" color="#403631" /></button>
+      </view>
+    </view>
+  </view>
+
+  <view class="journal-layout">
+    <view class="journal-heading">
+      <text class="ui-title">{{modeLabel || '日记'}}</text>
+      <button class="ui-control journal-date" bindtap="openCalendar" hover-class="ui-press" hover-start-time="20" aria-label="{{titleDate}}，打开日记日历">
+        <lp-icon name="line-calendar" size="30rpx" color="#6f625c" /><text>{{titleDate}}</text><lp-icon name="line-down" size="32rpx" color="#6f625c" />
+      </button>
+    </view>
+
+    <view wx:if="{{searchOpen}}" class="journal-search">
+      <view class="search-field">
+        <lp-icon name="line-search" size="32rpx" color="#6f625c" />
+        <input class="search-input" aria-label="搜索日记" placeholder="搜索日记" placeholder-style="color:#6f625c" value="{{query}}" bindinput="search" maxlength="100" confirm-type="search" focus="{{searchOpen}}" />
+        <button wx:if="{{query}}" class="ui-control ui-icon-button search-clear" bindtap="clearSearch" hover-class="ui-press" aria-label="清空搜索"><lp-icon name="line-close" size="30rpx" color="#6f625c" /></button>
+      </view>
+      <button class="ui-control search-cancel" bindtap="toggleSearch" hover-class="ui-press-text">取消</button>
+    </view>
+    <view wx:if="{{filtersOpen}}" class="journal-filters">
+      <picker class="filter-picker" range="{{categoryOptions}}" bindchange="selectCategory" aria-label="筛选分类"><view class="filter-label">{{category || '全部分类'}} <lp-icon name="line-down" size="32rpx" color="#6f625c" /></view></picker>
+      <picker class="filter-picker" range="{{tagOptions}}" bindchange="selectTag" aria-label="筛选标签"><view class="filter-label">{{tag || '全部标签'}} <lp-icon name="line-down" size="32rpx" color="#6f625c" /></view></picker>
+    </view>
+    <view wx:if="{{selectedDate || monthFilter || query || category || tag}}" class="active-filter">
+      <text>{{selectedDate || monthFilter || '筛选结果'}} · {{visible.length}} 篇</text><button class="ui-control clear-filters" bindtap="clearFilters" hover-class="ui-press-text">清除筛选</button>
+    </view>
+
+    <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取日记" error-text="日记加载失败，请重试" bind:retry="refresh" />
+    <block wx:else>
+      <scroll-view wx:if="{{memoryVisible && total}}" class="memory-rail" scroll-x="{{true}}" show-scrollbar="{{false}}" enhanced="{{true}}">
+        <block wx:for="{{memories}}" wx:key="id">
+          <view wx:if="{{!item.empty}}" class="memory-card {{item.revealed ? 'is-revealed' : ''}} {{item.cover ? 'has-cover' : ''}}" data-index="{{index}}" bindtap="revealMemory" hover-class="memory-pressed" aria-role="button" aria-label="{{item.revealed ? item.date : item.label + '，点击揭晓'}}">
+            <image wx:if="{{item.cover}}" class="memory-cover" src="{{item.cover}}" mode="aspectFill" />
+            <view wx:if="{{item.cover}}" class="memory-shade"></view>
+            <view class="memory-copy">
+              <text class="memory-label">{{item.kind === 'anniversary' ? item.label : '时光盲盒'}}</text>
+              <block wx:if="{{item.revealed}}">
+                <text class="memory-date">{{item.date}}</text><text class="memory-excerpt">{{item.preview}}</text>
+                <button class="ui-control memory-open" data-index="{{index}}" catchtap="openMemory" hover-class="ui-press-text">打开这一天<lp-icon name="line-right" size="32rpx" color="{{item.cover ? '#ffffff' : '#403631'}}" /></button>
+              </block>
+              <text wx:else class="memory-secret">查看回忆</text>
+            </view>
+          </view>
+        </block>
+      </scroll-view>
+
+      <button wx:if="{{memoryVisible && total}}" class="ui-control journal-streak" bindtap="openStatistics" hover-class="ui-press" hover-start-time="20">
+        <lp-icon name="line-chart" size="34rpx" color="#b72f46" /><text class="streak-label">连续 {{streak}} 天</text><text class="streak-count ui-number">{{total}} 篇</text><lp-icon name="line-right" size="32rpx" color="#81716a" />
+      </button>
+
+      <view wx:if="{{!visible.length}}" class="diary-empty"><text>{{selectedDate || monthFilter || query || category || tag ? '没有符合条件的日记' : mode === 'trash' ? '回收站是空的' : mode === 'draft' ? '还没有草稿' : mode === 'favorite' ? '还没有收藏' : mode === 'hidden' ? '还没有隐藏日记' : '还没有日记'}}</text></view>
+      <view wx:else class="journal-feed">
+        <view wx:for="{{visible}}" wx:key="id" class="feed-row {{item.showDate ? 'starts-day' : ''}}">
+          <view class="feed-day" aria-hidden="true"><block wx:if="{{item.showDate}}"><text class="feed-day-number ui-number">{{item.dayLabel}}</text><view class="feed-day-meta"><text>{{item.monthLabel}}</text><text>{{item.weekdayLabel}}</text></view></block></view>
+          <button class="ui-control feed-card" data-id="{{item.id}}" bindtap="open" hover-class="ui-press" hover-start-time="20" aria-label="打开 {{item.date}} {{item.time}} 的日记{{item.showTitle ? '，' + item.title : ''}}">
+            <view wx:if="{{item.pinned || item.draft || item.hidden}}" class="feed-state">
+              <text wx:if="{{item.pinned}}">置顶</text><text wx:if="{{item.draft}}">草稿</text><text wx:if="{{item.hidden}}">隐藏</text>
+            </view>
+            <text wx:if="{{item.showTitle}}" class="feed-title">{{item.title}}</text>
+            <text wx:if="{{item.preview}}" class="feed-preview">{{item.preview}}</text><text wx:elif="{{!item.photos.length && !item.audioCount}}" class="feed-preview muted">暂无正文</text>
+            <view wx:if="{{item.photos.length}}" class="feed-images"><view wx:for="{{item.photos}}" wx:for-item="photo" wx:for-index="photoIndex" wx:key="*this" class="feed-photo"><image src="{{photo}}" mode="aspectFill" /><text wx:if="{{photoIndex === 2 && item.extraPhotos}}" class="feed-photo-more">+{{item.extraPhotos}}</text></view></view>
+            <view wx:if="{{item.audioCount}}" class="feed-audio"><lp-icon name="line-audio" size="27rpx" color="#6f625c" /><text>{{item.audioCount}} 段音频</text></view>
+            <view class="feed-card-foot"><text class="ui-number">{{item.time}}</text><text wx:if="{{item.mood || item.weather}}">{{item.mood}} {{item.weather}}</text></view>
+          </button>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <button wx:if="{{!searchOpen}}" class="ui-control ui-primary journal-compose" bindtap="create" hover-class="ui-primary-pressed" hover-start-time="20" aria-label="写日记"><lp-icon name="line-compose" size="46rpx" color="#ffffff" /><text>写日记</text></button>
+  <view wx:if="{{drawerOpen || moreOpen || memoryPickerOpen}}" class="diary-overlay" bindtap="closePanels"></view>
+  <view wx:if="{{memoryPickerOpen}}" class="diary-sheet memory-date-picker" catchtap="noop">
+    <view class="sheet-heading"><text>往年今日</text><button class="ui-control ui-icon-button" bindtap="closePanels" aria-label="关闭日期选择" hover-class="ui-press"><lp-icon name="line-close" size="33rpx" color="#403631" /></button></view>
+    <scroll-view scroll-y="{{true}}"><button wx:for="{{memoryDates}}" wx:key="*this" class="ui-control diary-menu-row" data-date="{{item}}" bindtap="chooseMemoryDate" hover-class="ui-press"><text>{{item}}</text><lp-icon name="line-right" size="32rpx" color="#81716a" /></button></scroll-view>
+  </view>
+  <view wx:if="{{drawerOpen}}" class="diary-sheet diary-drawer" catchtap="noop">
+    <view class="sheet-heading"><text>我的日记</text><button class="ui-control ui-icon-button" bindtap="closePanels" aria-label="关闭日记菜单" hover-class="ui-press"><lp-icon name="line-close" size="33rpx" color="#403631" /></button></view>
+    <view class="drawer-group">
+      <button class="ui-control diary-menu-row" data-mode="all" bindtap="changeMode" hover-class="ui-press"><lp-icon name="line-book" size="35rpx" color="#403631" /><text>全部日记</text><lp-icon wx:if="{{mode === 'all'}}" name="line-check" size="31rpx" color="#b72f46" /></button>
+      <button class="ui-control diary-menu-row" bindtap="openCalendar" hover-class="ui-press"><lp-icon name="line-calendar" size="35rpx" color="#403631" /><text>日历视图</text><lp-icon name="line-right" size="32rpx" color="#81716a" /></button>
+      <button class="ui-control diary-menu-row" bindtap="openStatistics" hover-class="ui-press"><lp-icon name="line-chart" size="35rpx" color="#403631" /><text>日记统计</text><lp-icon name="line-right" size="32rpx" color="#81716a" /></button>
+    </view>
+    <view class="drawer-group">
+      <button class="ui-control diary-menu-row" data-mode="favorite" bindtap="changeMode" hover-class="ui-press"><lp-icon name="line-star" size="35rpx" color="#403631" /><text>收藏</text><lp-icon wx:if="{{mode === 'favorite'}}" name="line-check" size="31rpx" color="#b72f46" /></button>
+      <button class="ui-control diary-menu-row" data-mode="draft" bindtap="changeMode" hover-class="ui-press"><lp-icon name="line-clipboard" size="35rpx" color="#403631" /><text>草稿箱</text><lp-icon wx:if="{{mode === 'draft'}}" name="line-check" size="31rpx" color="#b72f46" /></button>
+      <button class="ui-control diary-menu-row" data-mode="hidden" bindtap="changeMode" hover-class="ui-press"><lp-icon name="line-lock" size="35rpx" color="#403631" /><text>隐藏日记</text><lp-icon wx:if="{{mode === 'hidden'}}" name="line-check" size="31rpx" color="#b72f46" /></button>
+      <button class="ui-control diary-menu-row" data-mode="trash" bindtap="changeMode" hover-class="ui-press"><lp-icon name="line-trash" size="35rpx" color="#403631" /><text>回收站</text><lp-icon wx:if="{{mode === 'trash'}}" name="line-check" size="31rpx" color="#b72f46" /></button>
+    </view>
+  </view>
+  <view wx:if="{{moreOpen}}" class="journal-more" style="top: {{navBottom}}px;" catchtap="noop">
+    <button class="ui-control diary-menu-row" bindtap="openCalendar" hover-class="ui-press"><lp-icon name="line-calendar" size="32rpx" color="#403631" /><text>日历视图</text></button>
+    <button class="ui-control diary-menu-row" bindtap="openStatistics" hover-class="ui-press"><lp-icon name="line-chart" size="32rpx" color="#403631" /><text>日记统计</text></button>
+    <button class="ui-control diary-menu-row" bindtap="toggleFilters" hover-class="ui-press"><lp-icon name="line-filter" size="32rpx" color="#403631" /><text>{{filtersOpen ? '收起筛选' : '分类与标签'}}</text></button>
+  </view>
+</view>

@@ -1,0 +1,33 @@
+<page-meta root-font-size="system" />
+<view class="screen legal-screen">
+  <lp-header title="协议与社区规范" />
+
+  <view class="legal-meta"><text>当前版本：{{policyVersion}}</text><text>生效日期：2026 年 9 月 2 日</text></view>
+
+  <view class="legal-card">
+    <text class="legal-title">用户协议摘要</text>
+    <text class="legal-copy">爱心点数用于个人与情侣之间的任务、积分和生活记录。应用内积分不具有现金价值，不提供支付、交易或投资服务。请勿利用本服务发布违法违规内容、侵害他人权益或从事广告引流、欺诈和骚扰。</text>
+  </view>
+
+  <view class="legal-card">
+    <text class="legal-title">隐私说明</text>
+    <text class="legal-copy">帖子仅保存在情侣空间，只有情侣双方可以查看，不提供公开发布入口。当前日常发布仅支持纯文字，不接收图片或视频。</text>
+    <text class="legal-copy">我们为提供记录、协作、内容安全与数据恢复功能保存相关信息。发布人可以删除自己的帖子。解除绑定后的情侣空间数据按解绑页面说明冻结归档。</text>
+  </view>
+
+  <view class="legal-card">
+    <text class="legal-title">社区内容规范</text>
+    <text class="legal-item">1. 不发布色情低俗、暴力恐怖、违法交易或危害公共安全的内容。</text>
+    <text class="legal-item">2. 不进行人身攻击、歧视、骚扰、诈骗、刷屏或广告引流。</text>
+    <text class="legal-item">3. 不泄露自己、伴侣或第三人的身份证件、住址、联系方式等敏感信息。</text>
+    <text class="legal-item">4. 只发布自己有权使用的文字和素材，尊重他人的著作权、肖像权与隐私权。</text>
+    <text class="legal-item">5. 平台可对违规内容采取下架或限制发布等措施，并保留必要的处理记录。</text>
+  </view>
+
+  <view class="legal-card">
+    <text class="legal-title">内容删除</text>
+    <text class="legal-copy">发布人可以在日常列表中编辑或删除自己的帖子。删除后无法在小程序中恢复。违法违规内容可能由平台直接下架，并根据实际情况配合有关部门处理。</text>
+  </view>
+
+
+</view>

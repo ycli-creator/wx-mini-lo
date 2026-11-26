@@ -5,13 +5,13 @@ const retryableReadActions = new Set([
   'auth.login', 'home.summary', 'points.summary', 'points.ledger',
   'invite.pending', 'invite.status', 'task.list', 'reward.list',
   'documents.list', 'documents.groups', 'documents.detail',
-  'community.list', 'records.list',
+  'community.list', 'records.list', 'health.read', 'diary.list',
   'heat.summary', 'chat.list', 'chat.unread',
   'share.resolve',
   'notifications.list', 'friends.search', 'friends.list', 'relationship.list', 'achievements.list',
 ])
 
-const silentActions = new Set(['documents.lock', 'documents.unlock'])
+const silentActions = new Set(['documents.lock', 'documents.unlock', 'diary.scope'])
 
 export const runAction = async <T>(
   action: string,

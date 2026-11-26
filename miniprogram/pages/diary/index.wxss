@@ -1,0 +1,77 @@
+@import "../../styles/ui-trial.wxss";
+
+.journal-page { box-sizing: border-box; min-height: 100vh; padding-bottom: calc(148rpx + env(safe-area-inset-bottom)); }
+.journal-layout { max-width: 740px; margin: 0 auto; padding: 6rpx var(--lp-page-gutter) 0; }
+.feed-head { position: fixed; top: 0; right: 0; left: 0; z-index: 40; background: var(--trial-canvas); }
+.journal-nav { box-sizing: border-box; max-width: 740px; height: 54px; margin: 0 auto; padding: 0 26rpx; display: flex; align-items: center; justify-content: space-between; }
+.journal-tools { display: flex; align-items: center; }
+.tool-selected { background: var(--trial-tint); }
+.journal-heading { min-height: 96rpx; margin-bottom: 26rpx; display: flex; align-items: center; justify-content: space-between; gap: 12rpx; }
+.journal-date { flex: none; min-height: 88rpx; padding: 0 12rpx; display: flex; align-items: center; gap: 7rpx; border-radius: 20rpx; color: var(--trial-muted); font-size: var(--lp-type-meta); white-space: nowrap; }
+
+.journal-search { display: flex; align-items: center; gap: 14rpx; margin-bottom: 16rpx; }
+.search-field { flex: 1; min-width: 0; min-height: 88rpx; display: flex; align-items: center; gap: 10rpx; padding-left: 18rpx; border-radius: 22rpx; background: var(--trial-tint); }
+.search-input { flex: 1; min-width: 0; min-height: 88rpx; font-size: var(--lp-type-body); color: var(--lp-text-primary); }
+.search-clear { border-radius: 22rpx; }
+.search-cancel { flex: none; min-height: 88rpx; display: flex; align-items: center; color: var(--lp-brand-text); font-size: var(--lp-type-meta); }
+.journal-filters { display: flex; flex-wrap: wrap; gap: 8rpx 14rpx; }
+.filter-picker { flex: 1 1 210rpx; min-width: 0; }
+.filter-label { min-height: 88rpx; display: flex; align-items: center; justify-content: space-between; gap: 6rpx; padding: 0 16rpx; border-radius: 20rpx; background: var(--trial-tint); font-size: var(--lp-type-meta); overflow-wrap: anywhere; }
+.active-filter { min-height: 88rpx; display: flex; align-items: center; justify-content: space-between; gap: 12rpx; color: var(--trial-muted); font-size: var(--lp-type-meta); overflow-wrap: anywhere; }
+.clear-filters { flex: none; min-height: 88rpx; display: flex; align-items: center; color: var(--lp-brand-text); }
+
+.memory-rail { width: 100%; white-space: nowrap; }
+.memory-card { display: inline-block; position: relative; width: min(555rpx, 100%); min-height: 208rpx; margin-right: 14rpx; overflow: hidden; border-radius: var(--trial-radius); vertical-align: top; background: #efe0d7; }
+.memory-card:last-child { margin-right: 0; }
+.memory-card.has-cover { color: #fff; background: #77635a; }
+.memory-pressed { opacity: .84; }
+.memory-cover, .memory-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+.memory-cover { filter: blur(12rpx); transform: scale(1.1); }
+.memory-card.is-revealed .memory-cover { filter: none; transform: none; }
+.memory-shade { background: linear-gradient(90deg, rgba(34, 23, 19, .66), rgba(34, 23, 19, .28)); }
+.memory-copy { position: relative; z-index: 1; min-height: 208rpx; display: flex; flex-direction: column; justify-content: center; gap: 7rpx; padding: 22rpx 24rpx; white-space: normal; }
+.memory-label { font-size: var(--lp-type-body); font-weight: 600; }
+.memory-secret, .memory-date { font-size: var(--lp-type-meta); }
+.memory-excerpt { font-size: var(--lp-type-meta); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.memory-open { min-height: 88rpx; display: flex; align-self: flex-start; align-items: center; gap: 6rpx; font-size: var(--lp-type-meta); font-weight: 600; }
+.journal-streak { width: 100%; min-height: 88rpx; margin: 14rpx 0 10rpx; padding: 0 18rpx; display: flex; align-items: center; gap: 12rpx; border-radius: 20rpx; font-size: var(--lp-type-meta); }
+.streak-label { flex: 1; min-width: 0; }
+.streak-count { color: var(--trial-muted); }
+
+.diary-empty { min-height: 196rpx; padding: 52rpx 16rpx; color: var(--trial-muted); font-size: var(--lp-type-body); }
+.journal-feed { display: flex; flex-direction: column; gap: 32rpx; }
+.feed-row { display: grid; grid-template-columns: minmax(84rpx, auto) minmax(0, 1fr); column-gap: 16rpx; align-items: start; }
+.feed-row.starts-day:not(:first-child) { margin-top: 16rpx; }
+.feed-day { padding-top: 30rpx; display: flex; flex-direction: column; gap: 3rpx; }
+.feed-day-number { font-size: var(--lp-type-section); font-weight: 500; line-height: 1.4; }
+.feed-day-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 2rpx; color: var(--trial-muted); font-size: var(--lp-type-meta); line-height: 1.4; white-space: nowrap; }
+.feed-card { width: 100%; min-width: 0; min-height: 100rpx; padding: 36rpx 32rpx; border-radius: var(--trial-radius); background: var(--trial-surface); line-height: 1.45; }
+.feed-state { display: flex; flex-wrap: wrap; gap: 10rpx; margin-bottom: 6rpx; color: var(--lp-brand-text); font-size: var(--lp-type-meta); }
+.feed-title { display: block; margin-bottom: 12rpx; color: var(--lp-text-primary); font-size: var(--lp-type-section); font-weight: 600; overflow-wrap: anywhere; }
+.feed-preview { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--lp-type-body); line-height: 1.65; }
+.feed-preview.muted { color: var(--trial-muted); }
+.feed-images { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8rpx; margin-top: 16rpx; }
+.feed-photo { position: relative; overflow: hidden; border-radius: 13rpx; }
+.feed-photo image { display: block; width: 100%; height: 136rpx; }
+.feed-photo-more { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #2f292877; color: #fff; font-size: var(--lp-type-body); }
+.feed-audio { display: flex; align-items: center; gap: 6rpx; margin-top: 14rpx; color: var(--trial-muted); font-size: var(--lp-type-meta); }
+.feed-card-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6rpx 12rpx; margin-top: 24rpx; padding-top: 18rpx; border-top: 1rpx solid var(--trial-divider); color: var(--trial-muted); font-size: var(--lp-type-meta); }
+.journal-compose { position: fixed; right: var(--lp-page-gutter); bottom: calc(26rpx + env(safe-area-inset-bottom)); z-index: 35; }
+
+.diary-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(42, 31, 29, .30); }
+.diary-sheet { position: fixed; bottom: 0; right: 0; left: 0; z-index: 81; box-sizing: border-box; max-width: 740px; max-height: 78vh; margin: 0 auto; padding: 12rpx 24rpx calc(18rpx + env(safe-area-inset-bottom)); overflow-y: auto; border-radius: 38rpx 38rpx 0 0; background: var(--trial-surface); box-shadow: var(--trial-panel-depth); }
+.sheet-heading { min-height: 88rpx; padding-left: 12rpx; display: flex; align-items: center; justify-content: space-between; gap: 12rpx; font-size: var(--lp-type-section); font-weight: 600; }
+.drawer-group + .drawer-group { margin-top: 12rpx; padding-top: 12rpx; border-top: 1rpx solid var(--trial-divider); }
+.diary-menu-row { position: relative; width: 100%; min-height: 88rpx; padding: 12rpx 14rpx; display: flex; align-items: center; gap: 14rpx; border-radius: 16rpx; font-size: var(--lp-type-body); line-height: 1.35; }
+.diary-menu-row text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.journal-more { position: fixed; right: 28rpx; z-index: 81; width: 342rpx; padding: 8rpx; border-radius: 27rpx; background: var(--trial-surface); box-shadow: var(--trial-panel-depth); }
+.journal-more .diary-menu-row + .diary-menu-row::before { content: ""; position: absolute; top: 0; left: 60rpx; right: 14rpx; height: 1rpx; background: var(--trial-divider); }
+.memory-date-picker scroll-view { max-height: 45vh; }
+.feed-card.ui-press { background: var(--trial-press); }
+@media (max-width: 350px) {
+  .feed-row { display: flex; flex-direction: column; gap: 10rpx; }
+  .feed-day { padding: 0; flex-direction: row; align-items: baseline; gap: 10rpx; }
+  .feed-row:not(.starts-day) .feed-day { display: none; }
+  .feed-day-meta { flex-direction: row; }
+  .journal-heading { flex-wrap: wrap; }
+}

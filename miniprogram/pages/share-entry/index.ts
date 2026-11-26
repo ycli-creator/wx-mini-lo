@@ -1,4 +1,5 @@
 import { lovePointsService } from '../../services/love-points'
+import { openPage } from '../../utils/navigation'
 
 Page({
   data: { message: '正在验证分享内容', targetPath: '' },
@@ -11,7 +12,6 @@ Page({
   openApp() {
     const path = this.data.targetPath
     if (!path) { wx.reLaunch({ url: '/pages/start/index' }); return }
-    if (path === '/pages/task/index' || path === '/pages/chat/index') wx.switchTab({ url: path })
-    else wx.redirectTo({ url: path })
+    openPage(path, true)
   },
 })

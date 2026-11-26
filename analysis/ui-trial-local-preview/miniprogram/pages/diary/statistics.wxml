@@ -1,0 +1,12 @@
+<page-meta root-font-size="system" />
+<view class="statistics-page" style="padding-top: {{navBottom}}px;">
+  <view class="statistics-nav" style="top: {{navTop}}px;"><button bindtap="back" aria-label="返回"><lp-icon name="line-back" size="44rpx" color="#403631" /></button></view>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" error-text="统计暂时无法读取" bind:retry="refresh" />
+  <block wx:else>
+    <view class="statistics-encounter"><text class="encounter-you">日记统计</text><view class="encounter-days"><text>记录 </text><text class="encounter-number">{{stats.durationDays}}</text><text> 天</text></view><text class="encounter-since">{{stats.firstDate ? '从 ' + stats.firstDate + ' 的第一篇日记算起' : '尚未记录日记'}}</text></view>
+    <view class="statistics-totals"><view><text class="total-label">已记录</text><text class="total-value">{{stats.total}}</text></view><view><text class="total-label">文字</text><text class="total-value">{{stats.wordCount}}</text></view><view><text class="total-label">图片</text><text class="total-value">{{stats.imageCount}}</text></view></view>
+    <button class="year-review-button" bindtap="toggleReview">年度回顾</button>
+    <view wx:if="{{reviewOpen}}" class="annual-review"><picker range="{{years}}" value="{{yearIndex}}" bindchange="changeYear"><view class="annual-year">{{year}} 年 <lp-icon name="line-down" size="32rpx" /></view></picker><text class="annual-summary">{{yearStats.total}} 篇日记 · {{yearStats.activeDays}} 个记录日</text><text class="annual-summary">{{yearStats.wordCount}} 字 · {{yearStats.imageCount}} 张图片</text><view class="annual-chart"><view wx:for="{{yearMonths}}" wx:key="label" class="annual-row"><text>{{item.label}}</text><view class="annual-track"><view style="width: {{item.width}}%;"></view></view><text>{{item.count}}</text></view></view></view>
+  </block>
+  <image class="statistics-landscape" src="/assets/icons/diary/landscape.svg" mode="widthFix" />
+</view>

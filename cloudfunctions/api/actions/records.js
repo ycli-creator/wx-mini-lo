@@ -23,10 +23,19 @@ const validMedia = (media) => {
 const list = async ({ openid, payload = {} }) => {
   const { coupleId, spaceType } = await requireSpace(openid)
   const month = cleanText(payload.month, 7)
-  assert(/^\d{4}-\d{2}$/.test(month), 'RECORD_MONTH_INVALID', '记录月份不正确')
+  assert(/^\d{4}-(0[1-9]|1[0-2])$/.test(month), 'RECORD_MONTH_INVALID', '记录月份不正确')
+  const date = db.command.gte(`${month}-01`).and(db.command.lte(`${month}-31`))
+  const readAll = async (where) => {
+    const data = []
+    while (true) {
+      const page = await db.collection(collections.dailyRecords).where({ ...where, date }).orderBy('date', 'desc').skip(data.length).limit(100).get()
+      data.push(...page.data)
+      if (page.data.length < 100) return { data }
+    }
+  }
   const [result, self] = await Promise.all([
-    db.collection(collections.dailyRecords).where({ coupleId, visibility: 'couple', deleted: false }).orderBy('date', 'desc').limit(500).get(),
-    db.collection(collections.dailyRecords).where({ coupleId, ownerOpenId: openid, deleted: false }).orderBy('date', 'desc').limit(500).get(),
+    readAll({ coupleId, visibility: 'couple', deleted: false }),
+    readAll({ coupleId, ownerOpenId: openid, deleted: false }),
   ])
   const records = [...result.data, ...self.data]
   const unique = [...new Map(records.map((item) => [item._id, item])).values()]

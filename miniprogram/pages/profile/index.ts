@@ -6,7 +6,7 @@ import { setActiveTab, showError } from '../../utils/ui'
 
 Page({
   data: { state: createInitialState(), loading: true, loadError: false, activeTab: 'posts', achievements: [] as AchievementItem[], unlockedCount: 0, relationshipDays: 0, friendCount: 0 },
-  async onShow() { setActiveTab(this, 4); await this.refresh() },
+  async onShow() { setActiveTab(this, 3); await this.refresh() },
   async refresh() {
     this.setData({ loading: true, loadError: false })
     try {
@@ -15,7 +15,7 @@ Page({
       const [achievements, friends, posts] = await Promise.all([
         state.bound ? lovePointsService.listAchievements(state) : Promise.resolve(buildAchievements(state)),
         lovePointsService.listFriends(),
-        state.bound ? lovePointsService.listCommunityPosts() : Promise.resolve([]),
+        state.bound && state.activeSpaceType === 'couple' ? lovePointsService.listCommunityPosts() : Promise.resolve([]),
       ])
       state.communityPosts = posts
       this.setData({ state, achievements, friendCount: friends.friends.length, unlockedCount: achievements.filter((item) => item.unlocked).length, relationshipDays: relationshipDays(state.relationshipStartedAt), loading: false })
@@ -52,5 +52,8 @@ Page({
   openDocuments() { wx.navigateTo({ url: '/pages/documents/index' }) },
   openSettings() { wx.navigateTo({ url: '/pages/settings/index' }) },
   openFriends() { wx.navigateTo({ url: '/pages/friends/index' }) },
+  openPosts() { wx.switchTab({ url: '/pages/community/index' }) },
+  createPost() { wx.navigateTo({ url: this.data.state.bound ? '/pages/community/create' : '/pages/invite/create' }) },
+  openTaskList() { wx.setStorageSync('love-points-task-view', 'tasks'); wx.switchTab({ url: '/pages/task/index' }) },
   copyIdentityCode() { wx.setClipboardData({ data: this.data.state.profile.identityCode }) },
 })

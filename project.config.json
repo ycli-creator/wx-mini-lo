@@ -29,7 +29,7 @@
     "minifyWXML": true,
     "localPlugins": false,
     "disableUseStrict": false,
-    "condition": false,
+    "condition": true,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],
@@ -38,10 +38,14 @@
     "swc": false,
     "disableSWC": true
   },
-  "simulatorPluginLibVersion": {},
+  "simulatorPluginLibVersion": {
+    "wxext14566970e7e9f62": "2.27.3"
+  },
   "packOptions": {
     "ignore": [],
     "include": []
   },
-  "editorSetting": {}
+  "editorSetting": {},
+  "projectArchitecture": "multiPlatform",
+  "libVersion": "3.17.2"
 }

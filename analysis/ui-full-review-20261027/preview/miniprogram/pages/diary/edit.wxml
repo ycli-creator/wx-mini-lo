@@ -1,0 +1,69 @@
+<view class="editor-screen paper-{{paper}} {{keyboardOpen ? 'keyboard-open' : ''}}">
+  <view class="editor-heading" style="top: {{headerTop}}px;">
+    <button class="heading-complete" bindtap="finish" loading="{{busy}}" disabled="{{busy || mediaBusy || recordPending || recorderState !== 'idle'}}" aria-label="完成并返回"><image src="/assets/icons/diary/check.svg" /></button>
+    <view class="date-time">
+      <picker mode="date" value="{{entry.date}}" data-field="date" bindchange="input" disabled="{{!editing || busy}}"><text class="date-label">{{displayDate}}</text></picker>
+      <picker mode="time" value="{{entry.time}}" data-field="time" bindchange="input" disabled="{{!editing || busy}}"><text class="time-label">/ {{entry.time}} {{displayWeekday}} {{relativeDate}}</text></picker>
+    </view>
+    <button class="heading-button bookmark {{entry.category ? 'bookmarked' : ''}}" data-action="category" bindtap="menuAction" disabled="{{busy || entry.deleted}}" aria-label="选择分类"><image src="/assets/icons/diary/bookmark.svg" /></button>
+    <button class="heading-button" bindtap="toggleMenu" disabled="{{busy || mediaBusy}}" aria-label="更多选项"><image src="/assets/icons/diary/more.svg" /></button>
+  </view>
+  <lp-page-state wx:if="{{loading || loadError}}" class="editor-loading" loading="{{loading}}" error-text="日记暂时无法读取，请重试。" bind:retry="refresh" />
+  <block wx:else>
+    <view wx:if="{{keyboardOpen}}" class="floating-count" style="top: {{headerBottom + 4}}px;">{{wordCount}} 字</view>
+    <scroll-view scroll-y="{{true}}" class="editor-scroll" style="top: {{headerBottom}}px; bottom: {{keyboardHeight}}px;" enhanced="{{true}}" show-scrollbar="{{false}}">
+      <view wx:if="{{entry.deleted}}" class="recycle-note">这篇日记在回收站，恢复后可继续编辑。</view>
+      <view wx:if="{{sheet === 'recovery'}}" class="recovery-banner"><text>发现上次未完成的编辑</text><view><button bindtap="recover">恢复编辑</button><button bindtap="discardRecovery">放弃缓存</button></view></view>
+      <view class="writing-area" style="--diary-line-height: {{entry.lineHeight * 28.8}}rpx;">
+        <input wx:if="{{editing && entry.titleVisible}}" class="edit-title" aria-label="日记标题" placeholder="标题" value="{{entry.title}}" data-field="title" bindinput="input" maxlength="80" disabled="{{busy}}" />
+        <text wx:elif="{{entry.titleVisible && entry.title}}" class="read-title">{{entry.title}}</text>
+        <textarea wx:if="{{editing && !preview}}" class="edit-body" aria-label="日记正文" placeholder="写下这一刻……" value="{{entry.body}}" data-field="body" bindinput="input" bindblur="blurBody" bindkeyboardheightchange="keyboardChange" adjust-position="{{false}}" maxlength="20000" auto-height="{{true}}" cursor="{{cursor}}" cursor-spacing="60" disabled="{{busy}}" />
+        <rich-text wx:else class="read-body" nodes="{{previewHtml}}" user-select="{{true}}" />
+        <view wx:if="{{entry.drawing}}" class="drawing-attachment"><image src="{{entry.drawing}}" mode="widthFix" data-src="{{entry.drawing}}" bindtap="previewImage" /><button wx:if="{{editing}}" class="remove-attachment" data-kind="drawing" bindtap="removeMedia" disabled="{{busy}}">移除画稿</button></view>
+        <view wx:for="{{entry.audio}}" wx:key="id" class="audio-attachment"><button class="audio-play" data-id="{{item.id}}" bindtap="playAudio"><lp-icon name="audio" size="32rpx" /><text>{{playingId === item.id ? '停止' : '播放'}} · {{item.name}} · {{item.duration}} 秒</text></button><button wx:if="{{editing}}" class="remove-attachment" data-kind="audio" data-id="{{item.id}}" bindtap="removeMedia" disabled="{{busy}}">移除</button></view>
+        <view class="image-grid">
+          <view wx:for="{{entry.images}}" wx:key="id" class="image-attachment"><image src="{{item.src}}" mode="aspectFill" data-src="{{item.src}}" bindtap="previewImage" /><button wx:if="{{editing}}" class="image-remove" data-kind="images" data-id="{{item.id}}" bindtap="removeMedia" disabled="{{busy}}" aria-label="移除图片"><lp-icon name="close" size="28rpx" /></button></view>
+          <button wx:if="{{editing && entry.images.length < 9}}" class="image-add" bindtap="toggleAdd" disabled="{{busy || mediaBusy}}" aria-label="添加图片、录音或手绘"><image src="/assets/icons/diary/plus.svg" /></button>
+        </view>
+        <button wx:if="{{entry.tags.length}}" class="tags-label" data-action="tags" bindtap="menuAction" disabled="{{!editing || busy}}">#{{tagsText}}</button>
+        <view wx:if="{{!keyboardOpen}}" class="entry-metadata">
+          <picker range="{{weatherOptions}}" value="{{weatherIndex}}" bindchange="chooseWeather" disabled="{{!editing || busy}}"><view class="metadata-row"><image src="/assets/icons/diary/sun.svg" /><text>{{entry.weather}}</text></view></picker>
+          <button class="metadata-row" data-action="location" bindtap="menuAction" disabled="{{!editing || busy}}"><image src="/assets/icons/diary/location.svg" /><text>{{entry.location || '（无位置信息）'}}</text></button>
+          <view wx:if="{{deviceModel}}" class="metadata-row"><image src="/assets/icons/diary/device.svg" /><text>{{deviceModel}}</text></view>
+          <view class="metadata-row"><image src="/assets/icons/diary/count.svg" /><text>{{wordCount}} 字</text></view>
+        </view>
+        <view wx:if="{{!editing}}" class="read-actions"><button wx:if="{{entry.deleted}}" bindtap="restore" disabled="{{busy}}">恢复日记</button><button wx:else bindtap="edit">编辑日记</button></view>
+      </view>
+      <view class="scroll-end {{formatOpen ? 'format-open' : ''}}"></view>
+    </scroll-view>
+    <view wx:if="{{editing}}" class="editor-dock" style="bottom: {{keyboardHeight}}px;">
+      <view wx:if="{{recordPending || recorderState !== 'idle'}}" class="recording-status"><text>{{recorderState === 'recording' ? '正在录音' : recorderState === 'saving' ? '正在保存录音' : '录音保存失败，原文件已保留'}}</text><button bindtap="record" disabled="{{recorderState === 'saving'}}">{{recordPending ? '重试保存' : '结束录音'}}</button></view>
+      <view wx:if="{{mediaBusy}}" class="recording-status">正在保存附件，请稍候……</view>
+      <scroll-view wx:if="{{formatOpen}}" class="format-tools" scroll-x="{{true}}"><button data-action="heading" bindtap="tool">H</button><button data-action="line" bindtap="tool">—</button><button data-action="bold" bindtap="tool"><text class="bold-tool">B</text></button><button data-action="italic" bindtap="tool"><text class="italic-tool">I</text></button><button data-action="strike" bindtap="tool">删除线</button><button data-action="bullet" bindtap="tool">列表</button><button data-action="quote" bindtap="tool">引用</button><button data-action="link" bindtap="tool">链接</button><button data-action="code" bindtap="tool">代码</button><button bindtap="togglePreview">预览</button><button bindtap="toggleFormat">收起</button></scroll-view>
+      <view class="main-tools">
+        <button data-action="paper" bindtap="tool" aria-label="纸张和格式"><image src="/assets/icons/diary/brush.svg" /></button>
+        <button data-action="tags" bindtap="tool" aria-label="标签"><image src="/assets/icons/diary/hash.svg" /></button>
+        <button data-action="undo" bindtap="tool" bindlongpress="redo" aria-label="撤销，长按重做"><image src="/assets/icons/diary/undo.svg" /></button>
+        <button data-action="list" bindtap="tool" aria-label="插入清单"><image src="/assets/icons/diary/list.svg" /></button>
+        <button data-action="tab" bindtap="tool" aria-label="缩进"><image src="/assets/icons/diary/indent.svg" /></button>
+        <button data-action="time" bindtap="tool" aria-label="插入时间"><image src="/assets/icons/diary/timer.svg" /></button>
+        <button data-action="datetime" bindtap="tool" aria-label="插入日期时间"><image src="/assets/icons/diary/calendar-grid.svg" /></button>
+        <button data-action="date" bindtap="tool" aria-label="插入日期"><image src="/assets/icons/diary/calendar-day.svg" /></button>
+      </view>
+    </view>
+    <view wx:if="{{menuOpen || addOpen || (sheet && sheet !== 'recovery')}}" class="panel-scrim" bindtap="closePanels"></view>
+    <view wx:if="{{menuOpen}}" class="more-panel" style="top: {{headerBottom}}px;" catchtap="noop"><button data-action="category" bindtap="menuAction">选择分类</button><button data-action="mood" bindtap="menuAction">心情 <text>{{entry.mood || "未选择"}}</text></button><button data-action="title" bindtap="menuAction">显示标题 <text>{{entry.titleVisible ? '已开启' : '已关闭'}}</text></button><button data-action="markdown" bindtap="menuAction">Markdown <text>{{entry.markdown ? '已开启' : '已关闭'}}</text></button><button data-action="hidden" bindtap="menuAction">隐藏日记 <text>{{entry.hidden ? '已开启' : '已关闭'}}</text></button><button data-action="original" bindtap="menuAction">同步原图 <text>{{entry.originalImages ? '已开启' : '已关闭'}}</text></button><button data-action="templates" bindtap="menuAction">日记模板</button><button data-action="drafts" bindtap="menuAction">草稿箱</button><button data-action="cache" bindtap="menuAction">恢复未完成的编辑</button><button data-action="history" bindtap="menuAction">编辑历史</button><button data-action="format" bindtap="menuAction">文字格式</button><button data-action="preview" bindtap="menuAction">{{preview ? "继续书写" : "预览排版"}}</button><button data-action="lineHeight" bindtap="menuAction">调整行距</button><button data-action="saveDraft" bindtap="menuAction">存为草稿</button><button data-action="copy" bindtap="menuAction">复制全文</button><button wx:if="{{id}}" data-action="pin" bindtap="menuAction">{{entry.pinned ? "取消置顶" : "置顶"}}</button><button wx:if="{{id}}" data-action="remove" bindtap="menuAction">移入回收站</button><button data-action="quit" bindtap="menuAction">放弃编辑</button></view>
+    <view wx:if="{{addOpen}}" class="bottom-panel attachment-menu" catchtap="noop"><text class="panel-title">添加到日记</text><view><button bindtap="addImages"><lp-icon name="image" />图片</button><button bindtap="record"><lp-icon name="microphone" />录音</button><button bindtap="addAudio"><lp-icon name="document" />本地音频</button><button bindtap="draw"><lp-icon name="draw" />手绘</button></view><button class="panel-cancel" bindtap="closePanels">取消</button></view>
+    <view wx:if="{{sheet && sheet !== 'recovery'}}" class="bottom-panel" style="bottom: {{keyboardHeight}}px;" catchtap="noop">
+      <block wx:if="{{sheet === 'field'}}"><text class="panel-title">{{fieldLabel}}</text><input class="panel-input" bindkeyboardheightchange="keyboardChange" adjust-position="{{false}}" value="{{fieldValue}}" bindinput="inputField" maxlength="{{fieldName === 'tags' ? 619 : fieldName === 'category' ? 30 : 100}}" focus="{{true}}" /><button class="diary-primary" bindtap="confirmField">确定</button></block>
+      <block wx:elif="{{sheet === 'templates'}}"><text class="panel-title">日记模板</text><scroll-view scroll-y="{{true}}" class="panel-scroll"><button wx:for="{{templates}}" wx:key="index" data-index="{{index}}" bindtap="useTemplate">{{item.name}}</button></scroll-view><button bindtap="saveTemplate">将当前内容存为模板</button></block>
+      <block wx:elif="{{sheet === 'history'}}"><text class="panel-title">编辑历史 · 最近 10 个版本</text><scroll-view scroll-y="{{true}}" class="panel-scroll"><text wx:if="{{!revisions.length}}">还没有历史版本。</text><button wx:for="{{revisions}}" wx:key="version" data-index="{{index}}" bindtap="restoreRevision">版本 {{item.version}} · {{item.savedAt}}<text class="revision-preview">{{item.entry.title || item.entry.body}}</text></button></scroll-view></block>
+      <block wx:elif="{{sheet === 'mood'}}"><text class="panel-title">心情</text><picker range="{{moods}}" value="{{moodIndex}}" bindchange="chooseMood"><view class="panel-input">{{moods[moodIndex]}} <lp-icon name="down" size="24rpx" /></view></picker></block>
+      <block wx:elif="{{sheet === 'paper'}}"><text class="panel-title">纸张背景</text><button wx:for="{{paperOptions}}" wx:key="id" data-id="{{item.id}}" bindtap="choosePaper">{{item.name}} <lp-icon wx:if="{{paper === item.id}}" name="check" size="28rpx" /></button></block>
+      <button class="panel-cancel" bindtap="closePanels">关闭</button>
+    </view>
+  </block>
+</view>
+
+
+

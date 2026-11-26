@@ -6,18 +6,18 @@ import { showError, showSuccess } from '../../utils/ui'
 const fallback = createInitialState().rewards[0]
 
 Page({
-  data: { state: createInitialState(), reward: fallback as Reward, rewardId: fallback.id, enough: false, redeemed: false, pointsLabel: '共同', loading: true, loadError: false, busy: false },
+  data: { state: createInitialState(), reward: fallback as Reward, rewardId: fallback.id, enough: false, balance: 0, shortfall: 0, redeemed: false, pointsLabel: '共同', loading: true, loadError: false, busy: false },
   onLoad(query: Record<string, string | undefined>) { if (query.id) this.setData({ rewardId: query.id }) },
   async onShow() { await this.refresh() },
   async refresh() {
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      const reward = state.rewards.find((item) => item.id === this.data.rewardId) || state.rewards.find((item) => item.id === state.selectedRewardId)
+      const reward = state.rewards.find((item) => item.id === this.data.rewardId)
       if (!reward) throw new Error('心愿不存在或已经下架')
       const balance = reward.pointsType === 'shared' ? state.sharedPoints : state.personalPoints
       const redeemed = state.redemptions.some((item) => item.rewardId === reward.id && item.status !== 'refunded')
-      this.setData({ state, reward, enough: balance >= reward.cost, redeemed, pointsLabel: reward.pointsType === 'shared' ? '共同' : '个人', loading: false })
+      this.setData({ state, reward, balance, shortfall: Math.max(0, reward.cost - balance), enough: balance >= reward.cost, redeemed, pointsLabel: reward.pointsType === 'shared' ? '共同' : '个人', loading: false })
     } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
   async redeem() {

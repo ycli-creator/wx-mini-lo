@@ -1,0 +1,18 @@
+<page-meta root-font-size="system" />
+<view class="screen with-tabbar has-floating-action community-screen">
+  <lp-header title="我们的日常" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="加载中…" error-text="日常加载失败，请重试" bind:retry="refresh" />
+  <block wx:else>
+    <view wx:if="{{posts.length}}" class="feed-list">
+      <view wx:for="{{posts}}" wx:key="id" class="feed-card">
+        <view class="feed-author"><view class="mini-avatar"><image wx:if="{{item.authorAvatarUrl}}" src="{{item.authorAvatarUrl}}" mode="aspectFill" /><lp-icon wx:else name="user-circle" size="30rpx" /></view><text class="couple-name">{{item.pairLabel}}</text><text class="feed-date">{{item.dateLabel}}</text><button wx:if="{{item.authorIsSelf || item.canDelete}}" class="post-more" data-id="{{item.id}}" bindtap="postMenu" disabled="{{!!busyPostId}}" aria-label="更多日常操作" hover-class="pressed"><lp-icon name="line-more" size="44rpx" color="#74645f" /></button></view>
+        <text wx:if="{{item.title}}" class="feed-title">{{item.title}}</text>
+        <text wx:if="{{item.content}}" class="feed-content">{{item.content}}</text>
+        <view wx:if="{{item.coverType === 'image'}}" class="feed-cover-wrap" data-id="{{item.id}}" bind:tap="previewImage" aria-role="button" aria-label="查看图片，共 {{item.mediaCount}} 张"><image class="feed-cover" src="{{item.coverUrl}}" mode="aspectFill" /><text wx:if="{{item.mediaCount > 1}}" class="media-count">{{item.mediaCount}} 张</text></view>
+        <view wx:elif="{{item.coverType === 'video'}}" class="feed-video-wrap"><video class="feed-video" src="{{item.media[0].fileId}}" poster="{{item.coverUrl}}" controls="{{true}}" show-center-play-btn="{{true}}" /></view>
+      </view>
+    </view>
+    <view wx:else class="empty-state"><lp-icon name="image" size="72rpx" color="#eb6077" /><text class="empty-title">{{bound ? '还没有共同日常' : '绑定 TA，开启共同日常'}}</text></view>
+    <button class="floating-create-action" hover-class="floating-create-action--pressed" bindtap="createPost"><lp-icon name="plus" size="32rpx" color="#ffffff" /><text>{{bound ? '发布日常' : '绑定 TA'}}</text></button>
+  </block>
+</view>

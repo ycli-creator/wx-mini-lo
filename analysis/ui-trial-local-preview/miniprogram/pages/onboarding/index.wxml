@@ -1,0 +1,18 @@
+<page-meta root-font-size="system" />
+<view class="screen onboarding-screen">
+  <lp-header title="选择使用方式" />
+  <view class="mode-list">
+    <view class="mode-option {{selected === 'record' ? 'selected' : ''}}" data-mode="record" bind:tap="selectMode" aria-role="radio" aria-checked="{{selected === 'record'}}">
+      <view class="mode-icon"><lp-icon name="lock-on" size="42rpx" /></view>
+      <view class="mode-copy"><text class="mode-title">专注记录</text><text class="mode-description">关闭身份码搜索与主页信息展示</text></view>
+      <view class="mode-check"><lp-icon wx:if="{{selected === 'record'}}" name="check" size="26rpx" /></view>
+    </view>
+    <view class="mode-option {{selected === 'social' ? 'selected' : ''}}" data-mode="social" bind:tap="selectMode" aria-role="radio" aria-checked="{{selected === 'social'}}">
+      <view class="mode-icon"><lp-icon name="usergroup" size="42rpx" /></view>
+      <view class="mode-copy"><text class="mode-title">分享生活</text><text class="mode-description">允许他人通过身份码找到你</text></view>
+      <view class="mode-check"><lp-icon wx:if="{{selected === 'social'}}" name="check" size="26rpx" /></view>
+    </view>
+  </view>
+
+  <lp-button label="继续" loading="{{busy}}" bind:tap="continue" />
+</view>

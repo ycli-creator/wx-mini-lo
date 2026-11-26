@@ -1,0 +1,17 @@
+<page-meta root-font-size="system" />
+<view class="screen">
+  <lp-header title="确认待办" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取待办" error-text="待办暂时无法读取，请重试。" bind:retry="refresh" />
+  <block wx:else>
+    <view class="review-heading"><text class="review-title">{{task.title}}</text><text class="review-meta">{{task.status === 'done' ? '已完成' : task.status === 'pending' ? '待确认' : '待补充'}} · {{task.points}} 积分</text></view>
+    <text wx:if="{{task.latestNote}}" class="review-note">{{task.latestNote}}</text>
+    <view wx:if="{{task.evidence.length}}" class="review-evidence"><image wx:for="{{task.evidence}}" wx:key="fileId" src="{{item.fileId}}" mode="aspectFill" data-url="{{item.fileId}}" bind:tap="previewImage"/></view>
+    <block wx:if="{{task.reviewerIsSelf && task.status === 'pending'}}">
+      <lp-button label="确认完成" loading="{{busy}}" bind:tap="approve" />
+      <view wx:if="{{rejectOpen}}" class="rejection-form"><textarea aria-label="补充原因" class="text-area" value="{{reason}}" maxlength="300" placeholder="补充原因（选填）" bind:input="handleReason"/><lp-button label="请对方补充" variant="soft" loading="{{busy}}" bind:tap="reject"/></view>
+      <view class="review-text-action" bind:tap="toggleReject">{{rejectOpen ? '取消' : '需要补充'}}</view>
+    </block>
+    <view wx:elif="{{task.status === 'pending'}}" class="review-note">等待 TA 确认</view>
+    <lp-button wx:else label="返回待办" variant="text" bind:tap="goTasks"/>
+  </block>
+</view>

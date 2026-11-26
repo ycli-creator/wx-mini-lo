@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "lp-icon": "/components/base/lp-icon/index"
+  }
+}

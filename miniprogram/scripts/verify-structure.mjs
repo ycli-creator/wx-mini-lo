@@ -6,8 +6,8 @@ const root = process.cwd()
 const appConfig = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'))
 const errors = []
 
-if (appConfig.pages.length !== 32) {
-  errors.push(`应有 32 个页面，当前为 ${appConfig.pages.length} 个`)
+if (appConfig.pages.length !== 38) {
+  errors.push(`应有 38 个页面，当前为 ${appConfig.pages.length} 个`)
 }
 
 for (const page of appConfig.pages) {
@@ -18,7 +18,7 @@ for (const page of appConfig.pages) {
 }
 
 const tabPages = appConfig.tabBar?.list?.map((item) => item.pagePath) || []
-if (tabPages.length !== 5) errors.push(`应有 5 个主 Tab，当前为 ${tabPages.length} 个`)
+if (tabPages.length !== 4) errors.push(`应有 4 个主 Tab，当前为 ${tabPages.length} 个`)
 for (const page of tabPages) {
   if (!appConfig.pages.includes(page)) errors.push(`Tab 页面未注册：${page}`)
 }

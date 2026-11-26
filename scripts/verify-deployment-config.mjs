@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 const projectConfig = JSON.parse(await readFile(new URL('../project.config.json', import.meta.url), 'utf8'))
 const envSource = await readFile(new URL('../miniprogram/config/env.ts', import.meta.url), 'utf8')
 const envMatch = envSource.match(/CLOUD_ENV_ID\s*=\s*['"]([^'"]*)['"]/)
+const appIdMatch = envSource.match(/WECHAT_APP_ID\s*=\s*['"]([^'"]*)['"]/)
 
 const failures = []
 
@@ -12,6 +13,10 @@ if (!projectConfig.appid || projectConfig.appid === 'touristappid') {
 
 if (!envMatch?.[1]?.trim()) {
   failures.push('miniprogram/config/env.ts 中的 CLOUD_ENV_ID 仍为空')
+}
+
+if (appIdMatch?.[1] !== projectConfig.appid) {
+  failures.push('miniprogram/config/env.ts 中的 WECHAT_APP_ID 与 project.config.json 不一致')
 }
 
 if (failures.length) {

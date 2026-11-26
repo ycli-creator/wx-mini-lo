@@ -1,0 +1,18 @@
+<page-meta root-font-size="system" />
+<view class="screen inbox-screen">
+  <lp-header title="消息" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="加载中…" error-text="消息加载失败，请重试" bind:retry="refresh" />
+  <block wx:else>
+    <view class="inbox-primary" aria-role="button" hover-class="pressed" bind:tap="openChat">
+      <view class="avatar"><lp-icon name="{{bound ? 'line-chat' : 'line-invite'}}" size="46rpx" color="#b72f46" /></view>
+      <view class="message-copy"><view class="message-heading"><text class="message-title">{{bound ? partnerName : '邀请 TA'}}</text></view><text wx:if="{{bound}}" class="message-preview">{{preview}}</text></view>
+      <text wx:if="{{unread}}" class="unread-count">{{unread > 99 ? '99+' : unread}}</text><lp-icon wx:else name="line-right" size="32rpx" color="#81716a" />
+    </view>
+    <view class="section-heading"><text class="section-title">通知</text></view>
+    <view wx:if="{{notifications.length}}" class="notification-list">
+      <view wx:for="{{notifications}}" wx:key="id" class="notification-row {{item.read ? '' : 'is-unread'}}" data-id="{{item.id}}" hover-class="pressed" bind:tap="openNotification"><lp-icon name="notification" size="32rpx"/><view class="message-copy"><text class="message-title">{{item.title}}</text><text class="message-preview">{{item.body}}</text></view><view wx:if="{{!item.read}}" class="notification-dot"></view><lp-icon wx:else name="line-right" size="32rpx" color="#81716a" /></view>
+    </view>
+    <view wx:if="{{!notifications.length}}" class="empty-state"><text class="empty-title">暂无通知</text></view>
+
+  </block>
+</view>

@@ -1,5 +1,10 @@
 {
   "collections": [
+    { "name": "diaries", "indexes": [{ "name": "owner_id", "unique": true, "fields": [{ "field": "ownerOpenId", "direction": "asc" }, { "field": "id", "direction": "asc" }] }] },
+    { "name": "health_profiles", "indexes": [] },
+    { "name": "health_days", "indexes": [
+      { "name": "owner_date", "unique": true, "fields": [{ "field": "ownerOpenId", "direction": "asc" }, { "field": "date", "direction": "asc" }] }
+    ] },
     { "name": "users", "indexes": [
       { "name": "identity_code", "unique": true, "fields": [{ "field": "identityCode", "direction": "asc" }] }
     ] },

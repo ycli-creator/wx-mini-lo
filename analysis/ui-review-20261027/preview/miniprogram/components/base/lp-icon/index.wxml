@@ -1,0 +1,12 @@
+<view
+  wx:if="{{iconUrl}}"
+  class="lp-icon"
+  style="width:{{size}};height:{{size}};{{color ? 'color:' + color + ';' : ''}}"
+  aria-hidden="{{!ariaLabel}}"
+  aria-label="{{ariaLabel}}"
+>
+  <view
+    class="lp-icon__glyph"
+    style="-webkit-mask-image:url('{{iconUrl}}');mask-image:url('{{iconUrl}}');"
+  ></view>
+</view>

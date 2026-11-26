@@ -1,0 +1,27 @@
+<page-meta root-font-size="system" />
+<view class="screen has-floating-action documents-screen">
+  <lp-header title="文档" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步文档" error-text="文档暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view wx:if="{{createOpen}}" class="create-panel">
+      <view class="create-field"><text class="field-hint">分组名称</text><input aria-label="分组名称" class="text-input" maxlength="30" value="{{groupName}}" bind:input="handleGroupName" /></view>
+      <lp-button label="创建分组" disabled="{{!groupName}}" loading="{{busy}}" bind:tap="createGroup" />
+  </view>
+  <view wx:if="{{groups.length}}" class="document-groups">
+    <view wx:for="{{groups}}" wx:for-item="group" wx:key="id" class="document-group">
+      <view class="section-heading"><text class="section-title">{{group.name}}</text><button wx:if="{{group.documents.length}}" class="document-add" data-id="{{group.id}}" bindtap="startGroupDocument" aria-label="在{{group.name}}新建文档"><lp-icon name="line-plus" size="44rpx" color="#b72f46"/></button></view>
+      <view wx:if="{{group.documents.length}}" class="surface-group">
+        <view wx:for="{{group.documents}}" wx:for-item="document" wx:key="id" class="list-cell" data-id="{{document.id}}" hover-class="pressed" bind:tap="openDocument">
+          <view class="cell-icon"><lp-icon name="file" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">{{document.title}}</text><text wx:if="{{document.lockedByOther}}" class="cell-subtitle">{{document.lockedByOther ? '对方正在编辑' : ''}}</text></view><lp-icon name="line-right" size="32rpx" color="#81716a" />
+        </view>
+      </view>
+      <button wx:else class="document-empty" hover-class="pressed" data-id="{{group.id}}" bindtap="startGroupDocument"><lp-icon name="line-plus" size="36rpx" color="#b72f46" />新文档</button>
+    </view>
+  </view>
+  <view wx:else class="empty-state"><text class="empty-title">还没有文档组</text></view>
+  <view class="floating-create-action {{createOpen ? 'is-open' : ''}}" hover-class="floating-create-action--pressed" bind:tap="toggleCreate">
+    <lp-icon name="{{createOpen ? 'line-close' : 'line-plus'}}" size="44rpx" color="{{createOpen ? '#403631' : '#ffffff'}}" />
+    <text>{{createOpen ? '收起' : '新建分组'}}</text>
+  </view>
+  </block>
+</view>

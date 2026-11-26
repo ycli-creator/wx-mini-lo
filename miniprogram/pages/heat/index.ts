@@ -1,25 +1,31 @@
 import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
 import { showError, showSuccess } from '../../utils/ui'
+import { openPage } from '../../utils/navigation'
 
 Page({
-  data: { heat: createInitialState().heat, bound: false, loading: true },
-  async onShow() {
+  data: { heat: createInitialState().heat, bound: false, loading: true, loadError: false, busy: false },
+  async onShow() { await this.refresh() },
+  async refresh() {
+    this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
       this.setData({ bound: state.bound, heat: state.heat, loading: false })
-    } catch (error) { this.setData({ loading: false }); showError(error) }
+    } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
   async checkIn() {
+    if (this.data.busy) return
+    this.setData({ busy: true })
     try { this.setData({ heat: await lovePointsService.checkInHeat() }); showSuccess('今天的打卡已记录') } catch (error) { showError(error) }
+    finally { this.setData({ busy: false }) }
   },
+  invite() { wx.navigateTo({ url: '/pages/invite/create' }) },
   openTask(event: WechatMiniprogram.TouchEvent) {
     const path = String(event.currentTarget.dataset.path || '')
     const code = String(event.currentTarget.dataset.code || '')
     if (code === 'HF01') { void this.checkIn(); return }
     if (!path) return
-    if (path === '/pages/task/index' || path === '/pages/chat/index') wx.switchTab({ url: path })
-    else wx.navigateTo({ url: path.replace('date=today', `date=${new Date().toISOString().slice(0, 10)}`) })
+    openPage(path.replace('date=today', `date=${new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10)}`))
   },
   async cue(event: WechatMiniprogram.TouchEvent) {
     const code = String(event.currentTarget.dataset.code || '')

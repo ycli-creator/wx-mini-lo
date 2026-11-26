@@ -21,7 +21,7 @@ Page({
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      const reward = state.rewards.find((item) => item.id === this.data.rewardId) || state.rewards.find((item) => item.id === state.selectedRewardId)
+      const reward = state.rewards.find((item) => item.id === this.data.rewardId)
       if (!reward) throw new Error('心愿不存在或已经下架')
       const redemption = state.redemptions.find((item) => item.rewardId === reward.id)
       if (!redemption) throw new Error('没有找到这条兑换记录')

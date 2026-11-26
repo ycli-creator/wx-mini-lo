@@ -36,16 +36,17 @@ Page({
     moods,
     flowOptions,
     loading: false,
+    loadError: false,
     busy: false,
     media: [] as DraftMedia[],
   },
   async onLoad(query: Record<string, string | undefined>) {
-    const date = query.date || new Date().toISOString().slice(0, 10)
-    this.setData({ id: query.id || '', date, readOnly: query.readonly === '1' })
+    const date = !query.date || query.date === 'today' ? new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10) : query.date
+    this.setData({ id: query.id || '', date, type: query.type === 'event' ? 'event' : query.type === 'period' ? 'period' : 'mood', readOnly: query.readonly === '1' })
     if (query.id) await this.loadRecord(query.id, date)
   },
   async loadRecord(id: string, date: string) {
-    this.setData({ loading: true })
+    this.setData({ loading: true, loadError: false })
     try {
       const records = await lovePointsService.listDailyRecords(date.slice(0, 7))
       const record = records.find((item) => item.id === id)
@@ -62,8 +63,9 @@ Page({
         media: record.media.map((item) => ({ ...item, localPath: item.fileId, posterPath: item.posterFileId || '' })),
         loading: false,
       })
-    } catch (error) { this.setData({ loading: false }); showError(error) }
+    } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
+  async refresh() { if (this.data.id) await this.loadRecord(this.data.id, this.data.date) },
   selectType(event: WechatMiniprogram.TouchEvent) { this.setData({ type: event.currentTarget.dataset.value as DailyRecordType }) },
   selectMood(event: WechatMiniprogram.TouchEvent) { this.setData({ mood: String(event.currentTarget.dataset.emoji) }) },
   selectFlow(event: WechatMiniprogram.TouchEvent) { this.setData({ periodFlow: event.currentTarget.dataset.value as DailyRecord['periodFlow'] }) },
@@ -81,7 +83,7 @@ Page({
   removeMedia(event: WechatMiniprogram.TouchEvent) { const index = Number(event.currentTarget.dataset.index); this.setData({ media: this.data.media.filter((_, itemIndex) => itemIndex !== index) }) },
   async upload(path: string, type: string) { if (path.startsWith('cloud://')) return path; if (!isCloudEnabled()) throw new Error('照片和视频需要连接云环境后保存'); return (await wx.cloud.uploadFile({ cloudPath: recordCloudPath(path, type), filePath: path })).fileID },
   async save() {
-    if (this.data.readOnly || this.data.busy) return
+    if (this.data.readOnly || this.data.busy || this.data.loading || this.data.loadError) return
     this.setData({ busy: true })
     try {
       const media: CommunityMedia[] = []

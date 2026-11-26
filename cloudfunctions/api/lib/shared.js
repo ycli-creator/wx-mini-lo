@@ -26,6 +26,9 @@ const collections = {
   communityPosts: 'community_posts',
   communityReports: 'community_reports',
   dailyRecords: 'daily_records',
+  diaries: 'diaries',
+  healthProfiles: 'health_profiles',
+  healthDays: 'health_days',
   heatAccounts: 'heat_accounts',
   dailyHeatTasks: 'daily_heat_tasks',
   heatLedgers: 'heat_ledgers',
@@ -44,6 +47,11 @@ const hashCode = (code) => crypto.createHash('sha256').update(String(code)).dige
 const randomCode = () => String(crypto.randomInt(100000, 1000000))
 const randomIdentityCode = () => `LP-${crypto.randomBytes(4).toString('hex').toUpperCase().match(/.{1,4}/g).join('-')}`
 const defaultPrivacy = () => ({ searchableByCode: false, showPartner: false, showRelationshipDays: false, showHeat: false, showDocumentCount: false, privateMode: false })
+const refundStatusFor = (redemption) => {
+  if (redemption?.status === 'refunded') return 'approved'
+  if (redemption?.status === 'refund_requested') return 'requested'
+  return redemption?.refundStatus === 'rejected' ? 'rejected' : 'none'
+}
 const defaultPreferences = () => ({
   onboardingCompleted: false,
   usageMode: 'record',
@@ -75,12 +83,17 @@ const ensureUser = async (openid) => {
   assert(openid, 'UNAUTHENTICATED', '无法获取微信用户身份')
   const existing = await getDoc(collections.users, openid)
   if (existing) {
-    const patch = { lastSeenAt: db.serverDate(), updatedAt: db.serverDate() }
+    const patch = {}
+    // Presence does not need a database write on every page read.
+    if (!existing.lastSeenAt || now().getTime() - new Date(existing.lastSeenAt).getTime() >= 60000) {
+      patch.lastSeenAt = db.serverDate()
+      patch.updatedAt = db.serverDate()
+    }
     if (!existing.identityCode) patch.identityCode = randomIdentityCode()
     if (!existing.privacy) patch.privacy = defaultPrivacy()
     if (!existing.preferences) patch.preferences = defaultPreferences()
     if (!existing.activeSpaceType) patch.activeSpaceType = existing.coupleId ? 'couple' : 'personal'
-    await db.collection(collections.users).doc(openid).update({ data: patch })
+    if (Object.keys(patch).length) await db.collection(collections.users).doc(openid).update({ data: patch })
     Object.assign(existing, patch)
     return existing
   }
@@ -106,8 +119,8 @@ const ensureUser = async (openid) => {
   return user
 }
 
-const requireCouple = async (openid) => {
-  const user = await getDoc(collections.users, openid)
+const requireCouple = async (openid, knownUser = null) => {
+  const user = knownUser || await getDoc(collections.users, openid)
   assert(user?.coupleId, 'NOT_BOUND', '请先完成情侣绑定')
   const couple = await getDoc(collections.couples, user.coupleId)
   assert(couple && couple.status === 'active', 'COUPLE_INACTIVE', '情侣空间不存在或已解绑')
@@ -116,15 +129,15 @@ const requireCouple = async (openid) => {
 }
 
 const personalSpaceId = (openid, version = 0) => `personal_${hashCode(`${openid}:${version}`).slice(0, 40)}`
-const requireSpace = async (openid, requestedSpaceType = '') => {
-  const user = await getDoc(collections.users, openid)
+const requireSpace = async (openid, requestedSpaceType = '', knownUser = null) => {
+  const user = knownUser || await getDoc(collections.users, openid)
   assert(user, 'UNAUTHENTICATED', '无法获取用户空间')
   const activeSpaceType = requestedSpaceType === 'couple' || requestedSpaceType === 'personal'
     ? requestedSpaceType
     : user.activeSpaceType || (user.coupleId ? 'couple' : 'personal')
   if (activeSpaceType === 'couple') {
     assert(user.coupleId, 'COUPLE_REQUIRED', '请先绑定 TA，再进入情侣空间')
-    const coupleSpace = await requireCouple(openid)
+    const coupleSpace = await requireCouple(openid, user)
     return { ...coupleSpace, spaceType: 'couple' }
   }
   const coupleId = personalSpaceId(openid, Number(user.personalSpaceVersion || 0))
@@ -272,36 +285,45 @@ const defaultState = (user = {}) => ({
   relationshipPublicApproved: false,
 })
 
-const projectState = async (openid) => {
-  const user = await getDoc(collections.users, openid)
+const projectState = async (openid, options = {}) => {
+  const user = options.user || await getDoc(collections.users, openid)
   if (!user) return defaultState(user)
-  const space = await requireSpace(openid)
+  const space = await requireSpace(openid, '', user)
   const couple = space.couple
   if (!couple || couple.status !== 'active' || !couple.members.includes(openid)) return defaultState(user)
 
   const coupleId = space.coupleId
   const partnerId = space.spaceType === 'couple' ? couple.members.find((id) => id !== openid) || '' : ''
+  const scope = ['home', 'tasks', 'documents', 'points', 'profile', 'identity'].includes(options.scope) ? options.scope : 'full'
+  const full = scope === 'full'
+  const needsTasks = full || scope === 'home' || scope === 'tasks'
+  const needsRewards = full || scope === 'tasks'
+  const needsRedemptions = full || scope === 'home' || scope === 'tasks'
+  const needsLedger = full || scope === 'points'
+  const needsDocuments = full || scope === 'documents' || scope === 'profile'
+  // Lazy factories ensure omitted sections issue no database requests.
+  const section = (enabled, query) => enabled ? query() : { data: [] }
   const [partner, account, taskResult, rewardResult, personalLedgerResult, sharedLedgerResult, groupResult, documentResult, latestDocument, redemptionResult, unbindResult, operationLogResult] = await Promise.all([
     partnerId ? getDoc(collections.users, partnerId) : null,
     getDoc(collections.accounts, coupleId),
-    db.collection(collections.tasks).where({ coupleId, deleted: command.neq(true) }).orderBy('createdAt', 'asc').limit(100).get(),
-    db.collection(collections.rewards).where({ coupleId, status: 'active' }).orderBy('createdAt', 'asc').limit(100).get(),
-    db.collection(collections.ledgers).where({ coupleId, pointsType: 'personal', accountOwnerOpenId: openid }).orderBy('createdAt', 'desc').limit(30).get(),
-    db.collection(collections.ledgers).where({ coupleId, pointsType: 'shared' }).orderBy('createdAt', 'desc').limit(30).get(),
-    db.collection(collections.documentGroups).where({ coupleId }).orderBy('order', 'asc').limit(50).get(),
-    db.collection(collections.documents)
+    section(needsTasks, () => db.collection(collections.tasks).where({ coupleId, deleted: command.neq(true) }).orderBy('createdAt', 'asc').limit(100).get()),
+    section(needsRewards, () => db.collection(collections.rewards).where({ coupleId, status: 'active' }).orderBy('createdAt', 'asc').limit(100).get()),
+    section(needsLedger, () => db.collection(collections.ledgers).where({ coupleId, pointsType: 'personal', accountOwnerOpenId: openid }).orderBy('createdAt', 'desc').limit(30).get()),
+    section(needsLedger, () => db.collection(collections.ledgers).where({ coupleId, pointsType: 'shared' }).orderBy('createdAt', 'desc').limit(30).get()),
+    section(full || scope === 'documents', () => db.collection(collections.documentGroups).where({ coupleId }).orderBy('order', 'asc').limit(50).get()),
+    section(needsDocuments, () => db.collection(collections.documents)
       .where({ coupleId, deleted: command.neq(true) })
       .field({ _id: true, groupId: true, title: true, lockOwnerOpenId: true, lockExpiresAt: true, updatedAt: true })
-      .orderBy('updatedAt', 'desc').limit(100).get(),
-    queryOne(collections.documents, { coupleId, deleted: command.neq(true) }, { field: 'updatedAt', direction: 'desc' }),
-    db.collection(collections.redemptions).where({ coupleId, status: command.in(['pending_approval', 'active', 'refund_requested', 'refunded']) }).orderBy('updatedAt', 'desc').limit(50).get(),
-    db.collection(collections.unbindRequests).where({ coupleId, status: 'pending' }).orderBy('createdAt', 'desc').limit(1).get(),
-    db.collection(collections.operationLogs).where({ coupleId }).orderBy('createdAt', 'desc').limit(200).get(),
+      .orderBy('updatedAt', 'desc').limit(100).get()),
+    full ? queryOne(collections.documents, { coupleId, deleted: command.neq(true) }, { field: 'updatedAt', direction: 'desc' }) : null,
+    section(needsRedemptions, () => db.collection(collections.redemptions).where({ coupleId, status: command.in(['pending_approval', 'active', 'refund_requested', 'refunded']) }).orderBy('updatedAt', 'desc').limit(50).get()),
+    section(full, () => db.collection(collections.unbindRequests).where({ coupleId, status: 'pending' }).orderBy('createdAt', 'desc').limit(1).get()),
+    section(full || scope === 'tasks', () => db.collection(collections.operationLogs).where({ coupleId }).orderBy('createdAt', 'desc').limit(200).get()),
   ])
 
   const taskDocuments = taskResult.data
   const taskDocumentById = new Map(taskDocuments.map((item) => [item._id, item]))
-  const taskCycles = await ensureTaskCycles(taskDocuments, coupleId)
+  const taskCycles = needsTasks ? await ensureTaskCycles(taskDocuments, coupleId) : []
   const document = latestDocument || null
   const incomingRedemption = redemptionResult.data.find((item) =>
     (item.status === 'pending_approval' && item.reviewerOpenId === openid)
@@ -385,6 +407,7 @@ const projectState = async (openid) => {
       bothRequired: Boolean(item.bothRequired || item.assigneeMode === 'both'),
       assigneeIsSelf: item.bothRequired || item.assigneeMode === 'both' || item.assigneeOpenId === openid,
       reviewerIsSelf: !(item.bothRequired || item.assigneeMode === 'both') && item.reviewerOpenId === openid,
+      approvalRequired: item.approvalRequired !== false,
       selfCompletion: cycle.participantCompletions?.[openid] ? { completed: true, completedAt: new Date(cycle.participantCompletions[openid].completedAt).toISOString(), note: cycle.participantCompletions[openid].note || '', evidence: Array.isArray(cycle.participantCompletions[openid].evidence) ? cycle.participantCompletions[openid].evidence : [] } : { completed: false, completedAt: '', note: '', evidence: [] },
       partnerCompletion: partnerId && cycle.participantCompletions?.[partnerId] ? { completed: true, completedAt: new Date(cycle.participantCompletions[partnerId].completedAt).toISOString(), note: cycle.participantCompletions[partnerId].note || '', evidence: Array.isArray(cycle.participantCompletions[partnerId].evidence) ? cycle.participantCompletions[partnerId].evidence : [] } : { completed: false, completedAt: '', note: '', evidence: [] },
       latestNote: cycle.latestNote || '',
@@ -462,7 +485,7 @@ const projectState = async (openid) => {
     redeemedRewardId: redemption && redemption.status !== 'refunded' ? redemption.rewardId : null,
     redemptionStatus: redemption?.status === 'pending_approval' ? 'pending' : redemption?.status === 'active' || redemption?.status === 'refund_requested' ? 'active' : redemption?.status === 'refunded' ? 'refunded' : 'none',
     redemptionCanReview: Boolean(redemption && redemption.status === 'pending_approval' && redemption.reviewerOpenId === openid),
-    refundStatus: redemption?.status === 'refund_requested' ? 'requested' : redemption?.status === 'refunded' ? 'approved' : 'none',
+    refundStatus: refundStatusFor(redemption),
     refundCanReview: Boolean(redemption && redemption.status === 'refund_requested' && redemption.refundReviewerOpenId === openid),
     documentTitle: document?.title || '',
     documentBody: document?.body || '',
@@ -476,7 +499,7 @@ const projectState = async (openid) => {
       rewardId: item.rewardId,
       status: item.status === 'pending_approval' ? 'pending' : item.status === 'refunded' ? 'refunded' : 'active',
       canReview: Boolean(item.status === 'pending_approval' && item.reviewerOpenId === openid),
-      refundStatus: item.status === 'refund_requested' ? 'requested' : item.status === 'refunded' ? 'approved' : 'none',
+      refundStatus: refundStatusFor(item),
       refundCanReview: Boolean(item.status === 'refund_requested' && item.refundReviewerOpenId === openid),
       requesterIsSelf: item.requesterOpenId === openid,
     })),

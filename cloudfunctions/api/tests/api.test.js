@@ -225,6 +225,16 @@ test('two users can complete the full cloud flow with idempotent point mutations
 
   const refundRequested = await call(applicant, 'reward.refund.request')
   assert.equal(refundRequested.data.refundStatus, 'requested')
+  const declinedRefund = await call(creator, 'reward.refund.review', { approved: false, rewardId: movieReward.id })
+  assert.equal(declinedRefund.ok, true)
+  const afterRejection = (await call(applicant, 'home.summary')).data
+  assert.equal(afterRejection.refundStatus, 'rejected')
+  const declinedRecord = afterRejection.redemptions.find(item => item.rewardId === movieReward.id)
+  assert.equal(declinedRecord.refundStatus, 'rejected')
+  assert.equal(declinedRecord.status, 'active')
+  assert.equal(afterRejection.sharedPoints, 675)
+  assert.equal(fakeCloud.dump('point_ledgers').filter(item => item.sourceType === 'reward_refund').length, 0)
+  assert.equal((await call(applicant, 'reward.refund.request', { rewardId: movieReward.id })).data.refundStatus, 'requested')
   const refundApproved = await call(creator, 'reward.refund.review', { approved: true })
   assert.equal(refundApproved.ok, true)
   const duplicateRefundApproval = await call(creator, 'reward.refund.review', { approved: true, rewardId: movieReward.id })

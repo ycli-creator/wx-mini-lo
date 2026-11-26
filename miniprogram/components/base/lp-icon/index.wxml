@@ -5,8 +5,11 @@
   aria-hidden="{{!ariaLabel}}"
   aria-label="{{ariaLabel}}"
 >
-  <view
+  <image
     class="lp-icon__glyph"
-    style="-webkit-mask-image:url('{{iconUrl}}');mask-image:url('{{iconUrl}}');"
-  ></view>
+    src="{{iconUrl}}"
+    mode="aspectFit"
+    binderror="handleImageError"
+    aria-hidden="true"
+  />
 </view>

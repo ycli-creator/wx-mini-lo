@@ -1,21 +1,28 @@
 import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
 import type { TaskItem } from '../../types/index'
-import { setActiveTab, setTabUnread, showError } from '../../utils/ui'
+import { setActiveTab, showError } from '../../utils/ui'
 import { relationshipDays } from '../../utils/achievements'
 
 const initialState = createInitialState()
+const taskStatusLabels: Record<string, string> = {
+  todo: '待完成', partial: '完成 1/2', pending: '待确认', done: '已完成', rejected: '待补充', missed: '已过期',
+}
 
 Page({
   data: {
     state: initialState,
     task: initialState.tasks[0] as TaskItem,
     hasTask: true,
+    taskStatusLabel: '',
+    taskSectionTitle: '待办',
     rewardHint: '',
     rewardNeedsAction: false,
     loading: true,
     loadError: false,
-    homeTab: 'today' as 'today' | 'tools',
+    unread: 0,
+    chatUnread: 0,
+    notificationUnread: 0,
     relationshipDays: 0,
   },
   async onShow() {
@@ -26,13 +33,15 @@ Page({
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      const task = state.tasks.find((item) => item.planType === 'daily' && item.isCurrentCycle && ['todo', 'partial', 'rejected', 'pending', 'done'].includes(item.status) && (item.assigneeIsSelf || item.reviewerIsSelf))
-        || state.tasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
-        || state.tasks.find((item) => item.planType === 'weekly' && item.isCurrentCycle && ['todo', 'rejected'].includes(item.status) && item.assigneeIsSelf)
-        || state.tasks.find((item) => item.planType === 'long_term' && ['todo', 'rejected'].includes(item.status) && item.assigneeIsSelf)
-        || state.tasks.find((item) => item.id === state.selectedTaskId)
-        || state.tasks[0]
-      const incomingRedemption = state.redemptions.find((item) => item.canReview || item.refundCanReview)
+      const currentTasks = state.tasks.filter((item) => item.planType === 'long_term' || item.isCurrentCycle)
+      const needsMyAction = (item: TaskItem) => item.kind === 'project'
+        ? ['todo', 'partial', 'rejected'].includes(item.status) && (item.projectSteps.some((step) => step.assigneeIsSelf && step.status !== 'done') || item.progressPercent === 100)
+        : item.assigneeIsSelf && ['todo', 'partial', 'rejected'].includes(item.status) && (!item.bothRequired || !item.selfCompletion.completed)
+      const task = currentTasks.find((item) => item.status === 'pending' && item.reviewerIsSelf)
+        || currentTasks.find((item) => item.planType === 'daily' && needsMyAction(item))
+        || currentTasks.find(needsMyAction)
+      const taskSectionTitle = !task ? '待办' : task.status === 'pending' ? '待我确认' : task.planType === 'daily' ? '今天待办' : '接下来'
+      const incomingRedemption = state.redemptions.find((item) => (item.status === 'pending' && item.canReview) || (item.refundStatus === 'requested' && item.refundCanReview))
       const ownPendingRedemption = state.redemptions.find((item) => item.requesterIsSelf && (item.status === 'pending' || item.refundStatus === 'requested'))
       const rewardHint = incomingRedemption?.refundCanReview
         ? '退款待处理'
@@ -47,18 +56,30 @@ Page({
         state,
         task: task || initialState.tasks[0],
         hasTask: Boolean(task),
+        taskStatusLabel: task ? taskStatusLabels[task.status] || '待完成' : '',
+        taskSectionTitle,
         rewardHint,
         rewardNeedsAction: Boolean(incomingRedemption),
         relationshipDays: relationshipDays(state.relationshipStartedAt),
         loading: false,
       })
-      if (state.bound) setTabUnread(this, await lovePointsService.getUnreadMessages())
+      await this.refreshUnread(state.bound)
     } catch (error) {
       this.setData({ loading: false, loadError: true })
       showError(error)
     }
   },
-  switchHomeTab(event: WechatMiniprogram.TouchEvent) { this.setData({ homeTab: event.currentTarget.dataset.tab as 'today' | 'tools' }) },
+  async refreshUnread(bound: boolean) {
+    const [chat, notifications] = await Promise.allSettled([
+      bound ? lovePointsService.getUnreadMessages() : Promise.resolve(0),
+      lovePointsService.listNotifications(),
+    ])
+    const chatUnread = chat.status === 'fulfilled' ? chat.value : this.data.chatUnread
+    const notificationUnread = notifications.status === 'fulfilled' ? notifications.value.unread : this.data.notificationUnread
+    this.setData({ chatUnread, notificationUnread, unread: chatUnread + notificationUnread })
+  },
+  openMessages() { wx.navigateTo({ url: '/pages/chat/index' }) },
+  openTaskList() { wx.setStorageSync('love-points-task-view', 'tasks'); wx.switchTab({ url: '/pages/task/index' }) },
   openTask() {
     if (!this.data.hasTask) {
       wx.setStorageSync('love-points-task-view', 'tasks')
@@ -71,6 +92,7 @@ Page({
   openPoints() { wx.navigateTo({ url: '/pages/points/index' }) },
   openRewards() { wx.setStorageSync('love-points-task-view', 'shop'); wx.switchTab({ url: '/pages/task/index' }) },
   openCalendar() { wx.navigateTo({ url: '/pages/records/index' }) },
+  openDiary() { wx.navigateTo({ url: '/pages/diary/index' }) },
   openHeat() { wx.navigateTo({ url: '/pages/heat/index' }) },
   openDocuments() { wx.navigateTo({ url: '/pages/documents/index' }) },
   openSettings() { wx.switchTab({ url: '/pages/profile/index' }) },

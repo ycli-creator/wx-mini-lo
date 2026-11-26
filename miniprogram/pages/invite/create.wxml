@@ -1,5 +1,6 @@
+<page-meta root-font-size="system" />
 <view class="screen">
-  <lp-header title="邀请 TA" subtitle="把小程序卡片发给对方，再由 TA 输入短码" />
+  <lp-header title="邀请 TA" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在生成邀请" error-text="邀请暂时没有生成成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
   <view class="form-card">

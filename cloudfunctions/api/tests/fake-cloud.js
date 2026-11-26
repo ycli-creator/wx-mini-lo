@@ -1,5 +1,6 @@
 const stores = new Map()
 const failNextAdds = new Set()
+const failNextSets = new Set()
 
 const clone = (value) => structuredClone(value)
 const storeFor = (name) => {
@@ -8,6 +9,8 @@ const storeFor = (name) => {
 }
 
 const command = {
+  gte: (value) => ({ __op: 'gte', value, and(other) { return { __op: 'range', min: value, max: other.value } } }),
+  lte: (value) => ({ __op: 'lte', value }),
   neq: (value) => ({ __op: 'neq', value }),
   in: (value) => ({ __op: 'in', value }),
 }
@@ -17,6 +20,9 @@ const matchesValue = (actual, expected) => {
   if (!isOperator(expected)) return actual === expected
   if (expected.__op === 'neq') return actual !== expected.value
   if (expected.__op === 'in') return expected.value.includes(actual)
+  if (expected.__op === 'gte') return actual >= expected.value
+  if (expected.__op === 'lte') return actual <= expected.value
+  if (expected.__op === 'range') return actual >= expected.min && actual <= expected.max
   return false
 }
 const matches = (document, where) => Object.entries(where).every(([key, expected]) => matchesValue(document[key], expected))
@@ -25,6 +31,7 @@ class DocumentReference {
   constructor(name, id) { this.name = name; this.id = id }
   async get() { return { data: clone(storeFor(this.name).get(this.id) || null) } }
   async set({ data }) {
+    if (failNextSets.delete(this.name)) throw new Error(`Injected set failure: ${this.name}`)
     if (Object.hasOwn(data, '_id')) throw new Error('The _id field cannot be modified')
     storeFor(this.name).set(this.id, clone({ ...data, _id: this.id }))
     return { _id: this.id }
@@ -93,7 +100,9 @@ const database = {
   serverDate: () => new Date(),
   collection: (name) => new CollectionReference(name),
   async runTransaction(handler) {
-    return handler({ collection: (name) => new CollectionReference(name) })
+    const before = clone(stores)
+    try { return await handler({ collection: (name) => new CollectionReference(name) }) }
+    catch (error) { stores.clear(); for (const [name, rows] of before) stores.set(name, rows); throw error }
   },
 }
 
@@ -105,7 +114,8 @@ const fakeCloud = {
   getWXContext() { return { OPENID: this.currentOpenId, APPID: 'test-appid', UNIONID: '' } },
   openapi: { security: { msgSecCheck: async () => ({ errCode: 0, result: { suggest: 'pass' } }) } },
   async deleteFile() { return { fileList: [] } },
-  reset() { stores.clear(); failNextAdds.clear(); this.currentOpenId = 'user-a' },
+  reset() { stores.clear(); failNextAdds.clear(); failNextSets.clear(); this.currentOpenId = 'user-a' },
+  failNextSet(name) { failNextSets.add(name) },
   failNextAdd(name) { failNextAdds.add(name) },
   dump(name) { return [...storeFor(name).values()].map(clone) },
 }

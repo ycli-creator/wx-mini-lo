@@ -1,0 +1,3 @@
+.document-paper { min-height: 55vh; padding: 28rpx; margin-bottom: 28rpx; background: var(--lp-bg-surface); border-radius: var(--lp-radius-card); }
+.document-title { height: 100rpx; font-size: 36rpx; font-weight: 600; border-bottom: 1rpx solid var(--lp-border); margin-bottom: 28rpx; }
+.document-body { width: 100%; min-height: 420rpx; font-size: var(--lp-type-body); line-height: 1.3; }

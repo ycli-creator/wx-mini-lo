@@ -1,0 +1,2 @@
+<page-meta root-font-size="system" />
+<view class="screen"><lp-header title="爱心点数" show-back="{{true}}" /><view class="empty-state"><text class="empty-title">{{message}}</text><view class="heat-action" bind:tap="openApp">打开爱心点数</view></view></view>

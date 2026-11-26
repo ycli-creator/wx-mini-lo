@@ -5,6 +5,7 @@ const file = path.resolve(__dirname, '../../database-schema.json')
 const schema = JSON.parse(fs.readFileSync(file, 'utf8'))
 const functionConfig = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config.json'), 'utf8'))
 const required = [
+  'diaries', 'health_profiles', 'health_days',
   'users', 'couples', 'invites', 'tasks', 'task_cycles', 'task_submissions', 'point_accounts',
   'point_ledgers', 'rewards', 'redemptions', 'document_groups', 'documents',
   'notifications', 'unbind_requests', 'operation_logs', 'community_posts', 'community_reports', 'daily_records',

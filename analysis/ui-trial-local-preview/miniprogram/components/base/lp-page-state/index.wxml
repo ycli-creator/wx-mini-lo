@@ -1,0 +1,5 @@
+<view class="page-state">
+  <view wx:if="{{loading}}" class="spinner" aria-label="加载中"></view>
+  <text class="state-title">{{loading ? loadingText : errorText}}</text>
+  <button wx:if="{{!loading}}" class="retry" hover-class="retry--pressed" bindtap="retry">重新加载</button>
+</view>

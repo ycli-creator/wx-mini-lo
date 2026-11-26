@@ -308,7 +308,7 @@ export const createInitialState = (): LovePointsState => ({
   redemptionStatus: 'none',
   redemptionCanReview: false,
   refundStatus: 'none',
-  refundCanReview: true,
+  refundCanReview: false,
   documentTitle: '我们的第一篇共同日记',
   documentBody: '今天一起完成了晚餐任务，番茄牛腩比想象中更成功。下次想试试做甜点。',
   selectedDocumentId: 'document-diary',

@@ -7,7 +7,7 @@
     </view>
     <text class="tag tag--{{status}}">{{label}}</text>
   </view>
-  <text class="description">{{taskDescription || description}}</text>
+  <text wx:if="{{taskDescription}}" class="description">{{taskDescription}}</text>
   <view class="progress-row">
     <text>进度 {{bothRequired ? (selfCompleted ? 50 : 0) + (partnerCompleted ? 50 : 0) : progress}}%</text>
     <view wx:if="{{bothRequired}}" class="track dual-track"><view class="dual-card-half self {{selfCompleted ? 'filled' : ''}}"></view><view class="dual-card-half partner {{partnerCompleted ? 'filled' : ''}}"></view></view>

@@ -3,11 +3,12 @@
     wx:for="{{tabs}}"
     wx:key="pagePath"
     class="item {{selected === index ? 'active' : ''}}"
+    aria-role="tab" aria-selected="{{selected === index}}" aria-label="{{item.text}}"
     data-index="{{index}}"
     hover-class="pressed"
     bind:tap="switchTab"
   >
-    <view class="icon-wrap"><lp-icon name="{{selected === index ? item.activeIcon : item.icon}}" size="44rpx" /><view wx:if="{{selected === index}}" class="dot"></view><view wx:if="{{item.text === '消息' && unread > 0}}" class="unread">{{unread > 99 ? '99+' : unread}}</view></view>
+    <view class="icon-wrap"><lp-icon name="{{item.icon}}" size="46rpx" color="{{selected === index ? '#b72f46' : '#74645f'}}" /></view>
     <text class="label">{{item.text}}</text>
   </view>
 </view>

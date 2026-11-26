@@ -13,6 +13,9 @@ type DraftMedia = {
 
 Page({
   data: {
+    loading: true,
+    loadError: false,
+    initialized: false,
     postId: '',
     editing: false,
     title: '',
@@ -23,7 +26,9 @@ Page({
     policyAccepted: false,
   },
   onLoad(query: Record<string, string | undefined>) { this.setData({ postId: query.id || '', editing: Boolean(query.id) }) },
-  async onShow() {
+  async onShow() { if (!this.data.initialized) await this.refresh() },
+  async refresh() {
+    this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
       const policyAccepted = state.preferences.communityPolicyVersion === COMMUNITY_POLICY_VERSION
@@ -38,11 +43,8 @@ Page({
           policyAccepted,
         })
       } else this.setData({ policyAccepted })
-      if (!state.preferences.communityGuideSeen) {
-        await wx.showModal({ title: '只属于两个人的记录', content: '帖子保存在你们的情侣空间里，只有你和 TA 能看到，任何时候都不会对外公开。', showCancel: false, confirmText: '我知道了', confirmColor: '#f65f6b' })
-        await lovePointsService.markGuideSeen('community')
-      }
-    } catch (error) { showError(error) }
+      this.setData({ initialized: true, loading: false })
+    } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) }
   },
   handleTitle(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ title: event.detail.value }) },
   handleContent(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ content: event.detail.value }) },
@@ -53,7 +55,7 @@ Page({
     this.setData({ media: this.data.media.filter((_, itemIndex) => itemIndex !== index) })
   },
   async publish() {
-    if (this.data.busy) return
+    if (this.data.busy || this.data.loading || this.data.loadError) return
     if (!this.data.title.trim()) {
       wx.showToast({ title: '请填写帖子标题', icon: 'none' })
       return

@@ -1,0 +1,7 @@
+.document-add { margin: 0; padding: 0; width: 88rpx; height: 88rpx; display: flex; align-items: center; justify-content: center; background: transparent; color: var(--lp-brand-text); }
+.document-add::after { border: 0; }
+.documents-screen .section-heading { margin: 0 0 8rpx; }
+.documents-screen .floating-create-action { bottom: calc(28rpx + env(safe-area-inset-bottom)); }
+
+.document-empty { display: flex; align-items: center; justify-content: flex-start; gap: 8rpx; margin: 0; padding: 16rpx 24rpx; min-height: var(--lp-touch-target); color: var(--lp-brand-text); border-radius: var(--lp-radius-card); background: var(--lp-bg-surface); font-size: var(--lp-type-body); }
+.document-empty::after { border: 0; }

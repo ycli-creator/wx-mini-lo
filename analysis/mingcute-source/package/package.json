@@ -1,0 +1,58 @@
+{
+  "name": "@mingcute/svg",
+  "version": "3.0.2",
+  "description": "Optimized Carefully crafted Mingcute SVG icons for Core Regular and Filled.",
+  "keywords": [
+    "icons",
+    "svg-icons",
+    "vector-icons",
+    "icon-library",
+    "svg",
+    "mingcute"
+  ],
+  "license": "Apache-2.0",
+  "author": "MingCute Design",
+  "homepage": "https://www.mingcute.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mingcute-design/mingcute-icons.git",
+    "directory": "packages/svg"
+  },
+  "bugs": {
+    "url": "https://github.com/mingcute-design/mingcute-icons/issues"
+  },
+  "private": false,
+  "type": "module",
+  "exports": {
+    "./styles.json": "./styles.json",
+    "./*": "./*"
+  },
+  "files": [
+    "styles.json",
+    "*/**/*.svg",
+    "*/metadata.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "@mingcute/compiler": "3.0.0",
+    "@mingcute/core": "3.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build:adapter": "tsc -p tsconfig.json",
+    "build": "pnpm run build:adapter && node scripts/build-assets.mjs && node scripts/render-fixtures.mjs",
+    "build:fixtures": "pnpm run build:adapter && node scripts/render-fixtures.mjs",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "test": "pnpm run build:adapter && node --test tests/*.test.mjs",
+    "audit:assets": "node scripts/audit-assets.mjs",
+    "check": "pnpm run typecheck && pnpm run test && pnpm run build && pnpm run audit:assets",
+    "clean": "node scripts/clean.mjs"
+  }
+}

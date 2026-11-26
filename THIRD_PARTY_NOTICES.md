@@ -1,5 +1,19 @@
 # Third-Party Notices
 
+## MingCute Icons
+
+- Package: `@mingcute/svg` 3.0.2, `core-regular` style.
+- Website: https://www.mingcute.com/
+- Project: https://github.com/mingcute-design/mingcute-icons
+- License: Apache-2.0; full text in `miniprogram/assets/icons/mingcute/LICENSE`.
+- Usage: shared `lp-icon` glyphs and diary UI icons. SVG `currentColor` is replaced with the project foreground color for local image rendering. Per-file sources are recorded in `miniprogram/assets/icons/mingcute/sources.json`. The diary landscape is an illustration rather than a UI icon.
+
+## Lucide Icons
+
+- Source: the Web prototype’s `lucide-react` dependency.
+- License: ISC; some glyphs remain under the Feather MIT license. Full notice in `miniprogram/assets/icons/line/LICENSE`.
+- Usage: line icons on the Home, Todo and Diary trial pages, with local PNG fallbacks. The glyphs retain Lucide’s geometry and use the project’s stroke weight and colors.
+
 ## TDesign MiniProgram
 
 - Package: `tdesign-miniprogram`

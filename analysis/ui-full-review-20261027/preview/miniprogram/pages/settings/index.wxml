@@ -1,0 +1,25 @@
+<view class="screen with-tabbar">
+  <lp-header title="隐私与设置" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步关系空间" error-text="关系空间暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  
+  <view class="section-heading"><text class="section-title">使用偏好</text></view>
+  <view class="segment"><view class="segment-item {{state.preferences.usageMode === 'record' ? 'active' : ''}}" data-mode="record" bind:tap="changeUsageMode">专注记录</view><view class="segment-item {{state.preferences.usageMode === 'social' ? 'active' : ''}}" data-mode="social" bind:tap="changeUsageMode">分享生活</view></view>
+  <view class="section-heading"><text class="section-title">主页隐私</text></view>
+  <view class="list">
+    <view class="switch-row privacy-master"><view class="cell-copy"><text class="cell-title">一键不展示</text></view><switch data-key="privateMode" checked="{{state.profile.privacy.privateMode}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">允许通过身份码找到我</text></view><switch data-key="searchableByCode" checked="{{state.profile.privacy.searchableByCode}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示伴侣身份</text></view><switch data-key="showPartner" checked="{{state.profile.privacy.showPartner}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示相伴天数</text></view><switch data-key="showRelationshipDays" checked="{{state.profile.privacy.showRelationshipDays}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+    <view class="switch-row"><view class="cell-copy"><text class="cell-title">展示情侣热力</text></view><switch data-key="showHeat" checked="{{state.profile.privacy.showHeat}}" color="#f65f6b" bind:change="changePrivacy" /></view>
+  </view>
+  <view class="section-heading"><text class="section-title">应用设置</text></view>
+  <view class="list">
+    <view class="list-cell" hover-class="pressed" bind:tap="openRelationship"><view class="cell-icon"><lp-icon name="heart" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">情侣关系设置</text></view><text class="chevron">›</text></view>
+    <view class="list-cell" hover-class="pressed" bind:tap="openFriends"><view class="cell-icon"><lp-icon name="usergroup-add" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">好友与身份码</text></view><text class="chevron">›</text></view>
+    <view class="list-cell" hover-class="pressed" bind:tap="openPolicies"><view class="cell-icon"><lp-icon name="file-paste" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">协议、隐私与社区规范</text></view><text class="chevron">›</text></view>
+    <view class="list-cell"><view class="cell-icon"><lp-icon name="info-circle" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">关于 Love Points</text></view><text class="cell-value">v{{appVersion}}</text></view>
+    <view class="list-cell" hover-class="pressed" bind:tap="openUnbind"><view class="cell-icon"><lp-icon name="error-circle" size="30rpx" /></view><view class="cell-copy"><text class="cell-title">解除绑定</text></view><text class="chevron">›</text></view>
+  </view>
+  </block>
+</view>

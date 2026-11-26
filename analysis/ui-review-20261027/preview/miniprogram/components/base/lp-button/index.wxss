@@ -1,0 +1,21 @@
+:host {
+  display: block;
+  margin-bottom: 18rpx;
+  --td-brand-color: #f65f6b;
+  --td-brand-color-active: #e84a57;
+  --td-brand-color-light: #fff1f0;
+  --td-button-primary-bg-color: #f65f6b;
+  --td-button-primary-border-color: #f65f6b;
+  --td-button-primary-active-bg-color: #e84a57;
+  --td-button-primary-active-border-color: #e84a57;
+  --td-button-light-bg-color: #fff1f0;
+  --td-button-light-border-color: #fff1f0;
+  --td-button-light-color: #e84a57;
+  --td-button-danger-bg-color: #db3f50;
+  --td-button-danger-border-color: #db3f50;
+  --td-button-border-radius: 32rpx;
+  --td-button-large-height: 104rpx;
+}
+.lp-button { font-weight: 600; }
+.lp-button--soft { --td-button-light-bg-color: #fff1f0; --td-button-light-color: #e84a57; }
+.lp-button--text { --td-button-light-bg-color: transparent; --td-button-light-color: #e84a57; }

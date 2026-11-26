@@ -1,0 +1,13 @@
+<page-meta root-font-size="system" />
+<view class="screen document-editor-screen">
+  <lp-header title="{{isNew ? '新建文档' : '编辑文档'}}" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取文档" error-text="文档暂时无法读取，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view wx:if="{{locked}}" class="notice-card warning"><text class="notice-title">对方正在编辑</text><text class="notice-copy">当前为只读，稍后可重新获取编辑权。</text></view>
+  <view class="document-paper"><input class="document-title" aria-label="文档标题" placeholder="标题" disabled="{{locked || busy}}" value="{{title}}" maxlength="60" bind:input="handleTitle" /><textarea class="document-body" aria-label="文档正文" placeholder="开始记录…" disabled="{{locked || busy}}" value="{{body}}" maxlength="5000" auto-height="{{true}}" bind:input="handleBody" /></view>
+  <lp-cue-button wx:if="{{!isNew}}" type="shared_doc" title="{{title}}" description="来一起完善这份共同记录。" resource-type="shared_doc" resource-id="{{documentId}}" action-path="/pages/documents/edit?id={{documentId}}" action-text="打开文档" label="@TA 来补充" />
+  <lp-button wx:if="{{locked && !isNew}}" label="重新获取编辑权" variant="soft" loading="{{busy}}" bind:tap="retryLock" />
+  <lp-button label="保存文档" disabled="{{locked || !title}}" loading="{{busy}}" bind:tap="save" />
+  <lp-button label="取消" variant="text" bind:tap="goBack" />
+  </block>
+</view>

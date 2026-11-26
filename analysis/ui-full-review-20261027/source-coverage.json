@@ -1,0 +1,268 @@
+[
+  {
+    "route": "pages/start/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/profile/edit",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 3,
+    "labelledInputs": 3
+  },
+  {
+    "route": "pages/onboarding/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/invite/create",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/invite/join",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 1,
+    "labelledInputs": 1
+  },
+  {
+    "route": "pages/invite/confirm",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/home/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/diary/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 1,
+    "labelledInputs": 1
+  },
+  {
+    "route": "pages/diary/edit",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 3,
+    "labelledInputs": 3
+  },
+  {
+    "route": "pages/diary/draw",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/diary/calendar",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/diary/statistics",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/task/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 10,
+    "labelledInputs": 10
+  },
+  {
+    "route": "pages/task/detail",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 5,
+    "labelledInputs": 5
+  },
+  {
+    "route": "pages/task/submit",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/task/review",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 1,
+    "labelledInputs": 1
+  },
+  {
+    "route": "pages/community/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/community/create",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 2,
+    "labelledInputs": 2
+  },
+  {
+    "route": "pages/points/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/reward/list",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 5,
+    "labelledInputs": 5
+  },
+  {
+    "route": "pages/reward/detail",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/reward/redemption",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/documents/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 1,
+    "labelledInputs": 1
+  },
+  {
+    "route": "pages/documents/edit",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 2,
+    "labelledInputs": 2
+  },
+  {
+    "route": "pages/profile/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/records/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 2,
+    "labelledInputs": 2
+  },
+  {
+    "route": "pages/records/statistics",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/records/edit",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 2,
+    "labelledInputs": 2
+  },
+  {
+    "route": "pages/heat/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/chat/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/chat/thread",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 1,
+    "labelledInputs": 1
+  },
+  {
+    "route": "pages/share-entry/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/settings/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/settings/relationship",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/legal/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/friends/index",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 1,
+    "labelledInputs": 1
+  },
+  {
+    "route": "pages/unbind/pending",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  },
+  {
+    "route": "pages/unbind/confirm",
+    "sourceReviewed": true,
+    "missingHandlers": [],
+    "inputs": 0,
+    "labelledInputs": 0
+  }
+]

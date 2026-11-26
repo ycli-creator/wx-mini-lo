@@ -1,7 +1,7 @@
 <view class="header {{showBack ? 'has-back' : ''}}">
   <view class="safe-top"></view>
   <view class="heading-row">
-    <view wx:if="{{showBack}}" class="back-button" hover-class="back-button--pressed" role="button" aria-label="返回上一页" bind:tap="goBack"><text class="back-icon">‹</text></view>
+    <button wx:if="{{showBack}}" class="back-button" hover-class="back-button--pressed" aria-label="返回上一页" bind:tap="goBack"><lp-icon name="line-back" size="48rpx" color="#b72f46" /></button>
     <view class="heading-copy">
       <text class="title">{{title}}</text>
       <text class="subtitle" wx:if="{{subtitle}}">{{subtitle}}</text>

@@ -1,0 +1,10 @@
+.onboarding-screen { padding-bottom: calc(env(safe-area-inset-bottom) + 48rpx); }
+.mode-list { margin-top: 22rpx; display: flex; flex-direction: column; gap: 22rpx; }
+.mode-option { min-height: 190rpx; padding: 30rpx; display: flex; align-items: center; gap: 24rpx; background: #fff; border: 2rpx solid var(--lp-border); border-radius: 34rpx; }
+.mode-option.selected { background: var(--lp-brand-soft); border-color: var(--lp-brand); box-shadow: 0 12rpx 32rpx rgba(232, 74, 87, 0.12); }
+.mode-icon { width: 80rpx; height: 80rpx; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--lp-brand-text); background: #fff; border-radius: 24rpx; }
+.mode-copy { min-width: 0; flex: 1; }
+.mode-title { display: block; margin-bottom: 8rpx; font-size: 32rpx; font-weight: 700; line-height: 44rpx; }
+.mode-description { color: var(--lp-text-secondary); font-size: 24rpx; line-height: 38rpx; }
+.mode-check { width: 42rpx; height: 42rpx; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; background: var(--lp-brand); border-radius: 50%; font-size: 24rpx; font-weight: 700; }
+.privacy-promise { margin: 30rpx 8rpx; display: flex; align-items: center; gap: 12rpx; color: var(--lp-text-secondary); font-size: 24rpx; }

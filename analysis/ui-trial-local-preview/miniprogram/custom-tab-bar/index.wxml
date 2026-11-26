@@ -1,0 +1,14 @@
+<view class="tabbar">
+  <view
+    wx:for="{{tabs}}"
+    wx:key="pagePath"
+    class="item {{selected === index ? 'active' : ''}}"
+    aria-role="tab" aria-selected="{{selected === index}}" aria-label="{{item.text}}"
+    data-index="{{index}}"
+    hover-class="pressed"
+    bind:tap="switchTab"
+  >
+    <view class="icon-wrap"><lp-icon name="{{item.icon}}" size="46rpx" color="{{selected === index ? '#b72f46' : '#74645f'}}" /></view>
+    <text class="label">{{item.text}}</text>
+  </view>
+</view>

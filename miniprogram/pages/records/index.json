@@ -1,1 +1,1 @@
-{ "navigationBarTitleText": "生活日历", "enablePullDownRefresh": true }
+{ "navigationBarTitleText": "日历", "enablePullDownRefresh": true, "backgroundColor": "#ffffff", "navigationBarBackgroundColor": "#ffffff" }

@@ -1,0 +1,22 @@
+const fs = require('node:fs')
+const path = require('node:path')
+;(async () => {
+  process._debugProcess(Number(process.argv[2]))
+  await new Promise(r=>setTimeout(r,300))
+  const targets = await (await fetch('http://127.0.0.1:9229/json/list')).json()
+  const target = targets.find(t=>t.title.includes('capture.cjs') || t.url?.includes('capture.cjs'))
+  if (!target) throw Error('Review script inspector not found')
+  const socket = new WebSocket(target.webSocketDebuggerUrl)
+  await new Promise((resolve,reject)=>{socket.onopen=resolve;socket.onerror=reject})
+  let nextId=0;const pending=new Map()
+  socket.onmessage=e=>{const m=JSON.parse(e.data);if(pending.has(m.id)){pending.get(m.id)(m);pending.delete(m.id)}}
+  const send=(method,params={})=>new Promise(resolve=>{const id=++nextId;pending.set(id,resolve);socket.send(JSON.stringify({id,method,params}))})
+  const proto=await send('Runtime.evaluate',{expression:'Object.prototype'})
+  const objects=await send('Runtime.queryObjects',{prototypeObjectId:proto.result.result.objectId})
+  const result=await send('Runtime.callFunctionOn',{objectId:objects.result.objects.objectId,functionDeclaration:"function(){return this.filter(x=>x && x.profileComplete !== undefined && x.availableSpaces && x.profile && x.tasks && x.preferences && x.profile.nickname !== 'UI-REVIEW-LOCAL-ONLY').map(x=>JSON.parse(JSON.stringify(x)))}",returnByValue:true})
+  const candidates=result.result.result.value
+  if (candidates.length > 1) throw Error('Multiple possible backups; refusing to select')
+  fs.writeFileSync(path.join(__dirname,'original-local-state.json'),JSON.stringify({value:candidates[0] ?? ''}))
+  console.log('Original local cache recovered; candidate count:',candidates.length)
+  socket.close()
+})().then(()=>process.exit(0)).catch(e=>{console.error(e.message);process.exit(1)})

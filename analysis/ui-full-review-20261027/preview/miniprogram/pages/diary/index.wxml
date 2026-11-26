@@ -1,0 +1,40 @@
+<view class="journal-page" style="padding-top: {{navBottom}}px;">
+  <view class="feed-head" style="padding-top: {{navTop}}px;">
+    <view class="journal-nav"><button class="nav-tool" bindtap="toggleDrawer" aria-label="打开日记菜单"><image src="/assets/icons/diary/menu.svg" /></button><button class="journal-date" bindtap="openCalendar">{{modeLabel || titleDate}} <lp-icon name="down" size="24rpx" /></button><view class="nav-spacer"></view><button class="nav-tool" bindtap="toggleSearch" aria-label="搜索日记"><image src="/assets/icons/diary/search.svg" /></button><button class="nav-tool" bindtap="toggleMore" aria-label="更多日记功能"><image src="/assets/icons/diary/more.svg" /></button></view>
+  </view>
+  <view wx:if="{{searchOpen}}" class="journal-search"><input aria-label="搜索日记" placeholder="搜索正文、标题、地点或标签" value="{{query}}" bindinput="search" maxlength="100" focus="{{true}}" /></view>
+  <view wx:if="{{filtersOpen}}" class="journal-filters"><picker range="{{categoryOptions}}" bindchange="selectCategory"><view>{{category || '全部分类'}} <lp-icon name="down" size="24rpx" /></view></picker><picker range="{{tagOptions}}" bindchange="selectTag"><view>{{tag || '全部标签'}} <lp-icon name="down" size="24rpx" /></view></picker><button bindtap="clearFilters">清除筛选</button></view>
+  <block wx:if="{{!loading && !loadError}}">
+    <scroll-view wx:if="{{memoryVisible}}" class="memory-rail" scroll-x="{{true}}" show-scrollbar="{{false}}" enhanced="{{true}}">
+      <view wx:for="{{memories}}" wx:if="{{!item.empty}}" wx:key="id" class="memory-card {{item.revealed ? 'is-revealed' : ''}} {{item.empty ? 'is-empty' : ''}}" data-index="{{index}}" bindtap="revealMemory" role="button" aria-label="{{item.empty ? '往年今日暂无日记' : item.revealed ? item.date : item.label + '，点击揭晓'}}">
+        <image wx:if="{{item.cover}}" class="memory-cover" src="{{item.cover}}" mode="aspectFill" /><view wx:else class="memory-pattern"><view></view><view></view></view><view class="memory-shade"></view>
+        <view class="memory-copy"><text class="memory-label">{{item.label}}</text><block wx:if="{{item.empty}}"><text class="memory-empty">暂无往年记录</text></block><block wx:elif="{{item.revealed}}"><text class="memory-date">{{item.date}}</text><text class="memory-excerpt">{{item.preview}}</text><button class="memory-open" data-index="{{index}}" catchtap="openMemory">{{item.kind === 'anniversary' ? '重逢这一天' : '打开这一天'}} · {{item.count}} 篇</button></block><block wx:else><text class="memory-secret">查看回忆</text></block></view>
+      </view>
+    </scroll-view>
+    <button class="journal-streak" bindtap="openStatistics">连续记录 {{streak}} 天（共 {{total}} 篇）</button>
+  </block>
+  <view wx:if="{{selectedDate || monthFilter || query || category || tag}}" class="active-filter"><text>{{selectedDate || monthFilter || '筛选结果'}} · {{visible.length}} 篇</text><button bindtap="clearFilters">查看全部</button></view>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取日记" error-text="日记暂时无法读取，请重试。" bind:retry="refresh" />
+  <block wx:else>
+    <view wx:if="{{!visible.length}}" class="diary-empty"><text class="empty-title">{{mode === 'trash' ? '回收站是空的' : mode === 'draft' ? '还没有草稿' : '这里还没有日记'}}</text></view>
+    <view class="journal-feed">
+      <view wx:for="{{visible}}" wx:key="id" class="feed-row">
+        <view class="feed-day"><block wx:if="{{item.showDate}}"><text class="feed-day-number">{{item.dayLabel}}</text><text class="feed-day-month">{{item.monthLabel}}/{{item.weekdayLabel}}</text></block></view>
+        <view class="feed-card" data-id="{{item.id}}" bindtap="open" role="button" aria-label="打开 {{item.date}} {{item.time}} 的日记">
+          <text wx:if="{{item.pinned || item.draft || item.hidden}}" class="feed-state">{{item.pinned ? '置顶 · ' : ''}}{{item.draft ? '草稿' : item.hidden ? '隐藏' : ''}}</text>
+          <text wx:if="{{item.showTitle}}" class="feed-title">{{item.title}}</text>
+          <text wx:if="{{item.preview}}" class="feed-preview">{{item.preview}}</text><text wx:elif="{{!item.photos.length && !item.audioCount}}" class="feed-preview muted">这篇草稿还没有正文。</text>
+          <view wx:if="{{item.photos.length}}" class="feed-images"><view wx:for="{{item.photos}}" wx:for-item="photo" wx:for-index="photoIndex" wx:key="*this" class="feed-photo"><image src="{{photo}}" mode="aspectFill" /><text wx:if="{{photoIndex === 2 && item.extraPhotos}}" class="feed-photo-more">+{{item.extraPhotos}}</text></view></view>
+          <text wx:if="{{item.audioCount}}" class="feed-audio">{{item.audioCount}} 段音频</text>
+          <view class="feed-card-foot"><text>{{item.time}}</text><text>{{item.mood}} {{item.weather}}</text></view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <button class="journal-compose" bindtap="create" aria-label="写日记"><image src="/assets/icons/diary/feather.svg" /></button>
+  <view wx:if="{{drawerOpen || moreOpen || memoryPickerOpen}}" class="diary-overlay" bindtap="closePanels"></view>
+  <view wx:if="{{memoryPickerOpen}}" class="memory-date-picker"><text>往年今日 · 选择一次重逢</text><scroll-view scroll-y="{{true}}"><button wx:for="{{memoryDates}}" wx:key="*this" data-date="{{item}}" bindtap="chooseMemoryDate">{{item}}</button></scroll-view><button bindtap="closePanels">关闭</button></view>
+  <view wx:if="{{drawerOpen}}" class="diary-drawer" style="padding-top: {{navTop + 20}}px;" catchtap="noop"><text class="drawer-title">我的日记</text><text class="drawer-count">{{total}} 篇 · {{wordCount}} 字</text><button data-mode="all" bindtap="changeMode">全部日记</button><button bindtap="openCalendar">日历视图</button><button bindtap="openStatistics">日记统计</button><view class="drawer-divider"></view><button data-mode="favorite" bindtap="changeMode">收藏</button><button data-mode="draft" bindtap="changeMode">草稿箱</button><button data-mode="hidden" bindtap="changeMode">隐藏日记</button><button data-mode="trash" bindtap="changeMode">回收站</button><button bindtap="closePanels" class="drawer-close">收起</button></view>
+  <view wx:if="{{moreOpen}}" class="journal-more" style="top: {{navBottom}}px;" catchtap="noop"><button bindtap="openCalendar">日历视图</button><button bindtap="openStatistics">整体统计</button><button bindtap="toggleFilters">分类与标签筛选</button><button bindtap="clearFilters">清除筛选</button></view>
+</view>
+

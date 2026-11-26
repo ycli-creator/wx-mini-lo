@@ -7,7 +7,9 @@ const schema = JSON.parse(await readFile(new URL('cloudfunctions/database-schema
 const envSource = await readFile(new URL('miniprogram/config/env.ts', root), 'utf8')
 const environmentId = envSource.match(/CLOUD_ENV_ID\s*=\s*['"]([^'"]*)['"]/)?.[1]?.trim()
 const wechatideBin = process.env.WECHATIDE_BIN
-  || '/Applications/wechatwebdevtools.app/Contents/MacOS/wechatide'
+  || (process.platform === 'darwin'
+    ? '/Applications/wechatwebdevtools.app/Contents/MacOS/wechatide'
+    : 'wechatide')
 
 if (!environmentId) {
   console.error('CLOUD_ENV_ID 为空；无法核对云端结构')
@@ -19,6 +21,12 @@ const invoke = (args) => {
     cwd: new URL('.', root),
     encoding: 'utf8',
   })
+
+  if (result.error?.code === 'ENOENT') {
+    console.error(`找不到 ${wechatideBin}。请安装带 wechatide 的微信开发者工具 Nightly，或将 WECHATIDE_BIN 指向其可执行文件。`)
+    process.exit(1)
+  }
+  if (result.error) throw result.error
 
   if (result.status !== 0) {
     if (result.stdout) process.stderr.write(result.stdout)

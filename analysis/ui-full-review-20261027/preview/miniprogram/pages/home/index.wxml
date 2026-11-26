@@ -1,0 +1,44 @@
+<view class="screen with-tabbar home-screen">
+  <view class="home-heading">
+    <text class="home-title">首页</text>
+    <button class="notification-button" bindtap="openMessages" hover-class="notification-pressed" aria-label="{{unread ? '消息，有未读消息' : '消息'}}">
+      <lp-icon name="notification" size="42rpx" color="#403631" />
+      <view wx:if="{{unread > 0}}" class="notification-dot"></view>
+    </button>
+  </view>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="加载中…" error-text="加载失败，请重试" bind:retry="refresh" />
+  <block wx:else>
+    <view class="memory-banner {{state.activeSpaceType === 'couple' ? 'couple' : 'personal'}}">
+      <image wx:if="{{state.profile.backgroundUrl}}" class="banner-image" src="{{state.profile.backgroundUrl}}" mode="aspectFill" />
+      <view class="banner-shade"></view>
+      <view class="banner-content">
+        <text class="banner-space">{{state.activeSpaceType === 'couple' ? state.profile.nickname + ' · ' + state.partnerProfile.nickname : state.profile.nickname}}</text>
+        <text class="banner-title">{{state.activeSpaceType === 'couple' ? (relationshipDays ? '相伴 ' + relationshipDays + ' 天' : '情侣空间') : '个人空间'}}</text>
+      </view>
+    </view>
+    <button class="diary-entry" bindtap="openDiary" hover-class="pressed">
+      <view class="entry-icon diary-icon"><lp-icon name="book-open" size="44rpx" color="#ea5266" /></view><text class="diary-entry-title">日记</text><lp-icon name="arrow-right-2" size="28rpx" color="#a49790" />
+    </button>
+    <view class="tool-grid">
+      <button class="tool-item" bindtap="openPoints" hover-class="pressed"><view class="tool-icon gold"><lp-icon name="money" size="44rpx" color="#cf8c1e" /></view><text>积分</text><text class="tool-value">{{state.activeSpaceType === 'couple' ? state.sharedPoints : state.personalPoints}}</text></button>
+      <button class="tool-item" bindtap="openRewards" hover-class="pressed"><view class="tool-icon rose"><lp-icon name="heart" size="44rpx" color="#eb6077" /></view><text>心愿</text><text class="tool-value">{{state.rewards.length}} 个</text></button>
+      <button class="tool-item" bindtap="openDocuments" hover-class="pressed"><view class="tool-icon blue"><lp-icon name="document" size="44rpx" color="#5499de" /></view><text>文档</text><text class="tool-value">{{state.documents.length}} 个</text></button>
+      <button class="tool-item" bindtap="openCalendar" hover-class="pressed"><view class="tool-icon rose"><lp-icon name="calendar" size="44rpx" color="#eb6077" /></view><text>日历</text></button>
+    </view>
+    <view class="section-heading"><text class="section-title">{{taskSectionTitle}}</text><button class="section-link" bindtap="openTaskList">全部待办 <lp-icon name="arrow-right-2" size="22rpx" /></button></view>
+    <button wx:if="{{hasTask}}" class="task-preview" bindtap="openTask" hover-class="pressed" aria-label="{{task.title}}，{{taskStatusLabel}}">
+      <view class="task-preview-icon"><lp-icon name="{{task.status === 'done' ? 'check' : 'task'}}" size="38rpx" color="{{task.status === 'done' ? '#688f3b' : '#e84a57'}}" /></view>
+      <view class="task-preview-copy">
+        <text class="task-preview-title">{{task.title}}</text>
+        <view class="task-preview-meta"><text>+{{task.points}} 积分{{task.bothRequired ? '/人' : ''}}</text><text wx:if="{{task.kind === 'project'}}">{{task.progressPercent || 0}}%</text></view>
+        <view wx:if="{{task.bothRequired}}" class="task-members"><text>我 · {{task.selfCompletion.completed ? '已完成' : '待完成'}}</text><text>TA · {{task.partnerCompletion.completed ? '已完成' : '待完成'}}</text></view>
+      </view>
+      <text class="task-preview-status {{task.status === 'done' ? 'is-done' : ''}}">{{taskStatusLabel}}</text>
+    </button>
+    <button wx:else class="empty-task" bindtap="openTaskList" hover-class="pressed"><text>暂无待处理事项</text><text class="empty-task-action">查看待办 <lp-icon name="arrow-right-2" size="22rpx" /></text></button>
+    <view wx:if="{{state.activeSpaceType === 'couple'}}" class="heat-strip" bindtap="openHeat" hover-class="pressed" role="button" aria-label="情侣热力">
+      <view class="entry-icon heat-icon"><lp-icon name="heart" size="38rpx" color="#ef5e72" /></view><text class="strip-title">情侣热力</text><text class="heat-count">{{state.heat.completedCount}}/5</text><text class="heat-number">+{{state.heat.todayHeat}}</text><lp-icon name="arrow-right-2" size="26rpx" color="#a49790" />
+    </view>
+    <view wx:if="{{rewardNeedsAction}}" class="action-notice" bindtap="openRewards" hover-class="pressed"><lp-icon name="notification" size="32rpx" /><text>{{rewardHint}}</text><lp-icon name="arrow-right-2" size="26rpx" color="#a49790" /></view>
+  </block>
+</view>

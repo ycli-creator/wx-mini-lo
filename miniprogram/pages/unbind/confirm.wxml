@@ -1,3 +1,4 @@
+<page-meta root-font-size="system" />
 <view class="screen">
   <lp-header title="确认解除绑定" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在确认解绑申请" error-text="当前解绑申请无法确认，请重新加载或返回设置。" bind:retry="refresh" />

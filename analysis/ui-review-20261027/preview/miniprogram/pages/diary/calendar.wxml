@@ -1,0 +1,16 @@
+<view class="calendar-page">
+  <view class="calendar-header" style="padding-top: {{navTop}}px;"><view class="calendar-nav"><button bindtap="back" aria-label="返回"><image src="/assets/icons/diary/back.svg" /></button><picker range="{{years}}" value="{{yearIndex}}" bindchange="changeYear"><view class="calendar-year">{{year}}年 <lp-icon name="down" size="24rpx" /></view></picker><view class="calendar-spacer"></view><button bindtap="toggleFilter" aria-label="筛选日历"><image src="/assets/icons/diary/filter.svg" /></button></view></view>
+  <scroll-view class="year-scroll" scroll-y="{{true}}" scroll-into-view="{{scrollTarget}}" style="top: {{navBottom}}px;" enhanced="{{true}}" show-scrollbar="{{false}}">
+    <view wx:if="{{filterOpen}}" class="calendar-filter"><picker range="{{categoryOptions}}" value="{{categoryIndex}}" bindchange="category"><view>{{categoryOptions[categoryIndex]}} <lp-icon name="down" size="24rpx" /></view></picker><button bindtap="favorite"><lp-icon wx:if="{{favoriteOnly}}" name="check" size="24rpx" /> 仅收藏</button></view>
+    <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" error-text="日历暂时无法读取" bind:retry="refresh" />
+    <block wx:else><view wx:for="{{months}}" wx:key="month" wx:for-item="month" id="{{month.id}}" class="year-month">
+      <view class="month-heading"><text>{{month.label}}</text><button data-month="{{month.month}}" bindtap="monthMenu" aria-label="查看{{month.label}}的日记">•••</button></view><text class="month-count">{{month.count ? '已记录 ' + month.count + ' 篇' : '未记录'}}</text>
+      <view class="month-week"><text wx:for="{{week}}" wx:key="*this">{{item}}</text></view>
+      <view class="month-grid"><view wx:for="{{month.days}}" wx:key="index" wx:for-item="day" class="calendar-cell-wrap"><button wx:if="{{!day.empty}}" data-date="{{day.date}}" data-count="{{day.count}}" bindtap="selectDay" class="calendar-cell {{day.count ? 'has-record' : ''}} {{day.today ? 'is-today' : ''}} {{day.future ? 'is-future' : ''}} {{mode === 'images' && day.image ? 'has-photo' : ''}}" aria-label="{{day.date}}，{{day.count}}篇，{{day.words}}字">
+        <image wx:if="{{mode === 'images' && day.image}}" src="{{day.image}}" mode="aspectFill" /><text class="cell-day">{{day.day}}</text><text wx:if="{{mode === 'mood' && day.mood}}" class="cell-detail">{{day.mood}}</text><text wx:elif="{{mode === 'weather' && day.weather}}" class="cell-detail">{{day.weather}}</text><text wx:elif="{{mode === 'words' && day.count}}" class="cell-detail">{{day.words}}字</text><text wx:if="{{day.count > 1}}" class="cell-count">{{day.count}}</text>
+      </button></view></view>
+    </view></block><view class="calendar-end"></view>
+  </scroll-view>
+  <view class="calendar-modes"><button wx:for="{{modes}}" wx:key="id" class="{{mode === item.id ? 'active' : ''}}" data-mode="{{item.id}}" bindtap="changeMode">{{item.name}}</button></view>
+</view>
+

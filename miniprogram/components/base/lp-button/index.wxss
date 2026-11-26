@@ -1,21 +1,22 @@
 :host {
   display: block;
   margin-bottom: 18rpx;
-  --td-brand-color: #f65f6b;
-  --td-brand-color-active: #e84a57;
+  --td-brand-color: #c83d53;
+  --td-brand-color-active: #b72f46;
   --td-brand-color-light: #fff1f0;
-  --td-button-primary-bg-color: #f65f6b;
-  --td-button-primary-border-color: #f65f6b;
-  --td-button-primary-active-bg-color: #e84a57;
-  --td-button-primary-active-border-color: #e84a57;
+  --td-button-primary-bg-color: #c83d53;
+  --td-button-primary-border-color: #c83d53;
+  --td-button-primary-active-bg-color: #b72f46;
+  --td-button-primary-active-border-color: #b72f46;
   --td-button-light-bg-color: #fff1f0;
   --td-button-light-border-color: #fff1f0;
-  --td-button-light-color: #e84a57;
+  --td-button-light-color: #b72f46;
   --td-button-danger-bg-color: #db3f50;
   --td-button-danger-border-color: #db3f50;
-  --td-button-border-radius: 32rpx;
-  --td-button-large-height: 104rpx;
+  --td-button-border-radius: 20rpx;
+  --td-button-large-height: 96rpx;
+  --td-button-large-font: 600 var(--lp-type-body, 30rpx) / 1.5 var(--td-font-family, sans-serif);
 }
 .lp-button { font-weight: 600; }
-.lp-button--soft { --td-button-light-bg-color: #fff1f0; --td-button-light-color: #e84a57; }
-.lp-button--text { --td-button-light-bg-color: transparent; --td-button-light-color: #e84a57; }
+.lp-button--soft { --td-button-light-bg-color: #fff1f0; --td-button-light-color: #b72f46; }
+.lp-button--text { --td-button-light-bg-color: transparent; --td-button-light-color: #b72f46; }

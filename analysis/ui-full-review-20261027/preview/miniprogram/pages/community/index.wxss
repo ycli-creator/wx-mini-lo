@@ -1,0 +1,21 @@
+.community-screen { padding-left: 30rpx; padding-right: 30rpx; }
+.feed-list { display: flex; flex-direction: column; gap: 20rpx; }
+.feed-card { padding: 28rpx; background: var(--lp-bg-surface); border-radius: var(--lp-radius-card); }
+.feed-author { display: flex; align-items: center; gap: 14rpx; margin-bottom: 22rpx; }
+.mini-avatar { width: 52rpx; height: 52rpx; flex: none; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: var(--lp-brand-soft); border-radius: 50%; }
+.mini-avatar image { width: 100%; height: 100%; }
+.couple-name { min-width: 0; flex: 1; overflow: hidden; color: var(--lp-text-primary); font-size: 25rpx; text-overflow: ellipsis; white-space: nowrap; }
+.feed-date { flex: none; color: var(--lp-text-secondary); font-size: 23rpx; }
+.feed-title { display: block; margin-bottom: 12rpx; font-size: 32rpx; font-weight: 600; line-height: 46rpx; overflow-wrap: anywhere; }
+.feed-content { display: block; color: var(--lp-text-primary); font-size: 28rpx; line-height: 46rpx; white-space: pre-wrap; overflow-wrap: anywhere; }
+.feed-cover-wrap, .feed-video-wrap { position: relative; overflow: hidden; margin-top: 22rpx; border-radius: var(--lp-radius-control); }
+.feed-cover, .feed-video { display: block; width: 100%; height: 360rpx; background: var(--lp-disabled); }
+.media-count { position: absolute; right: 16rpx; bottom: 16rpx; padding: 4rpx 12rpx; color: #fff; background: rgba(0,0,0,.6); border-radius: 12rpx; font-size: 23rpx; }
+.post-actions { margin-top: 16rpx; display: flex; justify-content: flex-end; gap: 12rpx; }
+.post-text-action { margin: 0; padding: 0 16rpx; min-height: 88rpx; display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); background: transparent; font-size: 25rpx; line-height: 1.5; }
+.post-text-action::after { border: 0; }
+.post-text-action.danger { color: var(--lp-danger); }
+.post-text-action[disabled] { opacity: .5; }
+.community-screen .empty-state { gap: 24rpx; }
+.community-screen .floating-create-action { margin: 0; line-height: 1.5; }
+.community-screen .floating-create-action::after { border: 0; }

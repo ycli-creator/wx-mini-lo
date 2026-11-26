@@ -1,0 +1,13 @@
+<view class="screen">
+  <lp-header title="邀请 TA" subtitle="把小程序卡片发给对方，再由 TA 输入短码" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在生成邀请" error-text="邀请暂时没有生成成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="form-card">
+    <text class="field-label">绑定短码 · 30 分钟内有效</text>
+    <text class="invite-code">{{codeDisplay}}</text>
+  </view>
+  <lp-button label="分享小程序卡片" open-type="share" disabled="{{!code}}" />
+  <lp-button label="查看绑定申请" variant="soft" disabled="{{!code}}" bind:tap="checkApplication" />
+  <lp-button label="返回" variant="text" bind:tap="goBack" />
+  </block>
+</view>

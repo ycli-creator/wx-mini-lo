@@ -1,0 +1,29 @@
+page {
+  --lp-bg-canvas: #fbf7f3;
+  --lp-bg-surface: #fffefa;
+  --lp-type-title: 1.75rem;
+  --lp-type-section: 1.25rem;
+  --lp-type-body: 1.0625rem;
+  --lp-type-meta: .875rem;
+  --lp-brand: #c83d53;
+  --lp-brand-text: #b72f46;
+  --lp-brand-soft: #fff1f0;
+  --lp-text-primary: #2f2928;
+  --lp-text-secondary: #74645f;
+  --lp-border: #eedfd8;
+  --lp-warning-bg: #fff1d6;
+  --lp-warning-text: #956015;
+  --lp-disabled: #f8efea;
+  --lp-success-bg: #edf6df;
+  --lp-success: #506f2c;
+  --lp-blue-bg: #eaf2ff;
+  --lp-blue: #35689f;
+  --lp-danger-bg: #fff0f1;
+  --lp-danger: #db3f50;
+  --lp-radius-surface: 20rpx;
+  --lp-radius-control: 12rpx;
+  --lp-radius-card: 28rpx;
+  --lp-shadow-card: 0 12rpx 32rpx rgba(83, 51, 43, .055);
+  --lp-shadow-action: 0 14rpx 30rpx rgba(232, 74, 87, .22);
+  --lp-touch-target: max(44px, 88rpx);
+}

@@ -1,0 +1,29 @@
+<page-meta root-font-size="system" />
+<view class="screen community-create-screen">
+  <lp-header title="{{editing ? '编辑帖子' : '记录一段日常'}}" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" error-text="日常加载失败，请重试" bind:retry="refresh" />
+  <block wx:else>
+  <view class="form-card title-card post-field-card">
+    <text class="field-kicker">帖子标题</text>
+    <input aria-label="标题" class="text-input" maxlength="60" placeholder="给这段日常起个标题" value="{{title}}" bind:input="handleTitle" />
+  </view>
+  <view class="form-card post-field-card body-card">
+    <text class="field-kicker">帖子正文</text>
+    <textarea aria-label="日常正文" class="text-area post-editor" maxlength="1000" placeholder="记录今天发生的小事……" value="{{content}}" bind:input="handleContent" />
+    <text class="editor-count">{{content.length}} / 1000</text>
+  </view>
+  <view wx:if="{{media.length}}" class="media-grid">
+    <view wx:for="{{media}}" wx:key="localPath" class="media-preview">
+      <image wx:if="{{item.type === 'image'}}" src="{{item.localPath}}" mode="aspectFill" />
+      <video wx:else src="{{item.localPath}}" poster="{{item.posterPath}}" controls="{{false}}" show-center-play-btn="{{true}}" />
+      <view class="remove-media" data-index="{{index}}" bind:tap="removeMedia">×</view>
+    </view>
+  </view>
+<view class="policy-consent">
+    <button class="policy-check {{policyAccepted ? 'checked' : ''}}" bindtap="togglePolicy" aria-role="checkbox" aria-checked="{{policyAccepted}}" aria-label="同意用户协议与隐私说明"><view class="policy-check-box"><lp-icon wx:if="{{policyAccepted}}" name="line-tick" size="28rpx" color="#ffffff" /></view></button>
+    <text bind:tap="togglePolicy">我已阅读并同意</text><text class="policy-link" bind:tap="openPolicies">《用户协议与隐私说明》</text>
+  </view>
+  <view class="visibility-result"><lp-icon name="lock-on" size="30rpx"/><text>当前：仅情侣空间可见</text></view>
+  <lp-button label="{{uploadProgress || (editing ? '保存帖子修改' : '保存到情侣空间')}}" disabled="{{!title || !content || media.length || !policyAccepted}}" loading="{{busy}}" bind:tap="publish" />
+  </block>
+</view>

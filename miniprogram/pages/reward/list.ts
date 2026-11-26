@@ -1,9 +1,9 @@
 import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
+import { rewardsForFilter, type DisplayReward, type RewardFilter } from '../../utils/reward-views'
 import type { Reward } from '../../types/index'
-import { setActiveTab, showError, showSuccess } from '../../utils/ui'
+import { showError, showSuccess } from '../../utils/ui'
 
-type DisplayReward = Reward & { enough: boolean; redeemed: boolean; pointsLabel: string; statusLabel: string; statusClass: string }
 
 Page({
   data: {
@@ -13,44 +13,23 @@ Page({
     loadError: false,
     busy: false,
     createOpen: false,
-    rewardFilter: 'all' as 'all' | 'available' | 'purchased' | 'pending' | 'refund',
-    name: '一起看日落',
-    description: '找一个天气好的傍晚散步',
+    rewardFilter: 'all' as RewardFilter,
+    name: '',
+    description: '',
     cost: '150',
     expiry: '创建后 365 天内',
-    condition: '由双方共同商量使用时间',
+    condition: '',
     approvalRequired: false,
     beneficiaryType: 'couple' as Reward['beneficiaryType'],
   },
   async onShow() {
-    setActiveTab(this, 2)
     await this.refresh()
   },
   async refresh() {
     this.setData({ loading: true, loadError: false })
     try {
       const state = await lovePointsService.getState()
-      const allRewards = state.rewards.map((reward) => {
-        const balance = reward.pointsType === 'shared' ? state.sharedPoints : state.personalPoints
-        const enough = balance >= reward.cost
-        const redemption = state.redemptions.find((item) => item.rewardId === reward.id && item.status !== 'refunded')
-        const redeemed = Boolean(redemption)
-        return {
-          ...reward,
-          enough,
-          redeemed,
-          pointsLabel: reward.pointsType === 'shared' ? '共同' : '个人',
-          statusLabel: redemption?.status === 'pending' ? '待确认' : redemption?.refundStatus === 'requested' ? '退款中' : redeemed ? '已兑换' : enough ? '可兑换' : '积分不足',
-          statusClass: redemption?.status === 'pending' || redemption?.refundStatus === 'requested' ? 'status-pending' : redeemed ? 'status-done' : enough ? 'status-todo' : 'status-warning',
-        }
-      })
-      const rewards = allRewards.filter((reward) => {
-        if (this.data.rewardFilter === 'available') return reward.enough && !reward.redeemed
-        if (this.data.rewardFilter === 'purchased') return reward.redeemed
-        if (this.data.rewardFilter === 'pending') return reward.statusLabel === '待确认'
-        if (this.data.rewardFilter === 'refund') return reward.statusLabel === '退款中'
-        return true
-      })
+      const rewards = rewardsForFilter(state, this.data.rewardFilter)
       this.setData({
         state,
         rewards,

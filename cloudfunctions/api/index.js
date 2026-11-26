@@ -8,6 +8,8 @@ const unbind = require('./actions/unbind')
 const profile = require('./actions/profile')
 const community = require('./actions/community')
 const records = require('./actions/records')
+const health = require('./actions/health')
+const diary = require('./actions/diary')
 const heat = require('./actions/heat')
 const chat = require('./actions/chat')
 const share = require('./actions/share')
@@ -18,7 +20,14 @@ const achievements = require('./actions/achievements')
 
 const routes = {
   'auth.login': async ({ openid }) => projectState(openid),
-  'home.summary': async ({ openid }) => projectState(openid),
+  'home.summary': async ({ openid, payload, user }) => {
+    const [state, heatSummary] = await Promise.all([
+      projectState(openid, { scope: payload.scope, user }),
+      payload.includeHeat && user.coupleId ? heat.summary({ openid }) : null,
+    ])
+    if (heatSummary) state.heat = heatSummary
+    return state
+  },
   'points.summary': async ({ openid }) => projectState(openid),
   'points.ledger': async ({ openid }) => projectState(openid),
   'profile.update': profile.update,
@@ -34,6 +43,13 @@ const routes = {
   'records.list': records.list,
   'records.save': records.save,
   'records.delete': records.remove,
+  'health.read': health.read,
+  'health.statistics': health.statistics,
+  'health.change': health.change,
+  'diary.list': diary.list,
+  'diary.save': diary.save,
+  'diary.history': diary.history,
+  'diary.scope': diary.scope,
   'heat.summary': heat.summary,
   'heat.checkin': heat.checkin,
   'chat.list': chat.list,
@@ -91,14 +107,15 @@ const routes = {
 }
 
 exports.main = async (event) => {
+  const startedAt = Date.now()
   const action = String(event?.action || '')
   const payload = event?.payload && typeof event.payload === 'object' ? event.payload : {}
   const { OPENID: openid } = cloud.getWXContext()
   try {
-    await ensureUser(openid)
+    const user = await ensureUser(openid)
     const handler = routes[action]
     if (!handler) throw new ApiError('ACTION_NOT_FOUND', `不支持的操作：${action || '空'}`)
-    const data = await handler({ openid, payload })
+    const data = await handler({ openid, payload, user })
     return { ok: true, data }
   } catch (error) {
     const isKnown = error instanceof ApiError
@@ -116,5 +133,7 @@ exports.main = async (event) => {
       code: isKnown ? error.code : 'INTERNAL_ERROR',
       message: isKnown ? error.message : '服务暂时不可用，请稍后重试',
     }
+  } finally {
+    console.info('api.performance', { action, scope: String(payload.scope || 'full'), elapsedMs: Date.now() - startedAt })
   }
 }

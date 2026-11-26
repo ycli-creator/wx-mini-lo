@@ -1,0 +1,14 @@
+import { lovePointsService } from '../../services/love-points'
+import { showError } from '../../utils/ui'
+
+Page({
+  data: { startedAt: '', selectedDate: '', today: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10), publicApproved: false, requests: [] as Array<{ id: string; type: string; value: string; canReview: boolean }>, loading: true, loadError: false, busy: false, bound: false },
+  async onShow() { await this.refresh() },
+  async refresh() { this.setData({ loading: true, loadError: false }); try { const state = await lovePointsService.getState(); this.setData({ bound: state.bound }); if (!state.bound) { this.setData({ loading: false }); return }; const data = await lovePointsService.getRelationshipSettings(); this.setData({ startedAt: data.relationshipStartedAt.slice(0, 10), selectedDate: data.relationshipStartedAt.slice(0, 10), publicApproved: data.publicApproved, requests: data.requests, loading: false }) } catch (error) { this.setData({ loading: false, loadError: true }); showError(error) } },
+  invite() { wx.navigateTo({ url: '/pages/invite/create' }) },
+  chooseDate(event: WechatMiniprogram.PickerChange) { this.setData({ selectedDate: String(event.detail.value) }) },
+  async requestDate() { if (this.data.busy || !this.data.bound) return; this.setData({ busy: true }); try { const data = await lovePointsService.requestRelationshipChange('date', this.data.selectedDate); this.setData({ requests: data.requests }); wx.showToast({ title: '日期确认已发送', icon: 'none' }) } catch (error) { showError(error) } finally { this.setData({ busy: false }) } },
+  async requestPublic() { if (this.data.busy || !this.data.bound) return; this.setData({ busy: true }); try { const data = await lovePointsService.requestRelationshipChange('public'); this.setData({ requests: data.requests }); wx.showToast({ title: '公开确认已发送', icon: 'none' }) } catch (error) { showError(error) } finally { this.setData({ busy: false }) } },
+  async revokePublic() { if (this.data.busy || !this.data.bound) return; this.setData({ busy: true }); try { const data = await lovePointsService.revokeRelationshipPublic(); this.setData({ publicApproved: data.publicApproved }); wx.showToast({ title: '情侣关系已隐藏', icon: 'none' }) } catch (error) { showError(error) } finally { this.setData({ busy: false }) } },
+  async review(event: WechatMiniprogram.TouchEvent) { if (this.data.busy || !this.data.bound) return; this.setData({ busy: true }); try { const data = await lovePointsService.reviewRelationshipChange(String(event.currentTarget.dataset.id || ''), event.currentTarget.dataset.approved === true); this.setData({ requests: data.requests, publicApproved: data.publicApproved, startedAt: data.relationshipStartedAt.slice(0, 10) }) } catch (error) { showError(error) } finally { this.setData({ busy: false }) } },
+})

@@ -15,13 +15,9 @@
 }
 
 .lp-icon__glyph {
-  width: 100%;
-  height: 100%;
-  background: currentColor;
-  -webkit-mask-position: center;
-  mask-position: center;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: contain;
-  mask-size: contain;
+  display: block;
+  width: 82%;
+  height: 82%;
+  min-width: min(12px, 100%);
+  min-height: min(12px, 100%);
 }

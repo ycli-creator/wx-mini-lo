@@ -3,8 +3,6 @@ const rootRoutes = new Set([
   'pages/home/index',
   'pages/task/index',
   'pages/community/index',
-  'pages/documents/index',
-  'pages/chat/index',
   'pages/profile/index',
 ])
 
@@ -12,6 +10,7 @@ Component({
   properties: {
     title: { type: String, value: '' },
     subtitle: { type: String, value: '' },
+    interceptBack: { type: Boolean, value: false },
   },
   data: { showBack: false },
   lifetimes: {
@@ -23,6 +22,7 @@ Component({
   },
   methods: {
     goBack() {
+      if (this.properties.interceptBack) { this.triggerEvent('back'); return }
       if (getCurrentPages().length > 1) {
         wx.navigateBack()
         return

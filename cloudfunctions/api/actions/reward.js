@@ -207,8 +207,11 @@ const requestRefund = async ({ openid, payload }) => {
   if (payload.rewardId) where.rewardId = String(payload.rewardId)
   const redemption = await queryOne(collections.redemptions, where, { field: 'updatedAt', direction: 'desc' })
   assert(redemption, 'NO_REFUNDABLE_REDEMPTION', '当前没有可退款的奖励')
-  await db.collection(collections.redemptions).doc(redemption._id).update({
-    data: { status: 'refund_requested', refundStatus: 'requested', refundReviewerOpenId: partnerId || openid, updatedAt: db.serverDate() },
+  await db.runTransaction(async transaction => {
+    const record = transaction.collection(collections.redemptions).doc(redemption._id)
+    const latest = (await record.get()).data
+    assert(latest.status === 'active', 'NO_REFUNDABLE_REDEMPTION', '这条兑换记录的退款状态已变更')
+    await record.update({ data: { status: 'refund_requested', refundStatus: 'requested', refundReviewerOpenId: partnerId || openid, updatedAt: now() } })
   })
   await writeOperationLog({ coupleId, openid, action: 'reward.refund.request', targetId: redemption._id })
   return projectState(openid)
@@ -220,15 +223,14 @@ const reviewRefund = async ({ openid, payload }) => {
   if (payload.rewardId) where.rewardId = String(payload.rewardId)
   const redemption = await queryOne(collections.redemptions, where, { field: 'updatedAt', direction: 'desc' })
   assert(redemption, 'NO_PENDING_REFUND', '当前没有待处理的退款申请')
-  if (!payload.approved) {
-    await db.collection(collections.redemptions).doc(redemption._id).update({ data: { status: 'active', refundStatus: 'rejected', updatedAt: db.serverDate() } })
-    return projectState(openid)
-  }
-
   await db.runTransaction(async (transaction) => {
-    const latest = (await transaction.collection(collections.redemptions).doc(redemption._id).get()).data
-    if (latest.status === 'refunded') return
+    const record = transaction.collection(collections.redemptions).doc(redemption._id)
+    const latest = (await record.get()).data
     assert(latest.status === 'refund_requested', 'REFUND_ALREADY_HANDLED', '退款已经处理')
+    if (!payload.approved) {
+      await record.update({ data: { status: 'active', refundStatus: 'rejected', updatedAt: now() } })
+      return
+    }
     const account = (await transaction.collection(collections.accounts).doc(coupleId).get()).data
     const snapshot = latest.rewardSnapshot
     const personalBalances = { ...(account.personalBalances || {}) }
@@ -248,7 +250,7 @@ const reviewRefund = async ({ openid, payload }) => {
     } })
     await transaction.collection(collections.redemptions).doc(redemption._id).update({ data: { status: 'refunded', refundStatus: 'approved', refundLedgerId: ledgerId, updatedAt: now() } })
   })
-  await writeOperationLog({ coupleId, openid, action: 'reward.refund.review.approve', targetId: redemption._id })
+  await writeOperationLog({ coupleId, openid, action: payload.approved ? 'reward.refund.review.approve' : 'reward.refund.review.reject', targetId: redemption._id })
   return projectState(openid)
 }
 

@@ -1,0 +1,14 @@
+<view class="screen">
+  <lp-header title="Love Points" />
+  <view class="notice-card brand">
+    <text class="notice-title">先绑定你的另一半</text>
+    
+  </view>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在读取关系状态" error-text="暂时无法确认绑定状态，请重新加载。" bind:retry="refresh" />
+  <view wx:else class="safe-actions">
+    <lp-button label="邀请 TA" bind:tap="goInvite" />
+    <lp-button label="输入短码" variant="soft" bind:tap="goJoin" />
+    <lp-button label="先自己使用" variant="ghost" bind:tap="goSolo" />
+  </view>
+
+</view>

@@ -1,0 +1,9 @@
+.profile-edit-screen { padding-bottom: calc(env(safe-area-inset-bottom) + 80rpx); }
+.profile-avatar-row { margin-bottom: 28rpx; padding: 28rpx 32rpx; display: flex; align-items: center; gap: 26rpx; background: #fff; border: 2rpx solid var(--lp-border); border-radius: 36rpx; }
+.avatar-button { width: 116rpx; height: 116rpx; margin: 0; padding: 0; overflow: hidden; background: var(--lp-brand-soft); border: 0; border-radius: 50%; }
+.avatar-button::after { border: 0; }
+.avatar-image, .avatar-placeholder { width: 116rpx; height: 116rpx; }
+.avatar-placeholder { display: flex; align-items: center; justify-content: center; color: var(--lp-brand-text); }
+.profile-avatar-copy { min-width: 0; flex: 1; }
+.profile-form { padding-bottom: 18rpx; }
+.profile-background{height:220rpx;margin-bottom:28rpx;position:relative;overflow:hidden;background:var(--lp-brand-soft);border-radius:30rpx}.profile-background image{width:100%;height:100%}.background-placeholder{height:100%;display:flex;align-items:center;justify-content:center;color:var(--lp-text-secondary)}.background-action{position:absolute;right:16rpx;bottom:16rpx;padding:10rpx 18rpx;color:var(--lp-text-primary);background:rgba(255,255,255,.86);border-radius:999rpx;font-size:22rpx}

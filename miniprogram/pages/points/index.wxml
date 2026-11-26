@@ -1,5 +1,6 @@
+<page-meta root-font-size="system" />
 <view class="screen">
-  <lp-header title="积分中心" subtitle="每个空间拥有独立积分与流水，不会相互迁移" />
+  <lp-header title="积分中心" />
   <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步积分" error-text="积分暂时没有同步成功，请重新加载。" bind:retry="refresh" />
   <block wx:else>
   <view class="points-card solo">
@@ -12,7 +13,7 @@
       <view class="ledger-amount {{item.amount >= 0 ? 'positive' : 'negative'}}"><text class="amount">{{item.amount >= 0 ? '+' : ''}}{{item.amount}} 积分</text><text class="balance">余额 {{item.balance}}</text></view>
     </view>
   </view>
-  <view wx:else class="empty-state section-gap"><text class="empty-title">还没有积分记录</text><text class="empty-copy">完成待办或兑换心愿后会显示在这里。</text></view>
+  <view wx:else class="empty-state section-gap"><text class="empty-title">还没有积分记录</text></view>
   <lp-button label="去心愿商店" bind:tap="goRewards" />
   <lp-button label="返回首页" variant="text" bind:tap="goHome" />
   </block>

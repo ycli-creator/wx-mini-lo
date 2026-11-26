@@ -1,7 +1,9 @@
+<page-meta root-font-size="system" />
 <view class="screen">
-  <lp-header title="情侣热力" subtitle="把今天一起完成的小事记录下来" show-back="{{true}}" />
-  <view wx:if="{{!bound && !loading}}" class="empty-state"><text class="empty-title">绑定 TA 后开启情侣热力</text><text class="empty-copy">热力只属于一段情侣关系，解绑后会随情侣空间清空。</text></view>
-  <block wx:elif="{{!loading}}">
+  <lp-header title="情侣热力" show-back="{{true}}" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" error-text="热力加载失败，请重试" bind:retry="refresh" />
+  <view wx:elif="{{!bound}}" class="empty-state"><text class="empty-title">绑定 TA 后开启情侣热力</text><lp-button label="绑定 TA" bind:tap="invite" /></view>
+  <block wx:else>
     <view class="heat-summary"><text class="heat-label">我们的热力</text><text class="heat-value">{{heat.totalHeat}}</text><text class="heat-today">今天 +{{heat.todayHeat}} · 已完成 {{heat.completedCount}} / 5</text></view>
     <view class="section-heading"><text class="section-title">今天的任务</text><text class="section-caption">四项固定 · 一项挑战</text></view>
     <view class="heat-list">

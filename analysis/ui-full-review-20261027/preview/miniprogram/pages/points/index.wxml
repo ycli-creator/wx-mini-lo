@@ -1,0 +1,19 @@
+<view class="screen">
+  <lp-header title="积分中心" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步积分" error-text="积分暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+  <view class="points-card solo">
+    <view class="points-column"><text class="points-label">{{state.activeSpaceType === 'couple' ? '情侣积分' : '个人积分'}}</text><text class="points-value">{{state.activeSpaceType === 'couple' ? state.sharedPoints : state.personalPoints}}</text></view>
+  </view>
+  <view wx:if="{{entries.length}}" class="list">
+    <view wx:for="{{entries}}" wx:key="id" class="ledger-row">
+      <view class="cell-icon"><lp-icon name="money" size="30rpx" /></view>
+      <view class="cell-copy"><text class="cell-title">{{item.title}}</text><text class="cell-subtitle">{{item.detail}}</text></view>
+      <view class="ledger-amount {{item.amount >= 0 ? 'positive' : 'negative'}}"><text class="amount">{{item.amount >= 0 ? '+' : ''}}{{item.amount}} 积分</text><text class="balance">余额 {{item.balance}}</text></view>
+    </view>
+  </view>
+  <view wx:else class="empty-state section-gap"><text class="empty-title">还没有积分记录</text></view>
+  <lp-button label="去心愿商店" bind:tap="goRewards" />
+  <lp-button label="返回首页" variant="text" bind:tap="goHome" />
+  </block>
+</view>

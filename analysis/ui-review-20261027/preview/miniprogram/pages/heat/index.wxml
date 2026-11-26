@@ -1,0 +1,18 @@
+<view class="screen">
+  <lp-header title="情侣热力" subtitle="把今天一起完成的小事记录下来" show-back="{{true}}" />
+  <view wx:if="{{!bound && !loading}}" class="empty-state"><text class="empty-title">绑定 TA 后开启情侣热力</text><text class="empty-copy">热力只属于一段情侣关系，解绑后会随情侣空间清空。</text></view>
+  <block wx:elif="{{!loading}}">
+    <view class="heat-summary"><text class="heat-label">我们的热力</text><text class="heat-value">{{heat.totalHeat}}</text><text class="heat-today">今天 +{{heat.todayHeat}} · 已完成 {{heat.completedCount}} / 5</text></view>
+    <view class="section-heading"><text class="section-title">今天的任务</text><text class="section-caption">四项固定 · 一项挑战</text></view>
+    <view class="heat-list">
+      <view wx:for="{{heat.tasks}}" wx:key="id" class="heat-task {{item.status === 'done' ? 'done' : ''}}">
+        <view class="heat-task-main" data-code="{{item.code}}" data-path="{{item.actionPath}}" bind:tap="openTask">
+          <view class="heat-title-row"><text class="heat-task-title">{{item.title}}</text><text wx:if="{{item.random}}" class="status-tag status-warning">随机挑战</text></view>
+          <text class="heat-description">{{item.description}}</text>
+          <view class="heat-meta"><text>{{item.progress}} / {{item.maxParticipants}}</text><text>{{item.rewardText}}</text></view>
+        </view>
+        <view class="heat-actions"><text class="heat-action" data-code="{{item.code}}" data-path="{{item.actionPath}}" bind:tap="openTask">{{item.status === 'done' ? '已完成' : item.actionText}}</text><text wx:if="{{item.canCue && item.status !== 'done'}}" class="cue-action" data-code="{{item.code}}" catch:tap="cue">@TA</text><button wx:if="{{item.status !== 'done'}}" class="share-action" open-type="share" data-code="{{item.code}}">微信分享</button></view>
+      </view>
+    </view>
+  </block>
+</view>

@@ -6,10 +6,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #8a7c78;
-  background: #ffffff;
-  border: 2rpx dashed #eedfd8;
-  border-radius: 36rpx;
+  color: var(--lp-text-secondary, #74645f);
   text-align: center;
 }
 .spinner {
@@ -25,13 +22,13 @@
 .state-copy { margin-top: 8rpx; font-size: 24rpx; line-height: 40rpx; }
 .retry {
   min-width: 180rpx;
-  min-height: 72rpx;
+  min-height: 88rpx;
   margin-top: 28rpx;
   padding: 14rpx 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #e84a57;
+  color: var(--lp-brand-text, #b72f46);
   background: #fff1f0;
   border-radius: 999rpx;
   font-size: 26rpx;
@@ -39,3 +36,6 @@
 }
 .retry--pressed { opacity: 0.72; transform: scale(0.98); }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.retry { margin-left: 0; margin-right: 0; line-height: 1.5; border: 0; }
+.retry::after { border: 0; }

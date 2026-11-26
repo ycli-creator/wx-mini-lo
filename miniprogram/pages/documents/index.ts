@@ -1,6 +1,6 @@
 import { lovePointsService } from '../../services/love-points'
 import { createInitialState } from '../../store/state'
-import { setActiveTab, showError, showSuccess } from '../../utils/ui'
+import { showError, showSuccess } from '../../utils/ui'
 
 type DisplayGroup = {
   id: string
@@ -17,12 +17,9 @@ Page({
     loadError: false,
     busy: false,
     createOpen: false,
-    createMode: 'document' as 'document' | 'group',
     groupName: '',
-    selectedGroupId: '',
   },
   async onShow() {
-    setActiveTab(this, 3)
     await this.refresh()
   },
   async refresh() {
@@ -38,15 +35,17 @@ Page({
           documents: documents.map((document) => ({ id: document.id, title: document.title, lockedByOther: document.lockedByOther })),
         }
       })
-      this.setData({ state, groups, selectedGroupId: this.data.selectedGroupId || groups[0]?.id || '', loading: false })
+      this.setData({ state, groups, loading: false })
     } catch (error) {
       this.setData({ loading: false, loadError: true })
       showError(error)
     }
   },
-  toggleCreate() { this.setData({ createOpen: !this.data.createOpen }) },
-  selectCreateMode(event: WechatMiniprogram.TouchEvent) { this.setData({ createMode: event.currentTarget.dataset.mode as 'document' | 'group' }) },
-  selectGroup(event: WechatMiniprogram.TouchEvent) { this.setData({ selectedGroupId: String(event.currentTarget.dataset.id) }) },
+  toggleCreate() {
+    if (this.data.busy) return
+    this.setData({ createOpen: !this.data.createOpen })
+    if (this.data.createOpen) wx.pageScrollTo({ scrollTop: 0, duration: 0 })
+  },
   handleGroupName(event: WechatMiniprogram.CustomEvent<{ value: string }>) { this.setData({ groupName: event.detail.value }) },
   async createGroup() {
     if (this.data.busy) return
@@ -58,13 +57,6 @@ Page({
       await this.refresh()
     } catch (error) { showError(error) }
     finally { this.setData({ busy: false }) }
-  },
-  startDocument() {
-    if (!this.data.selectedGroupId) {
-      wx.showToast({ title: '请先创建一个文档组', icon: 'none' })
-      return
-    }
-    wx.navigateTo({ url: `/pages/documents/edit?new=1&groupId=${encodeURIComponent(this.data.selectedGroupId)}` })
   },
   openDocument(event: WechatMiniprogram.TouchEvent) {
     const documentId = String(event.currentTarget.dataset.id)

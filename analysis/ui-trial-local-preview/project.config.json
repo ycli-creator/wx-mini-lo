@@ -1,0 +1,23 @@
+{
+  "projectname": "Love Points UI 对比预览",
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "miniprogramRoot": "miniprogram/",
+  "libVersion": "3.17.2",
+  "setting": {
+    "useCompilerPlugins": [
+      "typescript"
+    ],
+    "compileHotReLoad": true,
+    "minifyWXML": true,
+    "es6": true,
+    "postcss": true,
+    "enhance": true,
+    "packNpmManually": true,
+    "packNpmRelationList": [
+      { "packageJsonPath": "./miniprogram/package.json", "miniprogramNpmDistDir": "./miniprogram/" }
+    ],
+    "swc": false,
+    "disableSWC": true
+  }
+}

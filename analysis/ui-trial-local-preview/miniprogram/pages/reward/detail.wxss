@@ -1,0 +1,4 @@
+.reward-detail-screen .reward-card { min-height: auto; padding: 32rpx; margin-bottom: 24rpx; background: var(--lp-bg-surface); border: 0; border-radius: var(--lp-radius-card); }
+.reward-detail-screen .cell-title { font-size: 38rpx; font-weight: 600; line-height: 54rpx; }
+.reward-detail-screen .cell-subtitle { white-space: normal; margin-top: 12rpx; font-size: var(--lp-type-meta); line-height: 1.3; }
+.reward-detail-screen .reward-cost { margin-top: 20rpx; font-size: var(--lp-type-body); }

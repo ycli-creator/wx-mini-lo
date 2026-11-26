@@ -1,0 +1,53 @@
+<view class="screen records-screen">
+  <lp-header title="经期助手" />
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在同步生活记录" error-text="生活记录暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+  <block wx:else>
+    <view class="health-heading calendar-heading"><text>{{summary}}</text><button class="quiet-button" bindtap="openStatistics">统计</button></view>
+    <view class="calendar-card">
+      <view class="month-nav"><button class="month-arrow" data-offset="-1" bindtap="shiftMonth" aria-label="上个月"><lp-icon name="arrow-left-2" /></button><text class="month-title">{{monthLabel}}</text><button class="month-arrow" data-offset="1" bindtap="shiftMonth" aria-label="下个月"><lp-icon name="arrow-right-2" /></button></view>
+      <view class="weekday-row"><text>日</text><text>一</text><text>二</text><text>三</text><text>四</text><text>五</text><text>六</text></view>
+      <view class="calendar-grid">
+        <view wx:for="{{days}}" wx:key="key" role="button" aria-label="{{item.date}} {{item.phaseLabel}}" class="calendar-day phase-{{item.phase}} {{item.inMonth ? '' : 'outside'}} {{item.isToday ? 'today' : ''}} {{item.selected ? 'selected' : ''}}" data-date="{{item.date}}" bindtap="selectDate">
+          <text class="day-number">{{item.day}}</text><text wx:if="{{item.isToday}}" class="today-label">今天</text>
+          <view class="day-markers"><view wx:if="{{item.phase === 'ovulation'}}" class="day-dot ovulation"></view><view wx:elif="{{item.hasEvent || item.hasHealth || item.moodEmojis.length}}" class="day-dot event"></view></view>
+        </view>
+      </view>
+      <view class="calendar-legend"><view><view class="legend-dot actual"></view>月经期</view><view><view class="legend-dot predicted"></view>预测经期</view><view><view class="legend-dot fertile"></view>易孕期</view><view><view class="legend-dot ovulation"></view>排卵日</view></view>
+    </view>
+    <view class="daily-panel">
+      <view class="selected-heading"><button bindtap="goToday">{{selectedDateLabel}}<text wx:if="{{selectedDate !== today}}"> · 回到今天</text></button><text>{{saving ? '保存中…' : ''}}</text></view>
+      
+      <view class="quick-row"><view class="quick-label"><lp-icon name="drop" size="38rpx" /><text>经期</text></view><switch color="#fb626d" checked="{{!!activeCycleId}}" bindchange="openCycle" disabled="{{saving || future}}" aria-label="记录经期起止" /></view>
+      <view class="quick-row"><view class="quick-label"><lp-icon name="heart" size="38rpx" /><text>爱爱</text></view><button class="intimacy-add" bindtap="openIntimacy" disabled="{{saving || future}}" aria-label="添加亲密记录"><lp-icon name="plus" size="36rpx" /></button></view>
+      <button wx:for="{{selectedDay.intimacy}}" wx:key="id" class="intimacy-item" data-id="{{item.id}}" bindtap="openIntimacy">{{item.time}} · {{methods[item.method]}}<lp-icon name="arrow-right-2" size="24rpx" /></button>
+      <view class="quick-row"><view class="quick-label"><lp-icon name="happy" size="38rpx" /><text>心情</text></view><view class="quick-options"><button wx:for="{{moods}}" wx:key="label" class="quick-icon mood-option {{item.count ? 'chosen' : ''}}" data-index="{{index}}" data-delta="1" bindtap="moodChange" disabled="{{saving || future}}" aria-label="记录{{item.label}}，已有{{item.count}}次"><lp-icon name="{{item.icon}}" size="40rpx" color="{{item.count ? '#c99324' : '#9b918b'}}" /><text class="option-label">{{item.label}}</text><text wx:if="{{item.count}}" class="option-count">{{item.count}}</text></button></view></view>
+      <view class="quick-row"><view class="quick-label"><lp-icon name="tick-square" size="38rpx" /><text>好习惯</text></view><view class="quick-options"><button wx:for="{{habits}}" wx:key="label" class="quick-icon {{item.checked ? 'chosen' : ''}}" style="{{item.checked ? 'color:' + item.color : ''}}" data-index="{{index}}" bindtap="habitChange" disabled="{{saving || future}}" aria-label="{{item.label}}，{{item.checked ? '已打卡，再点取消' : '未打卡'}}"><lp-icon name="{{item.icon}}" size="40rpx" color="{{item.checked ? item.color : '#9b918b'}}" /><text class="option-label">{{item.label}}</text></button></view></view>
+    </view>
+    <view class="record-actions"><button class="quiet-button" bindtap="toggleDetails">{{detailsOpen ? '收起详细记录' : '详细记录与撤销'}}<lp-icon name="down" size="24rpx" /></button><button class="quiet-button" bindtap="openSettings">周期设置</button></view>
+    <view wx:if="{{detailsOpen}}" class="record-details">
+      
+      <view class="choice-grid"><button wx:for="{{moods}}" wx:key="label" class="undo-button" data-index="{{index}}" data-delta="-1" bindtap="moodChange" disabled="{{saving || future || !item.count}}">{{item.label}} −1</button></view>
+      <block wx:if="{{activeCycleId || selectedDay.flow || selectedDay.pain}}"><text class="health-note">流量</text><view class="choice-grid"><button wx:for="{{flows}}" wx:key="*this" class="choice {{selectedDay.flow === index + 1 ? 'chosen' : ''}}" data-kind="flow" data-value="{{index + 1}}" bindtap="levelChange" disabled="{{saving || future}}">{{item}}</button></view><text class="health-note">痛经</text><view class="choice-grid"><button wx:for="{{pains}}" wx:key="*this" class="choice {{selectedDay.pain === index + 1 ? 'chosen' : ''}}" data-kind="pain" data-value="{{index + 1}}" bindtap="levelChange" disabled="{{saving || future}}">{{item}}</button></view></block>
+      <view class="health-heading"><text>这一天的其他记录</text><button class="quiet-button" bindtap="addRecord">新增</button></view>
+      <view wx:for="{{selectedRecords}}" wx:key="id" class="record-cell" data-id="{{item.id}}" bindtap="openRecord"><view class="cell-copy"><text class="cell-title">{{item.summary}}</text><text class="cell-subtitle">{{item.ownerName}} · {{item.visibilityLabel}}</text></view><lp-icon name="arrow-right-2" size="24rpx" /></view>
+      <text wx:if="{{!selectedRecords.length}}" class="health-note">这一天还没有其他记录</text>
+    </view>
+    
+  </block>
+  <view wx:if="{{editor}}" class="drawer-backdrop" bindtap="closeEditor"><view class="record-drawer" catchtap="noop">
+    <view class="drawer-heading"><text class="drawer-title">{{editor === 'cycle' ? '经期起止' : editor === 'settings' ? '周期设置' : '亲密记录'}}</text><button class="quiet-button" bindtap="closeEditor" disabled="{{saving}}">关闭</button></view>
+    <view wx:if="{{editor === 'cycle'}}">
+      <picker mode="date" value="{{editStart}}" end="{{today}}" data-field="editStart" bindchange="editField"><view class="edit-control">开始日期　{{editStart}}</view></picker>
+      <picker mode="date" value="{{editEnd || selectedDate}}" start="{{editStart}}" end="{{today}}" data-field="editEnd" bindchange="editField"><view class="edit-control">结束日期　{{editEnd || '未确认，点击选择'}}</view></picker>
+      <button class="quiet-button" bindtap="clearEnd">暂不确认结束</button>
+    </view>
+    <view wx:elif="{{editor === 'settings'}}">
+      <text class="health-note">周期预测不能作为避孕依据。</text>
+      <label>周期长度（15～100 天）<input class="edit-control" name="cycleLength" type="number" value="{{editCycleLength}}" data-field="editCycleLength" bindinput="editField" /></label>
+      <label>经期长度（2～14 天）<input class="edit-control" name="periodLength" type="number" value="{{editPeriodLength}}" data-field="editPeriodLength" bindinput="editField" /></label>
+    </view>
+    <view wx:else><picker mode="time" value="{{editTime}}" data-field="editTime" bindchange="editField"><view class="edit-control">时间　{{editTime}}</view></picker><picker range="{{methods}}" value="{{editMethod}}" data-field="editMethod" bindchange="editField"><view class="edit-control">措施　{{methods[editMethod]}}</view></picker></view>
+    <button class="drawer-action" bindtap="saveEditor" loading="{{saving}}" disabled="{{saving}}">保存</button>
+    <button wx:if="{{editId && editor !== 'settings'}}" class="quiet-button" bindtap="deleteEditor" disabled="{{saving}}">删除记录</button>
+  </view></view>
+</view>

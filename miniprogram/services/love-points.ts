@@ -1,4 +1,5 @@
 import { createInitialState, resetState, updateState, readState } from '../store/state'
+import { buildAchievements } from '../utils/achievements'
 import type {
   CommunityMedia,
   CommunityPost,
@@ -131,12 +132,12 @@ const applyLocalRedemption = (draft: LovePointsState, reward: Reward) => {
   draft.redemptionStatus = 'active'
   draft.redemptionCanReview = false
   draft.refundStatus = 'none'
-  draft.refundCanReview = true
+  draft.refundCanReview = false
   upsertRedemption(draft, reward.id, {
     status: 'active',
     canReview: false,
     refundStatus: 'none',
-    refundCanReview: true,
+    refundCanReview: false,
     requesterIsSelf: true,
   })
   draft.ledger.unshift({
@@ -492,14 +493,15 @@ export const lovePointsService = {
       if (!task.approvalRequired || draft.activeSpaceType === 'personal') {
         const ledgerId = `${task.id}-self-completed`
         if (!draft.ledger.some((entry) => entry.id === ledgerId)) {
-          draft.personalPoints += task.points
-          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '个人待办完成', amount: task.points, balance: draft.personalPoints, type: 'personal' })
+          const account = task.pointsType === 'shared' ? 'sharedPoints' : 'personalPoints'
+          draft[account] += task.points
+          draft.ledger.unshift({ id: ledgerId, title: task.title, detail: '待办已完成', amount: task.points, balance: draft[account], type: task.pointsType })
         }
         task.progressPercent = 100
       }
       // 本机体验模式用同一台设备模拟双方，提交后切换为审批视角；云端模式由 OpenID 权限决定。
       task.reviewerIsSelf = Boolean(task.approvalRequired && draft.activeSpaceType === 'couple')
-      addLocalTaskLog(task, 'completed', task.status === 'done' ? `完成待办，个人积分 +${task.points}` : '提交了完成记录，等待对方确认')
+      addLocalTaskLog(task, 'completed', task.status === 'done' ? `完成待办，积分 +${task.points}` : '提交了完成记录，等待对方确认')
       syncSelectedTask(draft, task)
     })
   }),
@@ -711,7 +713,7 @@ export const lovePointsService = {
     return updateState((draft) => {
       const targetRewardId = rewardId || draft.redeemedRewardId || ''
       const redemption = draft.redemptions.find((item) => item.rewardId === targetRewardId && item.status === 'active')
-      if (!redemption) throw new Error('当前奖励没有可退款的兑换记录')
+      if (!redemption?.requesterIsSelf || redemption.refundStatus === 'requested') throw new Error('当前奖励没有可退款的兑换记录')
       redemption.refundStatus = 'requested'
       redemption.refundCanReview = true
       draft.refundStatus = 'requested'
@@ -729,7 +731,7 @@ export const lovePointsService = {
       const redemption = draft.redemptions.find((item) => item.rewardId === targetRewardId)
       if (redemption?.refundStatus === 'approved') return
       const reward = draft.rewards.find((item) => item.id === targetRewardId)
-      if (!reward || redemption?.refundStatus !== 'requested') throw new Error('没有待处理的退款申请')
+      if (!reward || redemption?.refundStatus !== 'requested' || !redemption.refundCanReview) throw new Error('没有待处理的退款申请')
       const nextBalance = (reward.pointsType === 'shared' ? draft.sharedPoints : draft.personalPoints) + reward.cost
       if (reward.pointsType === 'shared') draft.sharedPoints = nextBalance
       else draft.personalPoints = nextBalance
@@ -756,12 +758,10 @@ export const lovePointsService = {
     return runAction('reward.refund.review', { approved: false, rewardId }, () => updateState((draft) => {
       const targetRewardId = rewardId || draft.redeemedRewardId || ''
       const redemption = draft.redemptions.find((item) => item.rewardId === targetRewardId)
-      if (redemption) {
-        redemption.status = 'active'
-        redemption.refundStatus = 'none'
-        redemption.refundCanReview = false
-      }
-      draft.refundStatus = 'none'
+      if (!redemption?.refundCanReview || redemption.refundStatus !== 'requested') throw new Error('没有待处理的退款申请')
+      redemption.refundStatus = 'rejected'
+      redemption.refundCanReview = false
+      draft.refundStatus = 'rejected'
       draft.refundCanReview = false
       draft.redemptionStatus = 'active'
     }))
@@ -856,7 +856,7 @@ export const lovePointsService = {
   getUnreadMessages: async (): Promise<number> => (await runAction('chat.unread', {}, () => ({ unread: readState().unreadMessages }))).unread,
 
   listNotifications: async (): Promise<{ items: AppNotification[]; unread: number }> => runAction('notifications.list', {}, () => ({ items: [], unread: 0 })),
-  listAchievements: async (state: LovePointsState): Promise<AchievementItem[]> => runAction('achievements.list', {}, async () => (await import('../utils/achievements')).buildAchievements(state)),
+  listAchievements: async (state: LovePointsState): Promise<AchievementItem[]> => runAction('achievements.list', {}, () => buildAchievements(state)),
   readNotification: async (id: string): Promise<{ items: AppNotification[]; unread: number }> => runAction('notifications.read', { id }, () => ({ items: [], unread: 0 })),
   searchFriend: async (code: string): Promise<{ user: FriendProfile }> => runAction('friends.search', { code }, () => { throw new Error('本机体验模式无法搜索真实身份码') }),
   requestFriend: async (code: string): Promise<{ friends: FriendProfile[]; requests: Array<{ id: string; user: FriendProfile }> }> => runAction('friends.request', { code }, () => ({ friends: [], requests: [] })),

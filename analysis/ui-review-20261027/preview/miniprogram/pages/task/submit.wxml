@@ -1,0 +1,1 @@
+<view class="screen"><lp-header title="完成待办"/><lp-button label="打开待办" bind:tap="openDetail"/></view>

@@ -6,8 +6,6 @@ type DisplayPost = CommunityPost & {
   coverUrl: string
   coverType: 'image' | 'video' | 'text'
   mediaCount: number
-  statusLabel: string
-  statusClass: string
   dateLabel: string
 }
 
@@ -27,8 +25,6 @@ const displayPost = (post: CommunityPost): DisplayPost => {
     coverUrl: firstMedia?.type === 'video' ? firstMedia.posterFileId || '' : firstMedia?.fileId || '',
     coverType: firstMedia?.type || 'text',
     mediaCount: post.media.length,
-    statusLabel: '仅我们可见',
-    statusClass: 'status-done',
     dateLabel: formatDate(post.createdAt),
   }
 }
@@ -36,9 +32,6 @@ const displayPost = (post: CommunityPost): DisplayPost => {
 Page({
   data: {
     posts: [] as DisplayPost[],
-    allPosts: [] as DisplayPost[],
-    leftPosts: [] as DisplayPost[],
-    rightPosts: [] as DisplayPost[],
     loading: true,
     loadError: false,
     busyPostId: '',
@@ -56,13 +49,10 @@ Page({
     if (showLoading) this.setData({ loading: true, loadError: false })
     try {
       const [state, sourcePosts] = await Promise.all([lovePointsService.getState(), lovePointsService.listCommunityPosts()])
-      const allPosts = sourcePosts.map(displayPost)
-      const posts = allPosts.filter((item) => item.belongsToCurrentCouple)
+      const posts = sourcePosts.filter((item) => item.belongsToCurrentCouple).map(displayPost)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       this.setData({
         posts,
-        allPosts,
-        leftPosts: posts.filter((_, index) => index % 2 === 0),
-        rightPosts: posts.filter((_, index) => index % 2 === 1),
         bound: state.bound,
         loading: false,
         loadError: false,
@@ -73,8 +63,21 @@ Page({
     }
   },
   createPost() {
-    if (!this.data.bound) return wx.showModal({ title: '创建情侣空间后发布', content: '帖子会保存在两个人的情侣空间里，只有你和 TA 能看到。', showCancel: false, confirmText: '我知道了' })
+    if (!this.data.bound) return wx.navigateTo({ url: '/pages/invite/create' })
     wx.navigateTo({ url: '/pages/community/create' })
+  },
+  async postMenu(event: WechatMiniprogram.TouchEvent) {
+    const post = this.data.posts.find(item => item.id === event.currentTarget.dataset.id)
+    if (!post || this.data.busyPostId) return
+    const choices = [...(post.authorIsSelf ? ['编辑'] : []), ...(post.canDelete ? ['删除'] : [])]
+    if (!choices.length) return
+    try {
+      const { tapIndex } = await wx.showActionSheet({ itemList: choices })
+      if (choices[tapIndex] === '编辑') this.editPost(event)
+      if (choices[tapIndex] === '删除') await this.deletePost(event)
+    } catch (error) {
+      if (!/cancel/i.test(String((error as { errMsg?: string }).errMsg || error))) showError(error)
+    }
   },
   editPost(event: WechatMiniprogram.TouchEvent) {
     const id = String(event.currentTarget.dataset.id)
@@ -89,11 +92,15 @@ Page({
   },
   async deletePost(event: WechatMiniprogram.TouchEvent) {
     const postId = String(event.currentTarget.dataset.id)
-    if (this.data.busyPostId) return
-    const result = await wx.showModal({ title: '删除这条帖子？', content: '删除后将从情侣空间中移除，无法在小程序中恢复。', confirmText: '删除', confirmColor: '#d84b56' })
-    if (!result.confirm) return
+    if (this.data.busyPostId || !this.data.posts.some(post => post.id === postId && post.canDelete)) return
     this.setData({ busyPostId: postId })
-    try { await lovePointsService.deleteCommunityPost(postId); showSuccess('帖子已删除'); await this.refresh(false) }
+    try {
+      const result = await wx.showModal({ title: '删除这条日常？', content: '删除后将从情侣空间中移除，无法恢复。', confirmText: '删除', confirmColor: '#b72f46' })
+      if (!result.confirm) return
+      await lovePointsService.deleteCommunityPost(postId)
+      showSuccess('日常已删除')
+      await this.refresh(false)
+    }
     catch (error) { showError(error) }
     finally { this.setData({ busyPostId: '' }) }
   },

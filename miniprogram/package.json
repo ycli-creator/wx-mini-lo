@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit --pretty false",
-    "test:flows": "node --import tsx tests/flows.test.ts",
+    "test:flows": "node --import tsx tests/flows.test.ts && node --import tsx tests/task-page.test.cjs && node --import tsx tests/health-page.test.cjs && node --import tsx tests/health-views.test.cjs && node --import tsx tests/diary-service.test.cjs && node --import tsx tests/diary-page.test.cjs && node --import tsx tests/diary-editor.test.cjs && node --import tsx tests/diary-media.test.cjs && node --import tsx tests/diary-views.test.cjs && node --import tsx tests/navigation-icons.test.cjs && node --import tsx tests/ui-display.test.cjs && node --import tsx tests/ui-audit.test.cjs && node --import tsx tests/interaction-review.test.cjs && node --import tsx tests/cloud-init.test.cjs",
     "verify": "node scripts/verify-structure.mjs && npm run typecheck && npm run test:flows"
   },
   "dependencies": {

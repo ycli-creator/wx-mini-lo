@@ -1,0 +1,7 @@
+.settings-screen .switch-row { min-height: 112rpx; margin: 0; padding: 20rpx 0; border-bottom: 1rpx solid var(--lp-border); }
+.settings-screen .switch-row:last-child { border: 0; }
+.settings-screen .cell-title { font-size: var(--lp-type-body); }
+.settings-screen .danger-row .cell-title { color: var(--lp-danger); }
+.settings-screen .surface-group { margin-bottom: 36rpx; }
+.settings-screen .privacy-locked .cell-title { color: var(--lp-text-secondary); }
+.settings-screen .section-title { font-size: var(--lp-type-section); }

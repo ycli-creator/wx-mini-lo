@@ -1,0 +1,77 @@
+<view class="screen with-tabbar has-floating-action task-screen">
+  <lp-header
+    title="{{viewMode === 'tasks' ? (state.activeSpaceType === 'couple' ? '我们的待办' : '我的待办') : '心愿商店'}}"
+  />
+  <view class="segment task-main-segment">
+    <view class="segment-item {{viewMode === 'tasks' ? 'active' : ''}}" data-view="tasks" bind:tap="switchView">待办</view>
+    <view class="segment-item {{viewMode === 'shop' ? 'active' : ''}}" data-view="shop" bind:tap="switchView">心愿商店</view>
+  </view>
+  <lp-page-state wx:if="{{loading || loadError}}" loading="{{loading}}" loading-text="正在整理待办与心愿" error-text="待办和心愿暂时没有同步成功，请重新加载。" bind:retry="refresh" />
+
+  <block wx:else>
+    <block wx:if="{{viewMode === 'tasks'}}">
+      <view wx:if="{{createOpen}}" class="create-panel creator-card">
+        <view class="creator-heading"><view><text class="section-title">创建待办</text></view><view class="text-action" bind:tap="toggleTemplates">{{templatesOpen ? '收起模板' : '使用模板'}}</view></view>
+        <scroll-view wx:if="{{templatesOpen}}" scroll-x enhanced class="template-scroll" show-scrollbar="{{false}}">
+          <view class="template-row">
+            <view wx:for="{{taskPresets}}" wx:key="id" class="template-card {{selectedTaskPreset === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bind:tap="useTaskPreset">
+              <text class="template-icon">{{item.icon}}</text><text class="template-title">{{item.title}}</text><text class="template-meta">+{{item.points}} 积分</text>
+            </view>
+          </view>
+        </scroll-view>
+        <text class="field-hint">待办类型</text>
+        <view class="segment task-kind-segment"><view class="segment-item {{taskKind === 'one_time' ? 'active' : ''}}" data-kind="one_time" bind:tap="selectTaskKind">单次</view><view class="segment-item {{taskKind === 'recurring' ? 'active' : ''}}" data-kind="recurring" bind:tap="selectTaskKind">重复</view><view class="segment-item {{taskKind === 'project' ? 'active' : ''}} {{state.activeSpaceType !== 'couple' ? 'disabled' : ''}}" data-kind="project" bind:tap="selectTaskKind">大计划</view></view>
+        <view class="create-field"><text class="field-hint">待办名称</text><input class="text-input" maxlength="60" value="{{title}}" bind:input="handleTitle" /></view>
+
+        <view class="create-field"><text class="field-hint">完成奖励</text><input class="text-input" type="number" value="{{points}}" bind:input="handlePoints" /><text class="input-suffix">积分</text></view>
+        <block wx:if="{{taskKind === 'recurring'}}"><text class="field-hint section-gap">重复周期</text><view class="segment"><view class="segment-item {{planType === 'daily' ? 'active' : ''}}" data-plan="daily" bind:tap="selectPlanType">每日</view><view class="segment-item {{planType === 'weekly' ? 'active' : ''}}" data-plan="weekly" bind:tap="selectPlanType">每周</view></view></block>
+        <block wx:if="{{taskKind !== 'project'}}">
+<block wx:if="{{state.activeSpaceType === 'couple'}}"><text class="field-hint section-gap">由谁完成</text><view class="segment assignee-three"><view class="segment-item {{assignee === 'self' ? 'active' : ''}}" data-assignee="self" bind:tap="selectAssignee">我来完成</view><view class="segment-item {{assignee === 'partner' ? 'active' : ''}}" data-assignee="partner" bind:tap="selectAssignee">TA 来完成</view><view class="segment-item {{assignee === 'both' ? 'active' : ''}}" data-assignee="both" bind:tap="selectAssignee">双方都做</view></view></block>
+          <view class="options-toggle" bind:tap="toggleMoreOptions">{{moreOptionsOpen ? '收起设置' : '更多设置'}}<text class="options-summary">{{completionRequirement === 'image' ? '需照片' : completionRequirement === 'note' ? '需说明' : '直接完成'}}{{approvalRequired ? ' · 需确认' : ''}}</text></view>
+          <view wx:if="{{moreOptionsOpen}}"><view class="create-field"><text class="field-hint">简短说明</text><input class="text-input" maxlength="200" value="{{description}}" bind:input="handleDescription" /></view>          <text class="field-hint section-gap">完成方式</text>
+          <view class="choice-wrap"><view class="choice-chip {{completionRequirement === 'direct' ? 'active' : ''}}" data-requirement="direct" bind:tap="selectCompletionRequirement">直接完成</view><view class="choice-chip {{completionRequirement === 'note' ? 'active' : ''}}" data-requirement="note" bind:tap="selectCompletionRequirement">填写说明</view><view class="choice-chip {{completionRequirement === 'image' ? 'active' : ''}}" data-requirement="image" bind:tap="selectCompletionRequirement">上传图片</view></view>
+          <block wx:if="{{state.activeSpaceType === 'couple'}}"><text class="field-hint section-gap">完成后</text><view class="segment"><view class="segment-item {{!approvalRequired ? 'active' : ''}}" data-approval="false" bind:tap="toggleApproval">完成即到账</view><view class="segment-item {{approvalRequired ? 'active' : ''}}" data-approval="true" bind:tap="toggleApproval">需要确认</view></view></block>
+</view>
+        </block>
+        <block wx:else>
+          <view class="create-field"><text class="field-hint">简短说明</text><input class="text-input" maxlength="200" value="{{description}}" bind:input="handleDescription" /></view>
+
+          <view wx:for="{{projectSteps}}" wx:key="index" class="project-step-editor">
+            <view class="section-heading"><text class="section-title">环节 {{index + 1}}</text><text class="remove-step" data-index="{{index}}" bind:tap="removeProjectStep">移除</text></view>
+            <input class="text-input step-title-input" maxlength="60" placeholder="例如：购买车票" value="{{item.title}}" data-index="{{index}}" bind:input="handleProjectStepTitle" />
+            <view class="segment compact"><view class="segment-item {{item.assignee === 'self' ? 'active' : ''}}" data-index="{{index}}" data-assignee="self" bind:tap="selectProjectStepAssignee">我完成</view><view class="segment-item {{item.assignee === 'partner' ? 'active' : ''}}" data-index="{{index}}" data-assignee="partner" bind:tap="selectProjectStepAssignee">TA 完成</view></view>
+            <view class="choice-wrap compact"><view class="choice-chip {{item.completionRequirement === 'direct' ? 'active' : ''}}" data-index="{{index}}" data-requirement="direct" bind:tap="selectProjectStepRequirement">直接完成</view><view class="choice-chip {{item.completionRequirement === 'note' ? 'active' : ''}}" data-index="{{index}}" data-requirement="note" bind:tap="selectProjectStepRequirement">说明</view><view class="choice-chip {{item.completionRequirement === 'image' ? 'active' : ''}}" data-index="{{index}}" data-requirement="image" bind:tap="selectProjectStepRequirement">图片</view></view>
+          </view>
+          <view class="soft-button add-step" bind:tap="addProjectStep">＋ 添加环节</view>
+        </block>
+        <lp-button label="创建{{taskKind === 'project' ? '大计划' : '待办'}}" disabled="{{!title || !points}}" loading="{{busy}}" bind:tap="createTask" />
+      </view>
+
+      <view wx:if="{{!createOpen}}" class="task-sections">
+        <view wx:for="{{taskSections}}" wx:key="id" class="task-section {{item.id === 'today' ? 'today' : ''}}">
+          <view class="section-toggle" data-id="{{item.id}}" bind:tap="toggleTaskSection"><view class="section-copy"><text class="section-name">{{item.title}}</text></view><text class="section-count">{{item.tasks.length}}</text><text class="fold-chevron {{item.expanded ? 'expanded' : ''}}">⌄</text></view>
+          <view wx:if="{{item.expanded}}" class="section-content">
+            <view wx:if="{{item.tasks.length}}" class="compact-list"><view wx:for="{{item.tasks}}" wx:for-item="task" wx:key="id" class="todo-row {{task.bothRequired ? 'both-task' : ''}}" data-id="{{task.id}}" hover-class="pressed" bind:tap="openTask"><view class="todo-check {{task.status === 'done' ? 'done' : task.status === 'pending' || task.status === 'partial' ? 'pending' : ''}}"><lp-icon name="{{task.status === 'done' ? 'check' : task.status === 'pending' || task.status === 'partial' ? 'time' : 'circle'}}" size="28rpx" /></view><view class="cell-copy"><text class="cell-title">{{task.title}}</text><text class="cell-subtitle">{{task.planLabel}} · {{task.bothRequired ? '双方' : task.assigneeIsSelf ? '我' : 'TA'}}</text><view wx:if="{{task.bothRequired}}" class="dual-mini-progress"><view class="dual-half self {{task.selfCompletion.completed ? 'filled' : ''}}"></view><view class="dual-half partner {{task.partnerCompletion.completed ? 'filled' : ''}}"></view></view><view wx:if="{{task.bothRequired}}" class="dual-mini-labels"><text>我{{task.selfCompletion.completed ? '已完成' : '未完成'}}</text><text>TA{{task.partnerCompletion.completed ? '已完成' : '未完成'}}</text></view></view><view class="todo-end"><text class="todo-points">+{{task.points}}{{task.bothRequired ? ' / 人' : ''}}</text><text class="todo-status">{{task.statusLabel}}</text></view></view></view>
+            <view wx:else class="section-empty"><text>暂无待完成事项</text><text bind:tap="toggleCreate">新建待办</text></view>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view wx:if="{{createOpen}}" class="create-panel creator-card">
+        <view class="creator-heading"><view><text class="section-title">创建心愿</text></view><text wx:if="{{selectedRewardPreset}}" class="template-selected">已套用模板</text></view>
+        <scroll-view scroll-x enhanced class="template-scroll" show-scrollbar="{{false}}"><view class="template-row"><view wx:for="{{rewardPresets}}" wx:key="id" class="template-card {{selectedRewardPreset === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bind:tap="useRewardPreset"><text class="template-icon">{{item.icon}}</text><text class="template-title">{{item.name}}</text><text class="template-meta">{{item.cost}} 积分</text></view></view></scroll-view>
+        <view class="create-field"><text class="field-hint">心愿名称</text><input class="text-input" value="{{rewardName}}" bind:input="handleRewardName" /></view><view class="create-field"><text class="field-hint">简短说明</text><input class="text-input" value="{{rewardDescription}}" bind:input="handleRewardDescription" /></view><view class="create-field"><text class="field-hint">所需积分</text><input class="text-input" type="number" value="{{rewardCost}}" bind:input="handleRewardCost" /></view><view class="create-field"><text class="field-hint">有效期</text><input class="text-input" maxlength="60" value="{{rewardExpiry}}" bind:input="handleRewardExpiry" /></view><view class="create-field"><text class="field-hint">使用约定</text><input class="text-input" maxlength="120" value="{{rewardCondition}}" bind:input="handleRewardCondition" /></view>
+        <block wx:if="{{state.activeSpaceType === 'couple'}}"><text class="field-hint">心愿给谁</text><view class="choice-wrap"><view class="choice-chip {{rewardBeneficiaryType === 'self' ? 'active' : ''}}" data-beneficiary="self" bind:tap="selectRewardBeneficiary">给我</view><view class="choice-chip {{rewardBeneficiaryType === 'partner' ? 'active' : ''}}" data-beneficiary="partner" bind:tap="selectRewardBeneficiary">给 TA</view><view class="choice-chip {{rewardBeneficiaryType === 'couple' ? 'active' : ''}}" data-beneficiary="couple" bind:tap="selectRewardBeneficiary">两人共同</view></view></block>
+        <view wx:if="{{state.activeSpaceType === 'couple'}}" class="switch-row"><view><text class="cell-title">兑换前需要对方同意</text></view><switch color="#f65f6b" checked="{{rewardApprovalRequired}}" bind:change="handleRewardApproval" /></view>
+        <lp-button label="创建心愿" disabled="{{!rewardName || !rewardCost}}" loading="{{busy}}" bind:tap="createReward" />
+      </view>
+      <view class="notice-card brand store-balance"><text class="notice-title">个人积分 {{state.personalPoints}}</text></view>
+      <scroll-view scroll-x enhanced class="plan-filter-scroll" show-scrollbar="{{false}}"><view class="plan-filters"><view class="plan-filter {{rewardFilter === 'all' ? 'active' : ''}}" data-filter="all" bind:tap="selectRewardFilter">全部</view><view class="plan-filter {{rewardFilter === 'available' ? 'active' : ''}}" data-filter="available" bind:tap="selectRewardFilter">可兑换</view><view class="plan-filter {{rewardFilter === 'purchased' ? 'active' : ''}}" data-filter="purchased" bind:tap="selectRewardFilter">已兑换</view><view class="plan-filter {{rewardFilter === 'pending' ? 'active' : ''}}" data-filter="pending" bind:tap="selectRewardFilter">待确认</view><view class="plan-filter {{rewardFilter === 'refund' ? 'active' : ''}}" data-filter="refund" bind:tap="selectRewardFilter">退款中</view></view></scroll-view>
+      <view wx:if="{{rewards.length}}" class="list"><view wx:for="{{rewards}}" wx:key="id" class="reward-card" data-id="{{item.id}}" hover-class="pressed" bind:tap="openReward"><view class="reward-icon"><lp-icon name="gift" size="42rpx" /></view><view class="cell-copy"><text class="cell-title">{{item.name}}</text><text class="cell-subtitle">{{item.description}}</text></view><text class="status-tag {{item.statusClass}}">{{item.statusLabel}}</text><view class="reward-cost"><lp-icon name="money" size="30rpx" /><text>{{item.cost}} {{item.pointsLabel}}积分 · {{item.beneficiaryType === 'couple' ? '两人共同' : item.beneficiaryType === 'partner' ? '给 TA' : '给我'}}</text></view></view></view>
+      <view wx:else class="empty-state"><text class="empty-title">还没有心愿</text></view>
+    </block>
+    <view class="floating-create-action {{createOpen ? 'is-open' : ''}}" hover-class="floating-create-action--pressed" bind:tap="toggleCreate"><text class="floating-create-icon">{{createOpen ? '×' : '＋'}}</text><text>{{createOpen ? '收起' : viewMode === 'tasks' ? '创建待办' : '创建心愿'}}</text></view>
+  </block>
+</view>

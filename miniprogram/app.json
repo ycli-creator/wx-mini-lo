@@ -7,6 +7,11 @@
     "pages/invite/join",
     "pages/invite/confirm",
     "pages/home/index",
+    "pages/diary/index",
+    "pages/diary/edit",
+    "pages/diary/draw",
+    "pages/diary/calendar",
+    "pages/diary/statistics",
     "pages/task/index",
     "pages/task/detail",
     "pages/task/submit",
@@ -21,6 +26,7 @@
     "pages/documents/edit",
     "pages/profile/index",
     "pages/records/index",
+    "pages/records/statistics",
     "pages/records/edit",
     "pages/heat/index",
     "pages/chat/index",
@@ -56,11 +62,22 @@
     "backgroundColor": "#ffffff",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/home/index", "text": "首页" },
-      { "pagePath": "pages/task/index", "text": "待办" },
-      { "pagePath": "pages/community/index", "text": "日常" },
-      { "pagePath": "pages/chat/index", "text": "消息" },
-      { "pagePath": "pages/profile/index", "text": "我的" }
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/task/index",
+        "text": "待办"
+      },
+      {
+        "pagePath": "pages/community/index",
+        "text": "日常"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "我的"
+      }
     ]
   },
   "sitemapLocation": "sitemap.json",
